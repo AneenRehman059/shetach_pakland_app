@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "660060020862",
+    "project_id": "she-cms",
+    "storage_bucket": "she-cms.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:660060020862:android:1f72ba5d5db678197a782f",
+        "android_client_info": {
+          "package_name": "com.shetech.pakland"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDI--zLhSeMIp0oVMommmW-ear37xBYE_4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
