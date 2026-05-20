@@ -133,6 +133,7 @@ class LoginController extends GetxController {
       if (userId != null && userId.isNotEmpty) {
         await _clearFCMToken(userId);
       }
+
       await _storage.delete(key: "fcm_token");
       await _storage.delete(key: "user_id");
       await _storage.delete(key: "user_name");

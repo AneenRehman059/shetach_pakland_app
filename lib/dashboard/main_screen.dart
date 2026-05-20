@@ -1,5 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pakland/colors.dart';
@@ -40,94 +41,100 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final double sliderHeight = MediaQuery.of(context).size.height * 0.25;
 
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-        title: Image.asset(
-          ImageConstant.logo,
-          height: 55,
-        ),
-        actions: [
-          Obx(() {
-            final userType = loginController.userType.value;
-            final isAdmin = userType == "Admin" || userType == "Customer";
-
-            if (!isAdmin) return const SizedBox.shrink();
-
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  onPressed: () => Get.toNamed('/SOSListView'),
-                  icon: Icon(
-                    Icons.notifications,
-                    color: AppColors.appColor,
-                    size: 26,
-                  ),
-                ),
-                Obx(() {
-                  if (ticketController.activeSOSCount.value == 0) {
-                    return const SizedBox.shrink();
-                  }
-                  return Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            );
-          }),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-
-            Container(height: 1,
-              width: double.infinity,
-              color: AppColors.appColor,),
-            SizedBox(height: 5),
+    return WillPopScope(
+      onWillPop: ()async {
+        SystemNavigator.pop();
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          elevation: 0,
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+          title: Image.asset(
+            ImageConstant.logo,
+            height: 55,
+          ),
+          actions: [
             Obx(() {
+              final userType = loginController.userType.value;
+              final isAdmin = userType == "Admin" || userType == "Customer";
+
+              if (!isAdmin) return const SizedBox.shrink();
+
               return Stack(
+                alignment: Alignment.center,
                 children: [
-                  CarouselSlider(
-                    items: _buildSliderItems(context),
-                    options: CarouselOptions(
-                      autoPlay: true,
-                      autoPlayAnimationDuration: const Duration(milliseconds: 800),
-                      autoPlayCurve: Curves.easeInOut,
-                      viewportFraction: 1,
-                      enlargeCenterPage: true,
-                      height: sliderHeight,
-                      onPageChanged: (index, reason) {
-                        currentIndex.value = index;
-                      },
+                  IconButton(
+                    onPressed: () => Get.toNamed('/SOSListView'),
+                    icon: Icon(
+                      Icons.notifications,
+                      color: AppColors.appColor,
+                      size: 26,
                     ),
                   ),
-                  Positioned(
-                    bottom: 10,
-                    left: 0,
-                    right: 0,
-                    child: _buildIndicatorDots(),
-                  ),
+                  Obx(() {
+                    if (ticketController.activeSOSCount.value == 0) {
+                      return const SizedBox.shrink();
+                    }
+                    return Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    );
+                  }),
                 ],
               );
             }),
-            const SizedBox(height: 5),
-            Expanded(
-              child: DashboardMenus(),
-            ),
           ],
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+
+              Container(height: 1,
+                width: double.infinity,
+                color: AppColors.appColor,),
+              SizedBox(height: 5),
+              Obx(() {
+                return Stack(
+                  children: [
+                    CarouselSlider(
+                      items: _buildSliderItems(context),
+                      options: CarouselOptions(
+                        autoPlay: true,
+                        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                        autoPlayCurve: Curves.easeInOut,
+                        viewportFraction: 1,
+                        enlargeCenterPage: true,
+                        height: sliderHeight,
+                        onPageChanged: (index, reason) {
+                          currentIndex.value = index;
+                        },
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 10,
+                      left: 0,
+                      right: 0,
+                      child: _buildIndicatorDots(),
+                    ),
+                  ],
+                );
+              }),
+              const SizedBox(height: 5),
+              Expanded(
+                child: DashboardMenus(),
+              ),
+            ],
+          ),
         ),
       ),
     );

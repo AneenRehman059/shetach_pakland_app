@@ -127,7 +127,7 @@ class TicketRepository {
         if (decoded["StatusCode"] == "200") {
           final List Branches =  decoded["obj"]["Clientdetaillist"];
           //final List Branches =  decoded["obj"];
-          return List<Map<String, dynamic>>.from(Branches).skip(1);
+          return List<Map<String, dynamic>>.from(Branches);
         } else {
           throw Exception(decoded["Message"] ?? HttpMessageMapper.getMessage(response.statusCode));
         }

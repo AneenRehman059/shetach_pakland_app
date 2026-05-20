@@ -13,8 +13,10 @@ import 'package:pakland/controllers/login_controller.dart';
 import 'package:pakland/customs/custom_buttons.dart';
 import 'package:pakland/customs/custom_fields.dart';
 import 'package:pakland/services/biometric_auth_service.dart';
+import 'package:pakland/verify_otp_screen.dart';
 
 import 'app_permissions/location_permisson.dart';
+import 'controllers/send_otp_auth_device_controller.dart';
 import 'customs/biometric_button.dart';
 import 'customs/dialogs/biometric_dialogs.dart';
 import 'forgot_password_screen.dart';
@@ -32,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final loginController = Get.put(LoginController());
+  final sendOtpAuthDevController = Get.put(SendOtpAuthDeviceController());
   final biometricService = BiometricAuthService();
   final storage = const FlutterSecureStorage();
   final _sosRepo = SOSRepository();
@@ -281,9 +284,49 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       onPressed: () async {
                         Navigator.of(ctx).pop();
-                        // TODO: call your backend force-logout API here,
-                        // then retry login. Example:
-                        await _performLogin();
+                        try {
+                          final response = await sendOtpAuthDevController.sendOtpAuthDevice(
+                            cnic: usernameController.text,
+                          );
+
+                          if (response["StatusCode"] == "200") {
+                            // showTopSnackBar(
+                            //   context,
+                            //   "Password updated successfully",
+                            //   Colors.green.withOpacity(0.7),
+                            //   icon: Icons.check_circle,
+                            // );
+
+                            Future.delayed(const Duration(milliseconds: 1500), () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VerifyOtpScreen(
+                                    phoneNumber: "",
+                                    isPasswordReset: true,
+                                    userId: usernameController.text,
+                                  ),
+                                ),
+                              );
+                            });
+                          } else {
+                            showTopSnackBar(
+                              context,
+                              title: "Alert",
+                              "Some technical fault occured! Try again later.",
+                              Colors.red.withOpacity(0.7),
+                              icon: Icons.warning,
+                            );
+                          }
+                        } catch (e) {
+                          showTopSnackBar(
+                            context,
+                            title: "Alert",
+                            "Alert: ${e.toString()}",
+                            Colors.red.withOpacity(0.7),
+                            icon: Icons.warning,
+                          );
+                        }
                       },
                     ),
                   ),

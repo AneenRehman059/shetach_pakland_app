@@ -15,7 +15,7 @@ class SOSView extends StatefulWidget {
 class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
-  final SOSController _sosController = Get.find<SOSController>();
+  final SOSController _sosController = Get.put(SOSController());
   String brnCode = '';
   String brnName = '';
   String distance = '';
@@ -174,7 +174,7 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
           ),
           child: Text('CANCEL',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16,color: Colors.black54),),
         ),
-        SizedBox(height: screenHeight * 0.025), // 20px equivalent
+        SizedBox(height: screenHeight * 0.025),
       ],
     );
   }

@@ -31,6 +31,7 @@ class ApiConstants {
   static const String addFeedbackUrl = "$baseUrl/api/ReportExecl/Feedback";
   static const String payNowUrl = "$baseUrl/api/MobileAPi/CheckOut";
   static const String forgotPasswordUrl = "$baseUrl/api/ReportExecl/ForgetPassword";
+  static const String sendOtpAuthDevrdUrl = "$baseUrl/api/MobileAPi/DeviceAuth";
   static const String updateProfileUrl = "$baseUrl/api/MobileApi/UpdateUser";
   static const String recentActivityUrl = "$baseUrl/api/MobileApi/GetAllLogsByUser";
   static const String formNoUrl = "$baseUrl/api/MobileApi/FormStatus";

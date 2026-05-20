@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
+import '../../bottom_app_bar/bottom_app_bar.dart';
 import '../../colors.dart';
 import '../../controllers/tickets_controller.dart';
 import '../../customs/widgets/app_bar.dart';
@@ -40,39 +41,45 @@ class _CMSDashboardScreenState extends State<CMSDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(title: "Loading...", custom_RouteName: "/"),
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Obx(() {
+    return WillPopScope(
+      onWillPop: () async{
+        Get.offAll(() => MainWrapper());
+        return true;
+      },
+      child: Scaffold(
+        appBar: CustomAppBar(title: "Loading...", custom_RouteName: "/"),
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Obx(() {
 
-          if (ticketController.isLoading.value) {
-            return Center(
-              child: SpinKitWave(
-                color: AppColors.primaryColor,
-                size: 24.0,
-              ),
-            );
-          }
+            if (ticketController.isLoading.value) {
+              return Center(
+                child: SpinKitWave(
+                  color: AppColors.primaryColor,
+                  size: 24.0,
+                ),
+              );
+            }
 
-          final userType = ticketController.userType.value;
+            final userType = ticketController.userType.value;
 
-          /// 🔹 2️⃣ Invalid User State
-          if (userType.isEmpty || userType == "Invalid") {
-            return _buildInvalidUserUI();
-          }
+            /// 🔹 2️⃣ Invalid User State
+            if (userType.isEmpty || userType == "Invalid") {
+              return _buildInvalidUserUI();
+            }
 
-          /// 🔹 3️⃣ Valid User → Navigate Once
-          if (!_hasNavigated) {
-            _hasNavigated = true;
+            /// 🔹 3️⃣ Valid User → Navigate Once
+            if (!_hasNavigated) {
+              _hasNavigated = true;
 
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _navigateToDashboard(userType);
-            });
-          }
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _navigateToDashboard(userType);
+              });
+            }
 
-          return const SizedBox(); // Empty while navigating
-        }),
+            return const SizedBox(); // Empty while navigating
+          }),
+        ),
       ),
     );
   }
