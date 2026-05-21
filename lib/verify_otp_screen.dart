@@ -68,8 +68,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     try {
       final signUpData = SignUpRequestModel(
         cnic: widget.userId,
-        password: userPassword,
-        mobileNo: widget.phoneNumber,
+        password: "",
+        mobileNo: "",
         emailAddress: "string",
         address: "lahore",
         userName: "string",

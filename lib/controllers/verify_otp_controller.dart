@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pakland/models/signup_model.dart';
 import 'package:pakland/repo/signup_repo.dart';
 import 'package:pakland/repo/verify_otp_repo.dart';
-import 'package:pakland/repo/login_repo.dart'; // ✅ Import login repo
+import 'package:pakland/repo/login_repo.dart';
 
 import '../customs/toast_message.dart';
 import '../login_screen.dart';
@@ -13,8 +13,8 @@ import '../verify_otp_screen.dart';
 class VerifyOtpController extends GetxController {
   var isLoading = false.obs;
   final _repo = VerifyOtpRepo();
-  final _loginRepo = LoginRepository(); // ✅ Add login repo
-  final _storage = const FlutterSecureStorage(); // ✅ Add storage
+  final _loginRepo = LoginRepository();
+  final _storage = const FlutterSecureStorage();
   String? phoneNumber;
 
   Future<void> verifyOtpController(BuildContext context, SignUpRequestModel model) async {
@@ -24,11 +24,10 @@ class VerifyOtpController extends GetxController {
       final response = await _repo.verifyOtp(model);
 
       if (response["StatusCode"] == "200") {
-        // ✅ Call logout API before navigating to LoginScreen
         try {
-          final userId = await _storage.read(key: "user_id");
-          if (userId != null && userId.isNotEmpty) {
-            final logoutResponse = await _loginRepo.logoutApi(userId);
+          final cnic = model.cnic;
+          if (cnic.isNotEmpty) {
+            final logoutResponse = await _loginRepo.logoutApi(cnic);
             if (logoutResponse["StatusCode"] == "200") {
               print("✅ Logout API called successfully after OTP verification.");
             } else {
@@ -76,4 +75,5 @@ class VerifyOtpController extends GetxController {
       isLoading.value = false;
     }
   }
+
 }
