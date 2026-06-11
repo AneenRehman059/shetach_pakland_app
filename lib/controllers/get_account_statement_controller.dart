@@ -15,6 +15,10 @@ class AccountStatementController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
 
+  final RxString receiptImageUrl = ''.obs;
+  final RxBool isReceiptImageLoading = false.obs;
+  final RxString receiptImageError = ''.obs;
+
   Future<void> fetchAccountStatement({
     required String brnCode,
     required String registrationNo,
@@ -59,47 +63,25 @@ class AccountStatementController extends GetxController {
     }
   }
 
-  Future<void> fetchReceiptStatement({
+  Future<void> fetchReceiptImage({
     required String brnCode,
-    required String registrationNo,
-    required String idNo,
-    required String userName,
-    required int reportId,
     required String receiptNo,
-    required List<String> copies,
-
   }) async {
     try {
-      isLoading.value = true;
-      error.value = '';
+      isReceiptImageLoading.value = true;
+      receiptImageError.value = '';
+      receiptImageUrl.value = '';
 
-      final request = AccountStatementRequest(
-          brnCode: brnCode,
-          registrationNo: registrationNo,
-          idNo: idNo,
-          userName: userName,
-          reportId: reportId,
-          receiptNo: receiptNo,
-          copies: copies,
+      final url = await _repository.getReceiptImageUrl(
+        brnCode: brnCode,
+        receiptNo: receiptNo,
       );
 
-      final response = await _repository.getAccountStatement(request);
-      accountStatement.value = response;
-
-      if (!response.success) {
-        throw Exception('Failed to generate statement');
-      }
+      receiptImageUrl.value = url;
     } catch (e) {
-      error.value = e.toString();
-      // Get.snackbar(
-      //   'Error',
-      //   e.toString(),
-      //   snackPosition: SnackPosition.BOTTOM,
-      //   backgroundColor: Colors.red,
-      //   colorText: Colors.white,
-      // );
+      receiptImageError.value = e.toString();
     } finally {
-      isLoading.value = false;
+      isReceiptImageLoading.value = false;
     }
   }
 

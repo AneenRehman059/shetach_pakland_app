@@ -64,7 +64,7 @@ class LoginController extends GetxController {
       final model = LoginRequestModel(username: username, password: password, latitude: latitude, longitude: longitude, deviceId: deviceId);
       final response = await _repo.login(model);
 
-      lastStatusCode.value = response["StatusCode"]?.toString() ?? ""; // ✅ Always capture it
+      lastStatusCode.value = response["StatusCode"]?.toString() ?? "";
 
       if (response["StatusCode"] == "200") {
         final obj = response["obj"];
@@ -97,7 +97,20 @@ class LoginController extends GetxController {
         // );
         return false;
 
-      } else {
+      }
+      else if (response["StatusCode"] == "404") {
+        final message = response["Message"]?.toString() ?? "Access denied from this device.";
+        showTopSnackBar(
+          context,
+          title: "Access Denied",
+          message,
+          Colors.red.withOpacity(0.7),
+          icon: Icons.warning,
+        );
+        return false;
+
+      }
+      else {
         return false;
       }
     } catch (e) {
@@ -130,31 +143,31 @@ class LoginController extends GetxController {
           // Continue logout even if API fails
         }
 
-      if (userId != null && userId.isNotEmpty) {
-        await _clearFCMToken(userId);
-      }
+        if (userId != null && userId.isNotEmpty) {
+          await _clearFCMToken(userId);
+        }
 
-      await _storage.delete(key: "fcm_token");
-      await _storage.delete(key: "user_id");
-      await _storage.delete(key: "user_name");
-      await _storage.delete(key: "email_no1");
-      await _storage.delete(key: "OTP");
-      await _storage.delete(key: "address");
-      await _storage.delete(key: "profile_image_path");
-      await _storage.delete(key: "user_password");
+        await _storage.delete(key: "fcm_token");
+        await _storage.delete(key: "user_id");
+        await _storage.delete(key: "user_name");
+        await _storage.delete(key: "email_no1");
+        await _storage.delete(key: "OTP");
+        await _storage.delete(key: "address");
+        await _storage.delete(key: "profile_image_path");
+        await _storage.delete(key: "user_password");
 
-      // Optional: Delete biometric data as well
-      await _storage.delete(key: "biometric_enabled");
-      await _storage.delete(key: "biometric_username");
-      await _storage.delete(key: "biometric_password");
+        // Optional: Delete biometric data as well
+        await _storage.delete(key: "biometric_enabled");
+        await _storage.delete(key: "biometric_username");
+        await _storage.delete(key: "biometric_password");
 
-      // Clear user type
-      userType.value = "";
+        // Clear user type
+        userType.value = "";
 
-      // Navigate to login screen
-      Get.offAll(() => LoginScreen());
+        // Navigate to login screen
+        Get.offAll(() => LoginScreen());
 
-    }} catch (e) {
+      }} catch (e) {
       print('❌ Error during logout: $e');
       // Even if there's an error, still navigate to login
       Get.offAll(() => LoginScreen());

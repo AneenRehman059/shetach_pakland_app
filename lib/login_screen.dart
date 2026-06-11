@@ -14,6 +14,7 @@ import 'package:pakland/customs/custom_buttons.dart';
 import 'package:pakland/customs/custom_fields.dart';
 import 'package:pakland/services/biometric_auth_service.dart';
 import 'package:pakland/verify_otp_screen.dart';
+import 'package:flutter/services.dart';
 
 import 'app_permissions/location_permisson.dart';
 import 'controllers/send_otp_auth_device_controller.dart';
@@ -593,6 +594,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               showVisibilityIcon: true,
                               borderRadius: 30,
                               height: MediaQuery.of(context).size.height * 0.05,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                              ],
                             ),
                             if (_fieldErrors.containsKey('password'))
                               Padding(

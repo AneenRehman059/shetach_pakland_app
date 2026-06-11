@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pakland/colors.dart';
-
+import 'package:flutter/services.dart';
 class CustomTextField extends StatefulWidget {
   final String label;
   final String hintText;
@@ -19,6 +19,7 @@ class CustomTextField extends StatefulWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final double? borderRadius;
+  final List<TextInputFormatter>? inputFormatters;
 
   const CustomTextField({
     super.key,
@@ -39,6 +40,7 @@ class CustomTextField extends StatefulWidget {
     this.readOnly = false,
     this.onTap,
     this.borderRadius,
+    this.inputFormatters,
   });
 
   @override
@@ -234,6 +236,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             controller: widget.controller,
             obscureText: _obscureText,
             keyboardType: widget.keyboardType,
+            inputFormatters: widget.inputFormatters,
             maxLength: _getMaxLength(),
             onChanged: (value) {
               widget.onChanged?.call(value);
@@ -347,6 +350,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             controller: widget.controller,
             obscureText: _obscureText,
             keyboardType: widget.keyboardType,
+            inputFormatters: widget.inputFormatters,
             maxLength: _getMaxLength(),
             onChanged: (value) {
               widget.onChanged?.call(value);

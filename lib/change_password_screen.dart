@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -325,6 +326,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           showVisibilityIcon: true,
                           borderRadius: 30,
                           height: MediaQuery.of(context).size.height * 0.05,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                          ],
                         ),
                         if (_fieldErrors['oldPassword']?.isNotEmpty ?? false)
                           Padding(
@@ -353,6 +357,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           obscureText: true,
                           showVisibilityIcon: true,   borderRadius: 30,
                           height: MediaQuery.of(context).size.height * 0.05,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                          ],
                         ),
 
                         // New Password Strength Indicator
@@ -406,6 +413,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           obscureText: true,
                           showVisibilityIcon: true,   borderRadius: 30,
                           height: MediaQuery.of(context).size.height * 0.05,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                          ],
                         ),
 
                         if (_confirmPasswordStrength.isNotEmpty)

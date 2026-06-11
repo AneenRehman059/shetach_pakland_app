@@ -244,7 +244,8 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
         userName: userNameController.text,
         otp: "string",
         otpVia: "sms",
-        deviceId: deviceInfo['deviceId']!,
+        // deviceId: deviceInfo['deviceId']!,
+        deviceId: '',
         deviceModel: "string",
         platform: "string",
         osVersion: "string",
@@ -498,6 +499,9 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                                 showVisibilityIcon: true,
                                 borderRadius: 30,
                                 height: MediaQuery.of(context).size.height * 0.05,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                                ],
                               ),
 
                               // Password Strength Indicator
@@ -552,6 +556,9 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                                 showVisibilityIcon: true,
                                 borderRadius: 30,
                                 height: MediaQuery.of(context).size.height * 0.05,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                                ],
                               ),
 
                               // Confirm Password Strength Indicator

@@ -5,6 +5,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pakland/colors.dart';
 import 'package:pakland/customs/toast_message.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:pakland/show_receipt_attachment_screen.dart';
 import 'package:pakland/statment.dart';
 import 'bottom_app_bar/bottom_app_bar.dart';
 import 'controllers/account_recipt_controller.dart';
@@ -46,52 +47,34 @@ class _ReceiptTableViewState extends State<ReceiptTableView> {
     });
 
     try {
-      final tempController = Get.put(
-        AccountStatementController(),
-        tag: 'receipt_${receipt.receiptNo}',
-      );
+      final statementController =   Get.put(AccountStatementController());
 
-      // Define the copies array
-      final List<String> copies = ["Client", "Office", "Account"];
-
-      await tempController.fetchReceiptStatement(
-        brnCode: widget.brnCode,
-        registrationNo: widget.registrationNo,
-        idNo: widget.idNo,
-        userName: widget.idNo,
-        reportId: 101591,
+      await statementController.fetchReceiptImage(
+        brnCode: receipt.brnCode.toString(),
         receiptNo: receipt.receiptNo.toString(),
-        copies: copies,
       );
 
-      if (tempController.accountStatement.value?.reportUrl != null &&
-          tempController.accountStatement.value!.reportUrl!.isNotEmpty) {
-        final reportUrl = tempController.accountStatement.value!.reportUrl!;
-        await Get.to(() => PrintWebViewScreen(url: reportUrl));
-        await Get.delete<AccountStatementController>(tag: 'receipt_${receipt.receiptNo}');
-      } else {
+      if (statementController.receiptImageError.value.isNotEmpty) {
         showTopSnackBar(
           context,
-          "Failed to generate statement. Please try again.",
+         'No attachment found for this receipt.',
           Colors.red.withOpacity(0.7),
-          icon: Icons.error,
+          title: 'Attachment Unavailable',
+          icon: Icons.error_outline,
         );
+        return;
       }
-    } catch (e) {
-      debugPrint("Error fetching receipt statement: $e");
-      showTopSnackBar(
-        context,
-        title: "Alert",
-        "Some technical fault occured! Try again later.",
-        Colors.red.withOpacity(0.7),
-        icon: Icons.error,
-      );
+
+      if (statementController.receiptImageUrl.value.isNotEmpty) {
+        Get.to(() => ReceiptImageScreen(
+          imageUrl: statementController.receiptImageUrl.value,
+          receiptNo: receipt.receiptNo.toString(),
+        ));
+      }
     } finally {
-      if (mounted) {
-        setState(() {
-          _loadingReceipts.remove(receipt.receiptNo);
-        });
-      }
+      setState(() {
+        _loadingReceipts.remove(receipt.receiptNo);
+      });
     }
   }
 

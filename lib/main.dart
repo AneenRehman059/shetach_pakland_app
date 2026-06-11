@@ -38,6 +38,7 @@ import 'dashboard/cms_components/ticket_detail_screen.dart';
 import 'dashboard/cms_components/ticket_list_view.dart';
 import 'help_support_screen.dart';
 import 'login_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 final notificationService = FirebaseNotificationService();
 
@@ -213,117 +214,196 @@ class _MyAppState extends State<MyApp> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: Container(
-          width: 280,
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.85,
+            constraints: BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: Offset(0, 10),
+                ),
+              ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    "Update Available",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top gradient section
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.blue.shade600,
+                        Colors.blue.shade800,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
                     ),
                   ),
-                  SizedBox(height: 12),
-
-                  // Content text
-                  Text(
-                    "You can now update this app from",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-
-                  // Version information
-                  Row(
+                  child: Column(
                     children: [
-                      Text(
-                        _currentVersion,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.system_update_alt,
+                          size: 48,
+                          color: Colors.white,
                         ),
                       ),
-                      SizedBox(width: 6),
-                      Icon(
-                        Icons.arrow_forward,
-                        size: 14,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(width: 6),
+                      SizedBox(height: 16),
                       Text(
-                        _requiredVersion,
+                        "Update Available",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "A new version is ready to be installed",
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                          color: Colors.white.withOpacity(0.9),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 20),
+                ),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                // Content section
+                Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextButton(
-                        onPressed: () {
-                          SystemNavigator.pop();
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey[700],
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        ),
-                        child: Text(
-                          "Maybe Later",
-                          style: TextStyle(
-                            fontSize: 13,
-                          ),
+                      Text(
+                        "What's New:",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade800,
                         ),
                       ),
-                      SizedBox(width: 8),
-
-                      ElevatedButton(
-                        onPressed: () {
-                          SystemNavigator.pop(); // Close for now
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[600],
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
+                      SizedBox(height: 12),
+                      _buildFeatureItem(Icons.bug_report, "Bug fixes & performance improvements"),
+                      SizedBox(height: 8),
+                      _buildFeatureItem(Icons.security, "Security updates"),
+                      SizedBox(height: 8),
+                      _buildFeatureItem(Icons.speed, "Enhanced user experience"),
+                      SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                SystemNavigator.pop();
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                side: BorderSide(color: Colors.grey.shade400),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                "Later",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          "Update",
-                          style: TextStyle(
-                            fontSize: 13,
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                const url = 'https://shetechnologies.com';
+                                try {
+                                  if (await canLaunchUrl(Uri.parse(url))) {
+                                    await launchUrl(
+                                      Uri.parse(url),
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  }
+                                } catch (e) {
+                                  debugPrint("Error launching URL: $e");
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade600,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.download, size: 20),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    "Update Now",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFeatureItem(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: Colors.blue.shade600,
+        ),
+        SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

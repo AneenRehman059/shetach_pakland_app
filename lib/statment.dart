@@ -71,7 +71,7 @@ class _PrintWebViewScreenState extends State<PrintWebViewScreen> {
                     SpinKitWave(color: AppColors.appColor, size: 40.0),
                     const SizedBox(height: 16),
                     Text(
-                      'Loading Statement...',
+                      'Loading Receipt...',
                       style: TextStyle(
                           color: AppColors.appColor,
                           fontWeight: FontWeight.bold),

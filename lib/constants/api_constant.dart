@@ -20,6 +20,7 @@ class ApiConstants {
   static const String getBranchUrl = "$baseUrl/api/ReportExecl/GetBranch";
   static const String getStatementUrl = "$baseUrl/api/MobileApi/GetReceiptsByRegistration";
   static const String getReciptUrl = "$baseUrl/api/ReportExecl/GetReceiptByReg_no";
+  static const String getReceiptByReceiptNoUrl = "$baseUrl/api/MobileApi/GetReceiptsPrintByReceiptNo";
   static const String getAccountStatUrl = "$baseUrl/api/MobileApi/GetAccountStatement";
   static const String getBillUrl = "$baseUrl/api/MobileApi/GetAccountStatement";
   static const String clientBillsUrl = "$baseUrl/api/MobileApi/GetLastThreeBills";
