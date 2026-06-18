@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pakland/models/signup_model.dart';
-import 'package:pakland/repo/signup_repo.dart';
+import 'package:pakland/view/signup_repo.dart';
 
 import '../customs/toast_message.dart';
 import '../login_screen.dart';

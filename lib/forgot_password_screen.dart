@@ -214,12 +214,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
 
       if (response["StatusCode"] == "200") {
-        showTopSnackBar(
-            context,
-            "Password updated successfully",
-            Colors.green.withOpacity(0.7),
-            icon: Icons.check_circle
-        );
 
         Future.delayed(const Duration(milliseconds: 1500), () {
           Navigator.push(
@@ -321,9 +315,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         showVisibilityIcon: true,
                         borderRadius: 30,
                         height: MediaQuery.of(context).size.height * 0.05,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                        ],
                       ),
 
                       // New Password Strength Indicator
@@ -378,9 +369,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         obscureText: true,
                         showVisibilityIcon: true,   borderRadius: 30,
                         height: MediaQuery.of(context).size.height * 0.05,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                        ],
                       ),
 
                       // Confirm Password Strength Indicator

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pakland/models/signup_model.dart';
-import 'package:pakland/repo/signup_repo.dart';
+import 'package:pakland/view/signup_repo.dart';
 import 'package:pakland/repo/verify_otp_repo.dart';
 import 'package:pakland/repo/login_repo.dart'; // ✅ Import login repo
 

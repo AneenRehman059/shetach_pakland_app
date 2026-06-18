@@ -9,7 +9,7 @@ import 'package:pakland/customs/app_bar.dart';
 import 'package:pakland/customs/custom_buttons.dart';
 import 'package:pakland/login_screen.dart';
 
-import 'controllers/signup_controller.dart';
+import 'view/signup_controller.dart';
 import 'customs/toast_message.dart';
 import 'models/signup_model.dart';
 

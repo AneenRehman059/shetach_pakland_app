@@ -4,7 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pakland/colors.dart';
 import 'package:pakland/help_support_screen.dart';
 import 'package:pakland/login_screen.dart';
-import 'package:pakland/signup_screen.dart';
+import 'package:pakland/view/signup_screen.dart';
 import 'bottom_app_bar/bottom_app_bar.dart';
 import 'constants/image_constant.dart';
 import 'customs/login_check_util.dart';

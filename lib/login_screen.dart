@@ -7,7 +7,7 @@ import 'package:pakland/colors.dart';
 import 'package:pakland/constants/image_constant.dart';
 import 'package:pakland/customs/toast_message.dart';
 import 'package:pakland/repo/sos_repo.dart';
-import 'package:pakland/signup_screen.dart';
+import 'package:pakland/view/signup_screen.dart';
 import 'package:pakland/bottom_app_bar/bottom_app_bar.dart';
 import 'package:pakland/controllers/login_controller.dart';
 import 'package:pakland/customs/custom_buttons.dart';
@@ -594,9 +594,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               showVisibilityIcon: true,
                               borderRadius: 30,
                               height: MediaQuery.of(context).size.height * 0.05,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                              ],
                             ),
                             if (_fieldErrors.containsKey('password'))
                               Padding(

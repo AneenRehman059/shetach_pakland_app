@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:pakland/colors.dart';
 import 'package:pakland/constants/image_constant.dart';
-import 'package:pakland/controllers/signup_controller.dart';
+import 'package:pakland/view/signup_controller.dart';
 import 'package:pakland/login_screen.dart';
 import 'package:pakland/models/signup_model.dart';
 import 'package:pakland/customs/app_bar.dart';
@@ -11,7 +11,7 @@ import 'package:pakland/customs/custom_buttons.dart';
 import 'package:pakland/customs/custom_fields.dart';
 import 'package:pakland/verify_otp_screen.dart';
 
-import 'get_device_info.dart';
+import '../get_device_info.dart';
 
 class SignUpNScreen extends StatefulWidget {
   SignUpNScreen({super.key});
@@ -499,9 +499,6 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                                 showVisibilityIcon: true,
                                 borderRadius: 30,
                                 height: MediaQuery.of(context).size.height * 0.05,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                                ],
                               ),
 
                               // Password Strength Indicator
@@ -556,9 +553,6 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                                 showVisibilityIcon: true,
                                 borderRadius: 30,
                                 height: MediaQuery.of(context).size.height * 0.05,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                                ],
                               ),
 
                               // Confirm Password Strength Indicator

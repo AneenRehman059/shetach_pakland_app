@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pakland/bottom_app_bar/bottom_app_bar.dart';
@@ -6,12 +8,13 @@ import 'package:pakland/customs/app_bar.dart';
 import 'package:pakland/pdf_viewer_screen.dart';
 import 'package:pakland/constants/api_constant.dart';
 import 'package:pakland/controllers/get_company_controller.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../constants/download_contant.dart';
 import '../../controllers/theme_controller.dart';
+import '../../customs/custom_messages.dart';
 import '../../customs/toast_message.dart';
-import '../../permission_service.dart';
 import '../../status_bar_wrapper.dart';
 
 class SOPsScreen extends StatefulWidget {
@@ -21,15 +24,15 @@ class SOPsScreen extends StatefulWidget {
   State<SOPsScreen> createState() => _SOPsScreenState();
 }
 
-class _SOPsScreenState extends State<SOPsScreen>
-    with TickerProviderStateMixin {
+class _SOPsScreenState extends State<SOPsScreen> with TickerProviderStateMixin {
   final CompanyController _companyController = Get.find<CompanyController>();
-  final ThemeController _themeController = Get.find<ThemeController>();
+  final ThemeController   _themeController   = Get.find<ThemeController>();
 
   final Map<int, bool> _isDownloading = {};
-  final Map<int, bool> _isDownloaded = {};
+  final Map<int, bool> _isDownloaded  = {};
+
   late AnimationController _colorController;
-  late Animation<Color?> _colorAnimation;
+  late Animation<Color?>   _colorAnimation;
 
   @override
   void initState() {
@@ -49,18 +52,67 @@ class _SOPsScreenState extends State<SOPsScreen>
     super.dispose();
   }
 
+  // ── Main download handler ──────────────────────────────────────────
   Future<void> _downloadSOP(
       BuildContext context, String url, String fileName, int index) async {
-    final hasPermission = await DownloadUtils.requestPermission();
 
-    if (!hasPermission) {
-      if (await Permission.storage.isDenied ||
-          await Permission.manageExternalStorage.isDenied) {
+    // ── 1. Permission check ────────────────────────────────────────
+    PermissionStatus status;
+
+    if (await Permission.photos.isGranted) {
+      status = PermissionStatus.granted;
+    } else {
+      status = await Permission.photos.request();
+      if (!status.isGranted) {
+        status = await Permission.storage.request();
+      }
+    }
+
+    if (!status.isGranted) {
+      if (mounted) {
+        final isPermanentlyDenied =
+            status.isPermanentlyDenied ||
+                await Permission.photos.isPermanentlyDenied ||
+                await Permission.storage.isPermanentlyDenied;
+
+        if (isPermanentlyDenied) {
+          _showSettingsDialog();
+        } else {
+          showTopSnackBar(
+            context,
+            DownloadMessages.permissionDeniedMessage,
+            Colors.red.shade800,
+            title: DownloadMessages.permissionDeniedTitle,
+            icon: Icons.lock,
+          );
+        }
+      }
+      return;
+    }
+
+    // ── 2. Storage space check ─────────────────────────────────────
+    try {
+      final hasSpace = await _hasEnoughStorage();
+      if (!hasSpace) {
+        if (mounted) {
+          showTopSnackBar(
+            context,
+            DownloadMessages.insufficientStorageMessage,
+            Colors.orange.shade800,
+            title: DownloadMessages.insufficientStorageTitle,
+            icon: Icons.storage_rounded,
+          );
+        }
+        return;
+      }
+    } catch (_) {
+      if (mounted) {
         showTopSnackBar(
           context,
-          "Permission denied. Please allow storage access in app settings.",
-          Colors.red.withOpacity(0.7),
-          icon: Icons.error,
+          DownloadMessages.storageCheckFailedMessage,
+          Colors.orange.shade800,
+          title: DownloadMessages.insufficientStorageTitle,
+          icon: Icons.storage_rounded,
         );
       }
       return;
@@ -68,99 +120,144 @@ class _SOPsScreenState extends State<SOPsScreen>
 
     setState(() {
       _isDownloading[index] = true;
-      _isDownloaded[index] = false;
+      _isDownloaded[index]  = false;
     });
 
     try {
-      print('=== Starting SOP Download Process ===');
-      print('URL: $url');
-      print('File name: $fileName');
-      print('Index: $index');
+      // ── 3. Duplicate file check ──────────────────────────────────
+      final directory          = await DownloadUtils.getDownloadsDirectory();
+      final fileExists         = await DownloadUtils.checkFileExists(fileName);
+      final timestamp          = DateTime.now().millisecondsSinceEpoch;
+      final downloadedFileName = fileExists ? '${fileName}_$timestamp' : fileName;
 
-      // First check if file exists
-      final fileExists = await DownloadUtils.checkFileExists(fileName);
-      String downloadedFileName = fileName;
-
-      if (fileExists) {
-        // If file exists, add timestamp to make it unique
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        downloadedFileName = '${fileName}_$timestamp';
-      }
-
-      // Always download (either with original name or new name)
+      // ── 4. Download ──────────────────────────────────────────────
       final result = await DownloadUtils.downloadFile(url, downloadedFileName);
 
       setState(() {
         _isDownloading[index] = false;
-        _isDownloaded[index] = result;
+        _isDownloaded[index]  = result;
       });
 
+      if (!mounted) return;
+
       if (result) {
-        final directory = await DownloadUtils.getDownloadsDirectory();
-        final sanitizedFileName = DownloadUtils.sanitizeFileName(downloadedFileName);
-        final expectedPath = '${directory?.path}/$sanitizedFileName.pdf';
-        final fileExists = await DownloadUtils.checkFileExists(downloadedFileName);
+        final sanitized = DownloadUtils.sanitizeFileName(downloadedFileName);
+        final finalPath = '${directory?.path}/$sanitized.pdf';
+        final message   = fileExists
+            ? '${DownloadMessages.duplicateFileMessage} $downloadedFileName\n'
+            '${DownloadMessages.savedPathLabel} $finalPath'
+            : DownloadMessages.downloadSuccessMessage;
 
-        if (fileExists) {
-          showTopSnackBar(
-            context,
-            fileExists
-                ? "File downloaded successfully!\nPath: $expectedPath"
-                : "Download completed but file not found",
-            fileExists ? Colors.green.withOpacity(0.7) : Colors.red.withOpacity(0.7),
-            icon: fileExists ? Icons.check_circle : Icons.warning,
-            duration: fileExists ? const Duration(seconds: 5) : null,
-          );
-        }
-
-        if (!fileExists) {
-          _showDownloadDebugInfo(downloadedFileName);
-        }
+        showTopSnackBar(
+          context,
+          message,
+          Colors.green.shade800,
+          title: DownloadMessages.downloadSuccessTitle,
+          icon: Icons.check_circle,
+          duration: const Duration(seconds: 5),
+        );
       } else {
         showTopSnackBar(
           context,
-          title: "Alert",
-          "Download failed",
-          Colors.red.withOpacity(0.7),
+          DownloadMessages.downloadFailedMessage,
+          Colors.red.shade800,
+          title: DownloadMessages.downloadFailedTitle,
           icon: Icons.error,
         );
       }
     } catch (e) {
-      setState(() {
-        _isDownloading[index] = false;
-      });
-      showTopSnackBar(
-        context,
-        title: "Alert",
-        "Download failed: ${e.toString()}",
-        Colors.red.withOpacity(0.7),
-        icon: Icons.error,
-      );
+      setState(() => _isDownloading[index] = false);
+      if (mounted) {
+        showTopSnackBar(
+          context,
+          DownloadMessages.downloadFailedMessage,
+          Colors.red.shade800,
+          title: DownloadMessages.downloadFailedTitle,
+          icon: Icons.error,
+        );
+      }
     }
   }
 
-  void _showDownloadDebugInfo(String fileName) async {
-    await DownloadUtils.debugStorageInfo();
+  // ── Settings dialog (permanently denied) ──────────────────────────
+  void _showSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey.shade900,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Row(
+          children: [
+            const Icon(Icons.lock_outline, color: Colors.redAccent),
+            const SizedBox(width: 10),
+            Text(
+              DownloadMessages.permissionSettingsTitle,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ],
+        ),
+        content: Text(
+          DownloadMessages.permissionSettingsMessage,
+          style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              DownloadMessages.cancel,
+              style: const TextStyle(color: Colors.white54),
+            ),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.appColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            icon: const Icon(Icons.settings, color: Colors.white, size: 18),
+            label: Text(
+              DownloadMessages.openSettings,
+              style: const TextStyle(color: Colors.white),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              openAppSettings();
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-    final directory = await DownloadUtils.getDownloadsDirectory();
-    final sanitizedFileName = DownloadUtils.sanitizeFileName(fileName);
-    final expectedPath = '${directory?.path}/$sanitizedFileName.pdf';
+  // ── Storage check ──────────────────────────────────────────────────
+  Future<bool> _hasEnoughStorage({int minRequiredMB = 50}) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final result  = await Process.run('df', [tempDir.path]);
 
-    print('=== DEBUG INFO ===');
-    print('Expected path: $expectedPath');
-    print('Directory exists: ${await directory?.exists()}');
-    print('Directory path: ${directory?.path}');
-
-    if (directory != null && await directory.exists()) {
-      try {
-        final files = directory.listSync();
-        print('Files in directory:');
-        for (var file in files) {
-          print(' - ${file.path}');
+      if (result.exitCode == 0) {
+        final lines       = result.stdout.toString().trim().split('\n');
+        if (lines.length >= 2) {
+          final parts       = lines[1].trim().split(RegExp(r'\s+'));
+          final availableKB = int.tryParse(parts[3]) ?? 0;
+          return (availableKB / 1024) >= minRequiredMB;
         }
-      } catch (e) {
-        print('Error listing files: $e');
       }
+      return await _probeStorageWrite(tempDir.path);
+    } catch (_) {
+      return await _probeStorageWrite((await getTemporaryDirectory()).path);
+    }
+  }
+
+  Future<bool> _probeStorageWrite(String dirPath) async {
+    final probe = File('$dirPath/probe_${DateTime.now().millisecondsSinceEpoch}.tmp');
+    try {
+      await probe.writeAsBytes(List.filled(1024, 0));
+      await probe.delete();
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -169,28 +266,24 @@ class _SOPsScreenState extends State<SOPsScreen>
     return StatusBarWrapper(
       child: Scaffold(
         appBar: AppBar(
-          title: Text("SOPs",style: TextStyle(color: AppColors.whiteBg),),
+          title: Text("SOPs", style: TextStyle(color: AppColors.whiteBg)),
           centerTitle: true,
           backgroundColor: AppColors.appColor,
-          iconTheme: IconThemeData(color: Colors.white),
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: SafeArea(
           child: Column(
             children: [
-
               Expanded(
                 child: Obx(() {
                   if (_companyController.isLoading.value) {
                     return Center(
-                      child: SpinKitFadingCircle(
-                        color: AppColors.appColor,
-                        size: 50.0,
-                      ),
+                      child: SpinKitWave(color: AppColors.appColor, size: 50.0),
                     );
                   }
 
                   if (_companyController.mobileSOPs.isEmpty) {
-                    return Center(
+                    return const Center(
                       child: Text(
                         'No SOPs available',
                         style: TextStyle(color: Colors.black),
@@ -201,23 +294,15 @@ class _SOPsScreenState extends State<SOPsScreen>
                   return ListView.builder(
                     itemCount: _companyController.mobileSOPs.length,
                     itemBuilder: (context, index) {
-                      final sop = _companyController.mobileSOPs[index];
-                      final path = sop['image_path']?.toString() ?? '';
-                      final fullUrl = '${ApiConstants.baseUrl}$path';
-                      final sopName =
-                          sop['SOPs_name']?.toString() ?? 'Unnamed SOP';
-                      final fileType =
-                      fullUrl.toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOC';
+                      final sop      = _companyController.mobileSOPs[index];
+                      final path     = sop['image_path']?.toString() ?? '';
+                      final fullUrl  = '${ApiConstants.baseUrl}$path';
+                      final sopName  = sop['SOPs_name']?.toString() ?? 'Unnamed SOP';
+                      final fileType = fullUrl.toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOC';
 
                       return Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: _buildSOPItem(
-                          context,
-                          sopName,
-                          fileType,
-                          fullUrl,
-                          index,
-                        ),
+                        child: _buildSOPItem(context, sopName, fileType, fullUrl, index),
                       );
                     },
                   );
@@ -230,20 +315,15 @@ class _SOPsScreenState extends State<SOPsScreen>
     );
   }
 
-  Widget _buildSOPItem(BuildContext context, String title, String type,
-      String url, int index) {
+  Widget _buildSOPItem(
+      BuildContext context, String title, String type, String url, int index) {
     final isDownloading = _isDownloading[index] ?? false;
-    final isDownloaded = _isDownloaded[index] ?? false;
+    final isDownloaded  = _isDownloaded[index]  ?? false;
 
     return Column(
       children: [
         ListTile(
-          onTap: () {
-            Get.to(() => PDFViewerScreen(
-              title: title,
-              pdfUrl: url,
-            ));
-          },
+          onTap: () => Get.to(() => PDFViewerScreen(title: title, pdfUrl: url)),
           leading: Container(
             width: 45,
             height: 45,
@@ -261,15 +341,13 @@ class _SOPsScreenState extends State<SOPsScreen>
             title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
           ),
           trailing: AnimatedBuilder(
             animation: _colorAnimation,
             builder: (context, child) {
               return IconButton(
+                tooltip: DownloadMessages.downloadTooltip,
                 icon: Icon(
                   isDownloaded ? Icons.check_circle : Icons.download,
                   color: isDownloading
@@ -284,10 +362,7 @@ class _SOPsScreenState extends State<SOPsScreen>
             },
           ),
         ),
-        const Divider(
-          thickness: 0.6,
-          color: Colors.black45,
-        ),
+        const Divider(thickness: 0.6, color: Colors.black45),
       ],
     );
   }
