@@ -43,8 +43,8 @@ class BookingRepository {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchPlotSizes(String branchCode, String blockNo) async {
-    final url = Uri.parse("${ApiConstants.getPlotSizeUrl}?brn_code=$branchCode&block_no=$blockNo");
+  Future<List<Map<String, dynamic>>> fetchPlotSizes(String branchCode,) async {
+    final url = Uri.parse("${ApiConstants.getPlotSizeUrl}?brn_code=$branchCode");
 
     final response = await http.get(
       url,

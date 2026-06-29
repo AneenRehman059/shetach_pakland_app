@@ -96,7 +96,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                 ),
                 child: Obx(() {
-                  final double itemHeight = dropdownHeight; // same jo tum use kar rahe ho
+                  final double itemHeight = dropdownHeight;
                   final double maxVisibleItems = 5;
                   return SingleChildScrollView(
                     padding: EdgeInsets.all(screenWidth * 0.04),
@@ -195,7 +195,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           ),
                           SizedBox(height: screenHeight * 0.012),
                           _buildFieldWithHeader(
-                            header: 'Block/Floor*',
+                            header: 'Block/Floor',
                             screenWidth: screenWidth,
                             borderRadius: borderRadius,
                             child: DropdownButtonHideUnderline(
@@ -777,7 +777,6 @@ class _BookingScreenState extends State<BookingScreen> {
 
   void _submitForm() {
     if (selectedProject == null ||
-        selectedBlock == null ||
         selectedPlotType == null ||
         selectedPlotNatureCode == null ||
         selectedPlotSize == null ||

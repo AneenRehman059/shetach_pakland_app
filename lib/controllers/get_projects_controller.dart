@@ -76,6 +76,7 @@ class BookingController extends GetxController {
     selectedBranchCode.value = branch["brn_code"] ?? "";
 
     if (selectedBranchCode.value.isNotEmpty) {
+      await fetchPlotSizes(selectedBranchCode.value);
       await fetchBlocks(selectedBranchCode.value);
     }
   }
@@ -92,10 +93,10 @@ class BookingController extends GetxController {
     }
   }
 
-  Future<void> fetchPlotSizes(String branchCode, String blockNo,{BuildContext? context}) async {
+  Future<void> fetchPlotSizes(String branchCode, {BuildContext? context}) async {
     try {
       isLoading.value = true;
-      final data = await _repo.fetchPlotSizes(branchCode, blockNo);
+      final data = await _repo.fetchPlotSizes(branchCode,);
       plotSizes.assignAll(data);
     } catch (e) {
       showTopSnackBar(context ?? Get.overlayContext!, title: "Alert",e.toString(), Colors.red.withOpacity(0.7),icon: Icons.warning);
@@ -179,7 +180,6 @@ class BookingController extends GetxController {
     }
   }
 
-
   void selectBlock(String name) async {
     selectedBlockName.value = name;
     final block = blocks.firstWhere(
@@ -187,9 +187,5 @@ class BookingController extends GetxController {
       orElse: () => {},
     );
     selectedBlockCode.value = block["block_no"] ?? "";
-
-    if (selectedBranchCode.value.isNotEmpty && selectedBlockCode.value.isNotEmpty) {
-      await fetchPlotSizes(selectedBranchCode.value, selectedBlockCode.value);
-    }
   }
 }
