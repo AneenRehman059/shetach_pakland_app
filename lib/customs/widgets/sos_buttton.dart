@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 
-import '../../colors.dart';
 import '../../controllers/pay_online_controller.dart';
 import '../../controllers/social_controller.dart';
+
 
 class SOSButtonClone extends StatefulWidget {
   final bool isActive;
@@ -57,10 +57,8 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
     try {
 
       Get.dialog(
-        Center(
-          child: SpinKitRipple(
-            color: AppColors.appColor,
-          ),
+        const Center(
+          child: CircularProgressIndicator(),
         ),
         barrierDismissible: false,
       );
@@ -94,6 +92,9 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
       final Position userPos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+
+      const double hardcodedLat = 31.5464258;
+      const double hardcodedLng = 74.3000874;
 
       // Track available branches with client data
       List<Map<String, dynamic>> availableBranches = [];
@@ -145,6 +146,9 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
               userPos.longitude,
               branchLocation['latitude'],
               branchLocation['longitude'],
+
+              // hardcodedLat,
+              // hardcodedLng,
             );
 
             availableBranches.add({

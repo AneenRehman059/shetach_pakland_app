@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pakland/colors.dart';
 import 'package:pakland/constants/image_constant.dart';
@@ -8,10 +9,10 @@ import '../bottom_app_bar/bottom_app_bar.dart';
 import '../controllers/get_company_controller.dart';
 import '../controllers/social_controller.dart';
 import '../customs/toast_message.dart';
+import '../function/screen_helper.dart';
 
 class SalesCenterScreen extends StatefulWidget {
   const SalesCenterScreen({super.key});
-
   @override
   State<SalesCenterScreen> createState() => _SalesCenterScreenState();
 }
@@ -22,87 +23,83 @@ class _SalesCenterScreenState extends State<SalesCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = AppColors.lightAppColor;
-    final mediaQuery = MediaQuery.of(context);
-    final screenWidth = mediaQuery.size.width;
-    final screenHeight = mediaQuery.size.height;
+    final bool isTV = ScreenHelper.isTV(context);
+    final w = MediaQuery.of(context).size.width;
+    final h = MediaQuery.of(context).size.height;
 
     return WillPopScope(
-      onWillPop: () async {
-        Get.offAll(() => MainWrapper());
-        return false;
-      },
+      onWillPop: () async { Get.offAll(() => MainWrapper()); return false; },
       child: Scaffold(
         appBar: AppBar(
-          title: Text("Sales Centers", style: TextStyle(color: AppColors.whiteBg)),
-          centerTitle: true,
-          backgroundColor: AppColors.appColor,
+          title: Text("Sales Centers", style: TextStyle(color: AppColors.whiteBg, fontSize: isTV ? 22 : 16)),
+          centerTitle: true, backgroundColor: AppColors.appColor,
           iconTheme: IconThemeData(color: Colors.white),
+          toolbarHeight: isTV ? 70 : kToolbarHeight,
         ),
         body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: screenWidth * 0.04,
-                  vertical: screenHeight * 0.015,
-                ),
-                child: Text(
-                  'Main Offices',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: screenWidth * 0.045,
-                  ),
-                ),
+                padding: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.015),
+                child: Text('Main Offices', style: TextStyle(fontWeight: FontWeight.bold, fontSize: isTV ? 24 : w * 0.045)),
               ),
-
               Expanded(
                 child: Obx(() {
                   if (socialController.isLoading.value) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SpinKitWave(
-                            color: AppColors.appColor,
-                            size: 50.0,
-                          ),
-                          Text('Loading',style: TextStyle(color: AppColors.appColor),),
-                        ],
+                    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      SpinKitWave(color: AppColors.appColor, size: 50.0),
+                      Text('Loading', style: TextStyle(color: AppColors.appColor)),
+                    ]));
+                  }
+
+                  if (isTV) {
+                    // TV — 2 column grid with full detail cards
+                    return GridView.builder(
+                      padding: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.01),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: w * 0.03,
+                        mainAxisSpacing: h * 0.02,
+                        childAspectRatio: 1.6,
                       ),
+                      itemCount: socialController.branches.length,
+                      itemBuilder: (context, index) {
+                        final branch = socialController.branches[index];
+                        final whatsapp = companyController.whatsappNumber.value;
+                        return _TVBranchCard(
+                          branch: branch, whatsapp: whatsapp,
+                          onCall: () => _makePhoneCall(branch['phone_no'] ?? ''),
+                          onEmail: () => _sendEmail(branch['email_address'] ?? ''),
+                          onWhatsApp: () => _openWhatsApp(whatsapp),
+                          onMap: () => _openMaps(branch['latitude'] ?? '', branch['longitude'] ?? '', _formatAddress(branch)),
+                        );
+                      },
                     );
                   }
 
+                  // Mobile — same as before
                   return ListView.builder(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: screenWidth * 0.04,
-                      vertical: screenHeight * 0.01,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.01),
                     itemCount: socialController.branches.length,
                     itemBuilder: (context, index) {
                       final branch = socialController.branches[index];
                       final whatsapp = companyController.whatsappNumber.value;
-
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          officeName(
-                            title: branch['brn_name'] ?? '',
-                            screenWidth: screenWidth,
-                          ),
-                          SizedBox(height: screenHeight * 0.015),
-                          officeBlock(
-                            themeColor,
+                          _officeName(title: branch['brn_name'] ?? '', screenWidth: w),
+                          SizedBox(height: h * 0.015),
+                          _officeBlock(AppColors.lightAppColor,
                             address: _formatAddress(branch),
                             phone: branch['phone_no'] ?? '',
                             email: branch['email_address'] ?? '',
                             whatsapp: whatsapp,
                             latitude: branch['latitude'] ?? '',
                             longitude: branch['longitude'] ?? '',
-                            screenWidth: screenWidth,
+                            screenWidth: w,
                           ),
-                          SizedBox(height: screenHeight * 0.025),
+                          SizedBox(height: h * 0.025),
                         ],
                       );
                     },
@@ -117,282 +114,187 @@ class _SalesCenterScreenState extends State<SalesCenterScreen> {
   }
 
   String _formatAddress(Map<String, dynamic> branch) {
-    List<String> addressParts = [];
-
-    void addIfNotEmpty(String? value) {
-      if (value != null && value.trim().isNotEmpty) {
-        addressParts.add(value.trim());
-      }
-    }
-
-    addIfNotEmpty(branch['add_1']);
-    addIfNotEmpty(branch['add_2']);
-    addIfNotEmpty(branch['add_3']);
-    addIfNotEmpty(branch['add_4']);
-
-    return addressParts.join('\n');
+    List<String> parts = [];
+    void add(String? v) { if (v != null && v.trim().isNotEmpty) parts.add(v.trim()); }
+    add(branch['add_1']); add(branch['add_2']); add(branch['add_3']); add(branch['add_4']);
+    return parts.join(', ');
   }
 
-  Widget officeName({required String title, required double screenWidth}) {
+  Widget _officeName({required String title, required double screenWidth}) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: screenWidth * 0.03,
-        vertical: screenWidth * 0.04,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.lightAppColor,
-        borderRadius: BorderRadius.circular(screenWidth * 0.02),
-      ),
-      child: Row(
-        children: [
-          Image.asset(
-            'assets/images/building.png',
-            height: screenWidth * 0.07,
-            width: screenWidth * 0.07,
-            color: Colors.white,
-          ),
-          SizedBox(width: screenWidth * 0.025),
-          Expanded(
-            child: Text(
-              title.trim(),
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: screenWidth * 0.04,
-              ),
-            ),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03, vertical: screenWidth * 0.04),
+      decoration: BoxDecoration(color: AppColors.lightAppColor, borderRadius: BorderRadius.circular(screenWidth * 0.02)),
+      child: Row(children: [
+        Image.asset('assets/images/building.png', height: screenWidth * 0.07, width: screenWidth * 0.07, color: Colors.white),
+        SizedBox(width: screenWidth * 0.025),
+        Expanded(child: Text(title.trim(), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: screenWidth * 0.04))),
+      ]),
     );
   }
 
-  Widget officeBlock(
-      Color themeColor, {
-        required String address,
-        required String phone,
-        required String email,
-        required String whatsapp,
-        required double screenWidth,
-        required String latitude,
-        required String longitude,
-      }) {
+  Widget _officeBlock(Color themeColor, {
+    required String address, required String phone, required String email,
+    required String whatsapp, required double screenWidth,
+    required String latitude, required String longitude,
+  }) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(screenWidth * 0.03),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F3FF),
-        border: Border.all(color: themeColor),
-        borderRadius: BorderRadius.circular(screenWidth * 0.02),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (address.isNotEmpty)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _openMaps(latitude, longitude, address),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.location_on, size: screenWidth * 0.06, color: AppColors.appColor),
-                        SizedBox(width: screenWidth * 0.025),
-                        Expanded(
-                          child: Text(
-                            address,
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.035,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Location navigation icon added here
-                if (latitude.isNotEmpty && longitude.isNotEmpty)
-                  GestureDetector(
-                    onTap: () => _openMaps(latitude, longitude, address),
-                    child: Image.asset(ImageConstant.map,height: screenWidth * 0.08,width: screenWidth * 0.08,),
-                  ),
-              ],
-            ),
-          if (address.isNotEmpty) SizedBox(height: screenWidth * 0.03),
-
-          if (phone.isNotEmpty)
-            GestureDetector(
-              onTap: () => _makePhoneCall(phone),
-              child: Row(
-                children: [
-                  Icon(Icons.phone, size: screenWidth * 0.06, color: AppColors.appColor),
-                  SizedBox(width: screenWidth * 0.025),
-                  Text(
-                    phone,
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.035,
-                      color: Colors.blue,
-                    ),
-                  ),
-                ],
+      decoration: BoxDecoration(color: const Color(0xFFF0F3FF), border: Border.all(color: themeColor), borderRadius: BorderRadius.circular(screenWidth * 0.02)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (address.isNotEmpty) ...[
+          GestureDetector(
+            onTap: () => _openMaps(latitude, longitude, address),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.location_on, size: screenWidth * 0.06, color: AppColors.appColor),
+              SizedBox(width: screenWidth * 0.025),
+              Expanded(child: Text(address, style: TextStyle(fontSize: screenWidth * 0.035, color: Colors.blue))),
+              if (latitude.isNotEmpty) Container(
+                padding: EdgeInsets.all(screenWidth * 0.02),
+                decoration: BoxDecoration(color: AppColors.appColor.withOpacity(0.1), borderRadius: BorderRadius.circular(screenWidth * 0.02)),
+                child: Icon(Icons.navigation, color: AppColors.appColor, size: screenWidth * 0.06),
               ),
-            ),
-          if (phone.isNotEmpty) SizedBox(height: screenWidth * 0.03),
-
-          if (email.isNotEmpty)
-            GestureDetector(
-              onTap: () => _sendEmail(email),
-              child: Row(
-                children: [
-                  Icon(Icons.email,
-                      size: screenWidth * 0.06, color: AppColors.appColor),
-                  SizedBox(width: screenWidth * 0.025),
-                  Expanded(
-                    child: Text(
-                      email,
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.035,
-                        color: Colors.blue,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          if (whatsapp.isNotEmpty) SizedBox(height: screenWidth * 0.03),
-          if (whatsapp.isNotEmpty)
-            GestureDetector(
-              onTap: () => _openWhatsApp(whatsapp),
-              child: Row(
-                children: [
-                  Image.asset(ImageConstant.whatsapp, height: screenWidth * 0.06, width: screenWidth * 0.06),
-                  SizedBox(width: screenWidth * 0.025),
-                  Text(
-                    whatsapp,
-                    style: TextStyle(
-                        fontSize: screenWidth * 0.035,
-                        color: Colors.blue
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ]),
+          ),
+          SizedBox(height: screenWidth * 0.03),
         ],
-      ),
+        if (phone.isNotEmpty) ...[
+          GestureDetector(onTap: () => _makePhoneCall(phone), child: Row(children: [
+            Icon(Icons.phone, size: screenWidth * 0.06, color: AppColors.appColor),
+            SizedBox(width: screenWidth * 0.025),
+            Text(phone, style: TextStyle(fontSize: screenWidth * 0.035, color: Colors.blue)),
+          ])),
+          SizedBox(height: screenWidth * 0.03),
+        ],
+        if (email.isNotEmpty) GestureDetector(onTap: () => _sendEmail(email), child: Row(children: [
+          Icon(Icons.email, size: screenWidth * 0.06, color: AppColors.appColor),
+          SizedBox(width: screenWidth * 0.025),
+          Expanded(child: Text(email, style: TextStyle(fontSize: screenWidth * 0.035, color: Colors.blue))),
+        ])),
+        if (whatsapp.isNotEmpty) ...[
+          SizedBox(height: screenWidth * 0.03),
+          GestureDetector(onTap: () => _openWhatsApp(whatsapp), child: Row(children: [
+            Image.asset(ImageConstant.whatsapp, height: screenWidth * 0.06, width: screenWidth * 0.06),
+            SizedBox(width: screenWidth * 0.025),
+            Text(whatsapp, style: TextStyle(fontSize: screenWidth * 0.035, color: Colors.blue)),
+          ])),
+        ],
+      ]),
     );
   }
 
-  Future<void> _makePhoneCall(String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
-
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    } else {
-      showTopSnackBar(
-        context,
-        'Cannot make phone call to $phoneNumber',
-        Colors.red,
-        title: 'Call Failed',
-        icon: Icons.error_outline,
-      );
-    }
+  Future<void> _makePhoneCall(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
-  Future<void> _sendEmail(String emailAddress) async {
-    final Uri launchUri = Uri(
-      scheme: 'mailto',
-      path: emailAddress,
-    );
-
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    } else {
-      showTopSnackBar(
-        context,
-        'Cannot open email app for $emailAddress',
-        Colors.red,
-        title: 'Email Failed',
-        icon: Icons.error_outline,
-      );
-    }
+  Future<void> _sendEmail(String email) async {
+    final uri = Uri(scheme: 'mailto', path: email);
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   Future<void> _openWhatsApp(String phone) async {
-    final phoneDigits = phone.replaceAll(RegExp(r'[^0-9+]'), '');
-    final Uri launchUri = Uri.parse('https://wa.me/$phoneDigits');
-
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri, mode: LaunchMode.externalApplication);
-    } else {
-      showTopSnackBar(
-        context,
-        'Cannot open WhatsApp for $phone',
-        Colors.red,
-        title: 'WhatsApp Failed',
-        icon: Icons.error_outline,
-      );
-    }
+    final digits = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final uri = Uri.parse('https://wa.me/$digits');
+    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  Future<void> _openMaps(String latitude, String longitude, String address) async {
-    if (latitude.isEmpty || longitude.isEmpty) {
-      await _openMapsWithAddress(address);
-      return;
-    }
-
-    final Uri googleMapsUri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude'
-    );
-
-    final Uri appleMapsUri = Uri.parse(
-        'https://maps.apple.com/?ll=$latitude,$longitude&q=$address'
-    );
-
-    try {
-      if (await canLaunchUrl(googleMapsUri)) {
-        await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
-      }
-      else if (await canLaunchUrl(appleMapsUri)) {
-        await launchUrl(appleMapsUri, mode: LaunchMode.externalApplication);
-      }
-      else {
-        await _openMapsWithAddress(address);
-      }
-    } catch (e) {
-      await _openMapsWithAddress(address);
-    }
+  Future<void> _openMaps(String lat, String lng, String address) async {
+    if (lat.isEmpty || lng.isEmpty) { await _openMapsAddr(address); return; }
+    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+    else await _openMapsAddr(address);
   }
 
-  Future<void> _openMapsWithAddress(String address) async {
-    final encodedAddress = Uri.encodeComponent(address);
+  Future<void> _openMapsAddr(String address) async {
+    final enc = Uri.encodeComponent(address);
+    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$enc');
+    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
 
-    final Uri googleMapsUri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$encodedAddress'
+// TV Branch Card with focus + full details
+class _TVBranchCard extends StatefulWidget {
+  final Map<String, dynamic> branch;
+  final String whatsapp;
+  final VoidCallback onCall, onEmail, onWhatsApp, onMap;
+
+  const _TVBranchCard({required this.branch, required this.whatsapp, required this.onCall, required this.onEmail, required this.onWhatsApp, required this.onMap});
+
+  @override
+  State<_TVBranchCard> createState() => _TVBranchCardState();
+}
+
+class _TVBranchCardState extends State<_TVBranchCard> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = widget.branch['brn_name'] ?? '';
+    final phone = widget.branch['phone_no'] ?? '';
+    final email = widget.branch['email_address'] ?? '';
+    final address = [widget.branch['add_1'], widget.branch['add_2'], widget.branch['add_3'], widget.branch['add_4']]
+        .where((v) => v != null && v.toString().trim().isNotEmpty).join(', ');
+
+    return Focus(
+      onFocusChange: (f) => setState(() => _isFocused = f),
+      onKeyEvent: (node, event) => KeyEventResult.ignored,
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 150),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F3FF),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _isFocused ? AppColors.appColor : AppColors.lightAppColor, width: _isFocused ? 2.5 : 1),
+          boxShadow: _isFocused ? [BoxShadow(color: AppColors.appColor.withOpacity(0.25), blurRadius: 16, spreadRadius: 2)] : [],
+        ),
+        padding: EdgeInsets.all(14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Header
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(color: AppColors.lightAppColor, borderRadius: BorderRadius.circular(10)),
+            child: Row(children: [
+              Image.asset('assets/images/building.png', height: 22, width: 22, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text(name, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis)),
+            ]),
+          ),
+          SizedBox(height: 10),
+          // Address
+          if (address.isNotEmpty)
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.location_on, size: 18, color: AppColors.appColor),
+              SizedBox(width: 6),
+              Expanded(child: Text(address, style: TextStyle(fontSize: 12, color: Colors.black87), maxLines: 2, overflow: TextOverflow.ellipsis)),
+            ]),
+          Spacer(),
+          // Action buttons
+          Row(children: [
+            if (phone.isNotEmpty) _btn(Icons.phone, 'Call', widget.onCall),
+            if (phone.isNotEmpty) SizedBox(width: 6),
+            if (email.isNotEmpty) _btn(Icons.email, 'Email', widget.onEmail),
+            if (email.isNotEmpty) SizedBox(width: 6),
+            if (widget.whatsapp.isNotEmpty) _btn(Icons.message, 'WA', widget.onWhatsApp),
+            if (widget.whatsapp.isNotEmpty) SizedBox(width: 6),
+            _btn(Icons.navigation, 'Map', widget.onMap),
+          ]),
+        ]),
+      ),
     );
+  }
 
-    final Uri appleMapsUri = Uri.parse(
-        'https://maps.apple.com/?q=$encodedAddress'
-    );
-
-    if (await canLaunchUrl(googleMapsUri)) {
-      await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
-    } else if (await canLaunchUrl(appleMapsUri)) {
-      await launchUrl(appleMapsUri, mode: LaunchMode.externalApplication);
-    } else {
-      showTopSnackBar(
-        context,
-        'Cannot open maps for this location',
-        Colors.red,
-        title: 'Maps Failed',
-        icon: Icons.error_outline,
-      );
-    }
+  Widget _btn(IconData icon, String label, VoidCallback onTap) {
+    return Expanded(child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(color: AppColors.appColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: AppColors.appColor, size: 18),
+          SizedBox(height: 2),
+          Text(label, style: TextStyle(fontSize: 10, color: AppColors.appColor, fontWeight: FontWeight.bold)),
+        ]),
+      ),
+    ));
   }
 }

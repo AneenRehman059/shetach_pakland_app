@@ -96,7 +96,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                 ),
                 child: Obx(() {
-                  final double itemHeight = dropdownHeight;
+                  final double itemHeight = dropdownHeight; // same jo tum use kar rahe ho
                   final double maxVisibleItems = 5;
                   return SingleChildScrollView(
                     padding: EdgeInsets.all(screenWidth * 0.04),
@@ -193,9 +193,9 @@ class _BookingScreenState extends State<BookingScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(height: screenHeight * 0.012),
+                            SizedBox(height: screenHeight * 0.012),
                           _buildFieldWithHeader(
-                            header: 'Block/Floor',
+                            header: 'Block/Floor*',
                             screenWidth: screenWidth,
                             borderRadius: borderRadius,
                             child: DropdownButtonHideUnderline(
@@ -355,7 +355,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           ),
                           SizedBox(height: screenHeight * 0.012),
                           _buildFieldWithHeader(
-                            header: 'Plot/Unit Prefrence *',
+                            header: 'Prefrence *',
                             screenWidth: screenWidth,
                             borderRadius: borderRadius,
                             child: DropdownButtonHideUnderline(
@@ -387,7 +387,6 @@ class _BookingScreenState extends State<BookingScreen> {
                                 onChanged: bookingController.isLoading.value
                                     ? null
                                     : (value) {
-                                  print("qqqqqqqqqqqqqqqqqq   $value");
                                   setState(() {
                                     selectedPlotType = value;
                                   });
@@ -641,22 +640,22 @@ class _BookingScreenState extends State<BookingScreen> {
                           // ),
                           SizedBox(height: screenHeight * 0.012),
                           CustomTextField(
-                            controller: emailController,
-                            label: 'Email',
+                            controller: cityController,
+                            label: 'City',
                             labelStyle: TextStyle(fontWeight: FontWeight.w600,),
-                            hintText: 'Add Email',
-                            keyboardType: TextInputType.emailAddress,
+                            hintText: 'Add City',
+                            keyboardType: TextInputType.text,
                             isSignUpStyle: true,
                             borderRadius: screenWidth * 0.3,
                             height: MediaQuery.of(context).size.height * 0.05,
                           ),
                           SizedBox(height: screenHeight * 0.012),
                           CustomTextField(
-                            controller: cityController,
-                            label: 'City',
+                            controller: emailController,
+                            label: 'Email',
                             labelStyle: TextStyle(fontWeight: FontWeight.w600,),
-                            hintText: 'Add City',
-                            keyboardType: TextInputType.text,
+                            hintText: 'Add Email',
+                            keyboardType: TextInputType.emailAddress,
                             isSignUpStyle: true,
                             borderRadius: screenWidth * 0.3,
                             height: MediaQuery.of(context).size.height * 0.05,
@@ -777,6 +776,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   void _submitForm() {
     if (selectedProject == null ||
+        selectedBlock == null ||
         selectedPlotType == null ||
         selectedPlotNatureCode == null ||
         selectedPlotSize == null ||
@@ -806,7 +806,6 @@ class _BookingScreenState extends State<BookingScreen> {
 
     bookingController.submitBooking(
       brnCode: bookingController.selectedBranchCode.value,
-      selectedProject: selectedProject ?? "",
       // idNo: cnicController.text.trim(),
       contactName: nameController.text.trim(),
       contactNo: contactController.text.trim(),
@@ -816,7 +815,7 @@ class _BookingScreenState extends State<BookingScreen> {
       email: emailController.text.trim(),
       plotNature: selectedPlotNatureCode ?? "",
       plotType: selectedPlotType ?? "",
-      context: context
+      context: context,
     );
   }
 }

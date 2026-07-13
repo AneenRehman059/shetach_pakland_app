@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
@@ -7,20 +8,20 @@ import 'package:pakland/colors.dart';
 import 'package:pakland/constants/image_constant.dart';
 import 'package:pakland/customs/toast_message.dart';
 import 'package:pakland/repo/sos_repo.dart';
-import 'package:pakland/view/signup_screen.dart';
+import 'package:pakland/signup_screen.dart';
 import 'package:pakland/bottom_app_bar/bottom_app_bar.dart';
 import 'package:pakland/controllers/login_controller.dart';
 import 'package:pakland/customs/custom_buttons.dart';
 import 'package:pakland/customs/custom_fields.dart';
 import 'package:pakland/services/biometric_auth_service.dart';
 import 'package:pakland/verify_otp_screen.dart';
-import 'package:flutter/services.dart';
 
 import 'app_permissions/location_permisson.dart';
 import 'controllers/send_otp_auth_device_controller.dart';
 import 'customs/biometric_button.dart';
 import 'customs/dialogs/biometric_dialogs.dart';
 import 'forgot_password_screen.dart';
+import 'function/screen_helper.dart';
 import 'get_device_info.dart';
 import 'models/sos_models.dart';
 
@@ -174,12 +175,12 @@ class _LoginScreenState extends State<LoginScreen> {
       final String deviceId = await DeviceInfoService.getDeviceIdentifier();
 
       bool isSuccess = await loginController.login(
-        username: usernameController.text.trim(),
-        password: passwordController.text.trim(),
-        latitude: userLocation.latitude.toString(),
-        longitude: userLocation.longitude.toString(),
-        deviceId: deviceId,
-        context: context
+          username: usernameController.text.trim(),
+          password: passwordController.text.trim(),
+          latitude: userLocation.latitude.toString(),
+          longitude: userLocation.longitude.toString(),
+          deviceId: deviceId,
+          context: context
       );
 
       if (isSuccess) {
@@ -504,235 +505,245 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTV = ScreenHelper.isTV(context);
+    return isTV ? _buildTVLayout(context) : _buildMobileLayout(context);
+  }
+
+  // ─────────────────────────────────────────
+  // MOBILE LAYOUT — bilkul same as before
+  // ─────────────────────────────────────────
+  Widget _buildMobileLayout(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(ImageConstant.sc),
-                fit: BoxFit.cover,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 25),
+            Image.asset(ImageConstant.logo, height: 120, width: 120),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                child: _buildFormContent(context, isTV: false),
               ),
             ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 25),
-                Image.asset(
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────
+  // TV LAYOUT — same design, bas wide
+  // ─────────────────────────────────────────
+  Widget _buildTVLayout(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Row(
+          children: [
+            // LEFT — Logo (same white bg)
+            Expanded(
+              flex: 4,
+              child: Center(
+                child: Image.asset(
                   ImageConstant.logo,
-                  height: 120,
-                  width: 120,
+                  height: size.height * 0.45,
+                  width: size.height * 0.45,
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Sign In',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Sign in to your account to explore your dream place to live across the whole world',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+              ),
+            ),
 
-                        // User ID Field
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CustomTextField(
-                              controller: usernameController,
-                              keyboardType: TextInputType.text,
-                              label: 'User ID',
-                              labelStyle: TextStyle(color: AppColors.whiteBg),
-                              hintText: 'Enter User Id',
-                              imagePath: 'assets/images/cnic.png',
-                              borderRadius: 30,
-                              height: MediaQuery.of(context).size.height * 0.05,
-                            ),
-                            if (_fieldErrors.containsKey('cnic'))
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8, top: 4),
-                                child: Text(
-                                  _fieldErrors['cnic']!,
-                                  style: const TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
+            // Thin divider
+            Container(width: 1, color: Colors.grey.shade200),
 
-                        // Password Field
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CustomTextField(
-                              controller: passwordController,
-                              label: 'Password',
-                              labelStyle: TextStyle(color: AppColors.whiteBg),
-                              hintText: 'Enter Password',
-                              imagePath: 'assets/images/passwords.png',
-                              obscureText: true,
-                              showVisibilityIcon: true,
-                              borderRadius: 30,
-                              height: MediaQuery.of(context).size.height * 0.05,
-                            ),
-                            if (_fieldErrors.containsKey('password'))
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8, top: 4),
-                                child: Text(
-                                  _fieldErrors['password']!,
-                                  style: const TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
+            // RIGHT — Same form
+            Expanded(
+              flex: 6,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 30),
+                child: _buildFormContent(context, isTV: true),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                        // Remember Me and Forgot Password
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _rememberMe,
-                                  onChanged: (bool? value) {
-                                    _saveRememberMeStatus(value ?? false);
-                                  },
-                                  checkColor: Colors.white,
-                                  fillColor: MaterialStateProperty.resolveWith<Color>(
-                                        (Set<MaterialState> states) {
-                                      if (states.contains(MaterialState.selected)) {
-                                        return Colors.red;
-                                      }
-                                      return Colors.transparent;
-                                    },
-                                  ),
-                                  side: const BorderSide(color: Colors.white, width: 2),
-                                ),
-                                const Text(
-                                  'Remember Me',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                if (usernameController.text.isEmpty) {
-                                  showTopSnackBar(
-                                    context,
-                                    title: "Alert",
-                                    "Please enter your User ID first",
-                                    Colors.orange,
-                                    icon: Icons.info,
-                                  );
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ForgotPasswordScreen(
-                                        cnic: usernameController.text.trim(),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: const Text(
-                                'Forgot Password',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+  // ─────────────────────────────────────────
+  // SHARED FORM — same design dono mein
+  // ─────────────────────────────────────────
+  Widget _buildFormContent(BuildContext context, {required bool isTV}) {
+    final double titleSize = isTV ? 32 : 24;
+    final double subtitleSize = isTV ? 16 : 14;
+    final double fieldHeight = isTV
+        ? MediaQuery.of(context).size.height * 0.07
+        : MediaQuery.of(context).size.height * 0.05;
+    final double labelSize = isTV ? 14 : 12;
 
-                        const SizedBox(height: 10),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Sign In',
+          style: TextStyle(
+            fontSize: titleSize,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        SizedBox(height: isTV ? 10 : 20),
+        Text(
+          'Sign in to your account to explore your dream place to live across the whole world',
+          style: TextStyle(fontSize: subtitleSize, color: Colors.black54),
+        ),
+        SizedBox(height: isTV ? 30 : 20),
 
-                        // Sign In Button
-                        Center(
-                          child: CustomButton(
-                            text: 'Sign In',
-                            onPressed: _isLoading ? () {} : () => _performLogin(),
-                            isLoading: _isLoading,
-                            autoWidth: true,
-                            borderRadius: 30,
-                          ),
-                        ),
+        // User ID
+        CustomTextField(
+          controller: usernameController,
+          keyboardType: TextInputType.text,
+          label: 'User ID',
+          labelStyle: TextStyle(color: AppColors.black),
+          hintText: 'XXXXX-XXXXXXX-X',
+          imagePath: 'assets/images/cnic.png',
+          borderRadius: 30,
+          height: fieldHeight,
+        ),
+        if (_fieldErrors.containsKey('cnic'))
+          Padding(
+            padding: const EdgeInsets.only(left: 8, top: 4),
+            child: Text(_fieldErrors['cnic']!,
+                style: const TextStyle(color: Colors.red, fontSize: 12)),
+          ),
+        SizedBox(height: isTV ? 16 : 10),
 
-                        const SizedBox(height: 10),
+        // Password
+        CustomTextField(
+          controller: passwordController,
+          label: 'Password',
+          labelStyle: TextStyle(color: AppColors.black),
+          hintText: 'XXXXXXXXXX',
+          imagePath: 'assets/images/passwords.png',
+          obscureText: true,
+          showVisibilityIcon: true,
+          borderRadius: 30,
+          height: fieldHeight,
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+          ],
+        ),
+        if (_fieldErrors.containsKey('password'))
+          Padding(
+            padding: const EdgeInsets.only(left: 8, top: 4),
+            child: Text(_fieldErrors['password']!,
+                style: const TextStyle(color: Colors.red, fontSize: 12)),
+          ),
 
-                        // Sign Up Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Don't have an account?",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            const SizedBox(width: 5),
-                            GestureDetector(
-                              onTap: () {
-                                Get.to(SignUpNScreen());
-                              },
-                              child: Text(
-                                "Sign Up",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  shadows: [
-                                    Shadow(
-                                      offset: const Offset(1, 2),
-                                      blurRadius: 4,
-                                      color: Colors.black.withOpacity(0.3),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-
-                        BiometricLoginButton(
-                          onPressed: _loginWithBiometric,
-                          isEnabled: _isBiometricEnabled,
-                          username: _savedBiometricUsername,
-                        ),
-                      ],
-                    ),
+        // Remember Me & Forgot Password
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberMe,
+                  onChanged: (v) => _saveRememberMeStatus(v ?? false),
+                  checkColor: Colors.white,
+                  fillColor: MaterialStateProperty.resolveWith<Color>(
+                        (states) => states.contains(MaterialState.selected)
+                        ? AppColors.appColor
+                        : Colors.transparent,
+                  ),
+                  side: BorderSide(color: AppColors.appColor, width: 2),
+                ),
+                Text(
+                  'Remember Me',
+                  style: TextStyle(
+                    color: AppColors.appColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: labelSize,
                   ),
                 ),
               ],
             ),
+            TextButton(
+              onPressed: () {
+                if (usernameController.text.isEmpty) {
+                  showTopSnackBar(context,
+                      title: "Alert",
+                      "Please enter your User ID first",
+                      Colors.orange,
+                      icon: Icons.info);
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ForgotPasswordScreen(
+                          cnic: usernameController.text.trim()),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                'Forgot Password',
+                style: TextStyle(
+                  color: AppColors.appColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: labelSize,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: isTV ? 20 : 10),
+
+        // Sign In Button
+        Center(
+          child: CustomButton(
+            text: 'Sign In',
+            onPressed: _isLoading ? () {} : () => _performLogin(),
+            isLoading: _isLoading,
+            autoWidth: true,
+            borderRadius: 30,
           ),
-        ],
-      ),
+        ),
+
+        SizedBox(height: isTV ? 16 : 10),
+
+        // Sign Up Link
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("Don't have an account?",
+                style: TextStyle(
+                    color: Colors.black, fontSize: isTV ? 14 : 12)),
+            const SizedBox(width: 5),
+            GestureDetector(
+              onTap: () => Get.to(SignUpNScreen()),
+              child: Text(
+                "Sign Up",
+                style: TextStyle(
+                  color: AppColors.appColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: isTV ? 14 : 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        // Biometric — mobile only
+        if (!isTV)
+          BiometricLoginButton(
+            onPressed: _loginWithBiometric,
+            isEnabled: _isBiometricEnabled,
+            username: _savedBiometricUsername,
+          ),
+      ],
     );
   }
 }

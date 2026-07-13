@@ -4,17 +4,18 @@ import 'package:get/get.dart';
 import 'package:pakland/bottom_app_bar/bottom_app_bar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pakland/colors.dart';
+import 'package:pakland/customs/app_bar.dart';
 import 'package:pakland/pdf_viewer_screen.dart';
 import 'package:pakland/constants/api_constant.dart';
 import 'package:pakland/controllers/get_company_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../constants/download_contant.dart';
-import '../../customs/custom_messages.dart';
 import '../../customs/toast_message.dart';
+import '../../permission_service.dart';
 
 class DocumentsScreen extends StatefulWidget {
-  const DocumentsScreen({super.key});
+  DocumentsScreen({super.key});
 
   @override
   State<DocumentsScreen> createState() => _DocumentsScreenState();
@@ -25,10 +26,9 @@ class _DocumentsScreenState extends State<DocumentsScreen>
   final CompanyController _companyController = Get.find<CompanyController>();
 
   final Map<int, bool> _isDownloading = {};
-  final Map<int, bool> _isDownloaded  = {};
-
+  final Map<int, bool> _isDownloaded = {};
   late AnimationController _colorController;
-  late Animation<Color?>   _colorAnimation;
+  late Animation<Color?> _colorAnimation;
 
   @override
   void initState() {
@@ -37,6 +37,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat(reverse: true);
+
     _colorAnimation =
         ColorTween(begin: Colors.blue, end: Colors.green).animate(_colorController);
   }
@@ -47,213 +48,123 @@ class _DocumentsScreenState extends State<DocumentsScreen>
     super.dispose();
   }
 
-  // ── Main download handler ──────────────────────────────────────────
   Future<void> _downloadDocument(
       BuildContext context, String url, String fileName, int index) async {
+    // Always request permission using system dialog
+    final hasPermission = await DownloadUtils.requestPermission();
 
-    // ── 1. Permission check ────────────────────────────────────────
-    PermissionStatus status;
-
-    if (await Permission.photos.isGranted) {
-      status = PermissionStatus.granted;
-    } else {
-      status = await Permission.photos.request();
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
-      }
-    }
-
-    if (!status.isGranted) {
-      if (mounted) {
-        final isPermanentlyDenied =
-            status.isPermanentlyDenied ||
-                await Permission.photos.isPermanentlyDenied ||
-                await Permission.storage.isPermanentlyDenied;
-
-        if (isPermanentlyDenied) {
-          _showSettingsDialog();
-        } else {
-          showTopSnackBar(
-            context,
-            DownloadMessages.permissionDeniedMessage,
-            Colors.red.shade800,
-            title: DownloadMessages.permissionDeniedTitle,
-            icon: Icons.lock,
-          );
-        }
-      }
-      return;
-    }
-
-    // ── 2. Storage space check ─────────────────────────────────────
-    try {
-      final hasSpace = await _hasEnoughStorage();
-      if (!hasSpace) {
-        if (mounted) {
-          showTopSnackBar(
-            context,
-            DownloadMessages.insufficientStorageMessage,
-            Colors.orange.shade800,
-            title: DownloadMessages.insufficientStorageTitle,
-            icon: Icons.storage_rounded,
-          );
-        }
-        return;
-      }
-    } catch (_) {
-      if (mounted) {
-        showTopSnackBar(
-          context,
-          DownloadMessages.storageCheckFailedMessage,
-          Colors.orange.shade800,
-          title: DownloadMessages.insufficientStorageTitle,
-          icon: Icons.storage_rounded,
-        );
-      }
+    if (!hasPermission) {
+      // Show snackbar only if user denied the permission
       return;
     }
 
     setState(() {
       _isDownloading[index] = true;
-      _isDownloaded[index]  = false;
+      _isDownloaded[index] = false;
     });
 
     try {
-      // ── 3. Duplicate file check ──────────────────────────────────
-      final directory          = await DownloadUtils.getDownloadsDirectory();
-      final fileExists         = await DownloadUtils.checkFileExists(fileName);
-      final timestamp          = DateTime.now().millisecondsSinceEpoch;
-      final downloadedFileName = fileExists ? '${fileName}_$timestamp' : fileName;
+      print('=== Starting Download Process ===');
+      print('URL: $url');
+      print('File name: $fileName');
+      print('Index: $index');
 
-      // ── 4. Download ──────────────────────────────────────────────
-      final result = await DownloadUtils.downloadFile(url, downloadedFileName);
+      // Get the download path before downloading
+      final directory = await DownloadUtils.getDownloadsDirectory();
+      final sanitizedFileName = DownloadUtils.sanitizeFileName(fileName);
+      final expectedPath = '${directory?.path}/$sanitizedFileName.pdf';
 
-      setState(() {
-        _isDownloading[index] = false;
-        _isDownloaded[index]  = result;
-      });
+      // First check if file exists
+      final fileExists = await DownloadUtils.checkFileExists(fileName);
 
-      if (!mounted) return;
+      if (fileExists) {
+        // If file exists, we'll download with a different name or overwrite
+        // Let's add timestamp to make it unique
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final uniqueFileName = '${sanitizedFileName}_$timestamp.pdf';
+        final result = await DownloadUtils.downloadFile(url, uniqueFileName);
 
-      if (result) {
-        final sanitized = DownloadUtils.sanitizeFileName(downloadedFileName);
-        final finalPath = '${directory?.path}/$sanitized.pdf';
-        final message   = fileExists
-            ? '${DownloadMessages.duplicateFileMessage} $downloadedFileName\n'
-            '${DownloadMessages.savedPathLabel} $finalPath'
-            : DownloadMessages.downloadSuccessMessage;
+        setState(() {
+          _isDownloading[index] = false;
+          _isDownloaded[index] = result;
+        });
 
-        showTopSnackBar(
-          context,
-          message,
-          Colors.green.shade800,
-          title: DownloadMessages.downloadSuccessTitle,
-          icon: Icons.check_circle,
-          duration: const Duration(seconds: 5),
-        );
+        if (result) {
+          showTopSnackBar(
+            context,
+            "File downloaded successfully!\nFile already existed, saved as: $uniqueFileName",
+            Colors.green.withOpacity(0.7),
+            icon: Icons.check_circle,
+            duration: const Duration(seconds: 5),
+          );
+        } else {
+          showTopSnackBar(
+            context,
+            title: "Alert",
+            "Download failed",
+            Colors.red.withOpacity(0.7),
+            icon: Icons.error,
+          );
+        }
       } else {
-        showTopSnackBar(
-          context,
-          DownloadMessages.downloadFailedMessage,
-          Colors.red.shade800,
-          title: DownloadMessages.downloadFailedTitle,
-          icon: Icons.error,
-        );
-      }
-    } catch (e) {
-      setState(() => _isDownloading[index] = false);
-      if (mounted) {
-        showTopSnackBar(
-          context,
-          DownloadMessages.downloadFailedMessage,
-          Colors.red.shade800,
-          title: DownloadMessages.downloadFailedTitle,
-          icon: Icons.error,
-        );
-      }
-    }
-  }
+        // File doesn't exist, download normally
+        final result = await DownloadUtils.downloadFile(url, fileName);
 
-  // ── Settings dialog (permanently denied) ──────────────────────────
-  void _showSettingsDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey.shade900,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: Row(
-          children: [
-            const Icon(Icons.lock_outline, color: Colors.redAccent),
-            const SizedBox(width: 10),
-            Text(
-              DownloadMessages.permissionSettingsTitle,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ],
-        ),
-        content: Text(
-          DownloadMessages.permissionSettingsMessage,
-          style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              DownloadMessages.cancel,
-              style: const TextStyle(color: Colors.white54),
-            ),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.appColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            icon: const Icon(Icons.settings, color: Colors.white, size: 18),
-            label: Text(
-              DownloadMessages.openSettings,
-              style: const TextStyle(color: Colors.white),
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              openAppSettings();
-            },
-          ),
-        ],
-      ),
-    );
-  }
+        setState(() {
+          _isDownloading[index] = false;
+          _isDownloaded[index] = result;
+        });
 
-  // ── Storage check ──────────────────────────────────────────────────
-  Future<bool> _hasEnoughStorage({int minRequiredMB = 50}) async {
-    try {
-      final tempDir = await getTemporaryDirectory();
-      final result  = await Process.run('df', [tempDir.path]);
-
-      if (result.exitCode == 0) {
-        final lines = result.stdout.toString().trim().split('\n');
-        if (lines.length >= 2) {
-          final parts       = lines[1].trim().split(RegExp(r'\s+'));
-          final availableKB = int.tryParse(parts[3]) ?? 0;
-          return (availableKB / 1024) >= minRequiredMB;
+        if (result) {
+          showTopSnackBar(
+            context,
+            "File downloaded successfully!\nPath: $expectedPath",
+            Colors.green.withOpacity(0.7),
+            icon: Icons.check_circle,
+            duration: const Duration(seconds: 5),
+          );
+        } else {
+          showTopSnackBar(
+            context,
+            title: "Alert",
+            "Download failed",
+            Colors.red.withOpacity(0.7),
+            icon: Icons.error,
+          );
         }
       }
-      return await _probeStorageWrite(tempDir.path);
-    } catch (_) {
-      return await _probeStorageWrite((await getTemporaryDirectory()).path);
+    } catch (e) {
+      setState(() {
+        _isDownloading[index] = false;
+      });
+      print('Download error: $e');
+      showTopSnackBar(
+        context,
+        title: "Alert",
+        "Download failed: ${e.toString()}",
+        Colors.red.withOpacity(0.7),
+        icon: Icons.error,
+      );
     }
   }
 
-  Future<bool> _probeStorageWrite(String dirPath) async {
-    final probe = File(
-        '$dirPath/probe_${DateTime.now().millisecondsSinceEpoch}.tmp');
-    try {
-      await probe.writeAsBytes(List.filled(1024, 0));
-      await probe.delete();
-      return true;
-    } catch (_) {
-      return false;
+  void _showDownloadDebugInfo(String fileName) async {
+    final directory = await DownloadUtils.getDownloadsDirectory();
+    final sanitizedFileName = DownloadUtils.sanitizeFileName(fileName);
+    final expectedPath = '${directory?.path}/$sanitizedFileName.pdf';
+
+    print('=== DEBUG INFO ===');
+    print('Expected path: $expectedPath');
+    print('Directory exists: ${await directory?.exists()}');
+    print('Directory path: ${directory?.path}');
+
+    // List files in directory
+    if (directory != null && await directory.exists()) {
+      final files = directory.listSync();
+      print('Files in directory:');
+      for (var file in files) {
+        print(' - ${file.path}');
+      }
     }
   }
 
@@ -266,51 +177,69 @@ class _DocumentsScreenState extends State<DocumentsScreen>
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text("Downloads", style: TextStyle(color: AppColors.whiteBg)),
+          title: Text("Downloads",style: TextStyle(color: AppColors.whiteBg),),
           centerTitle: true,
           backgroundColor: AppColors.appColor,
-          iconTheme: const IconThemeData(color: Colors.white),
+          iconTheme: IconThemeData(color: Colors.white),
         ),
         body: SafeArea(
-          child: Obx(() {
-            if (_companyController.isLoading.value) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SpinKitWave(color: AppColors.appColor, size: 50),
-                    const SizedBox(height: 8),
-                    Text(
-                      DownloadMessages.loadingLabel,
-                      style: TextStyle(fontSize: 14, color: AppColors.appColor),
-                    ),
-                  ],
-                ),
-              );
-            }
+          child: Column(
+            children: [
+              Expanded(
+                child: Obx(() {
+                  if (_companyController.isLoading.value) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SpinKitWave(
+                            color: AppColors.appColor,
+                           size: 50,
+                          ),
+                          Text(
+                            "Loading",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.appColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
-            if (_companyController.mobileDocuments.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No downloads available',
-                  style: TextStyle(color: Colors.black),
-                ),
-              );
-            }
+                  if (_companyController.mobileDocuments.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'No downloads available',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    );
+                  }
 
-            return ListView.builder(
-              itemCount: _companyController.mobileDocuments.length,
-              itemBuilder: (context, index) {
-                final document = _companyController.mobileDocuments[index];
-                final path     = document['path']?.toString() ?? '';
-                final fullUrl  = '${ApiConstants.baseUrl}$path';
-                final fileName =
-                    document['file']?.toString() ?? 'Unnamed Document';
+                  return ListView.builder(
+                    itemCount: _companyController.mobileDocuments.length,
+                    itemBuilder: (context, index) {
+                      final document = _companyController.mobileDocuments[index];
+                      final path = document['path']?.toString() ?? '';
+                      final fullUrl = '${ApiConstants.baseUrl}$path';
+                      final fileName =
+                          document['file_name']?.toString() ?? 'Unnamed Document';
+                      final fileType =
+                          document['doc_type']?.toString() ?? 'PDF';
 
-                return _buildDocumentItem(context, fileName, fullUrl, index);
-              },
-            );
-          }),
+                      return _buildDocumentItem(
+                        context,
+                        fileName,
+                        fullUrl,
+                        index,
+                      );
+                    },
+                  );
+                }),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -319,14 +248,19 @@ class _DocumentsScreenState extends State<DocumentsScreen>
   Widget _buildDocumentItem(
       BuildContext context, String title, String url, int index) {
     final isDownloading = _isDownloading[index] ?? false;
-    final isDownloaded  = _isDownloaded[index]  ?? false;
+    final isDownloaded = _isDownloaded[index] ?? false;
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
           ListTile(
-            onTap: () => Get.to(() => PDFViewerScreen(title: title, pdfUrl: url)),
+            onTap: () {
+              Get.to(() => PDFViewerScreen(
+                title: title,
+                pdfUrl: url,
+              ));
+            },
             leading: Container(
               width: 45,
               height: 45,
@@ -334,19 +268,21 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                 color: Colors.blue.shade50,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.description, color: Colors.blue, size: 24),
+              child: Icon(Icons.description, color: Colors.blue, size: 24),
             ),
             title: Text(
               title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
             ),
             trailing: AnimatedBuilder(
               animation: _colorAnimation,
               builder: (context, child) {
                 return IconButton(
-                  tooltip: DownloadMessages.downloadTooltip,
                   icon: Icon(
                     isDownloaded ? Icons.check_circle : Icons.download,
                     color: isDownloading
@@ -361,7 +297,10 @@ class _DocumentsScreenState extends State<DocumentsScreen>
               },
             ),
           ),
-          const Divider(thickness: 0.6, color: Colors.black45),
+          Divider(
+            thickness: 0.6,
+            color: Colors.black45,
+          ),
         ],
       ),
     );

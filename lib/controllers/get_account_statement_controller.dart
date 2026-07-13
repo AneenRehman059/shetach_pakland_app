@@ -15,10 +15,6 @@ class AccountStatementController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
 
-  final RxString receiptImageUrl = ''.obs;
-  final RxBool isReceiptImageLoading = false.obs;
-  final RxString receiptImageError = ''.obs;
-
   Future<void> fetchAccountStatement({
     required String brnCode,
     required String registrationNo,
@@ -63,25 +59,47 @@ class AccountStatementController extends GetxController {
     }
   }
 
-  Future<void> fetchReceiptImage({
+  Future<void> fetchReceiptStatement({
     required String brnCode,
+    required String registrationNo,
+    required String idNo,
+    required String userName,
+    required int reportId,
     required String receiptNo,
+    required List<String> copies,
+
   }) async {
     try {
-      isReceiptImageLoading.value = true;
-      receiptImageError.value = '';
-      receiptImageUrl.value = '';
+      isLoading.value = true;
+      error.value = '';
 
-      final url = await _repository.getReceiptImageUrl(
+      final request = AccountStatementRequest(
         brnCode: brnCode,
+        registrationNo: registrationNo,
+        idNo: idNo,
+        userName: userName,
+        reportId: reportId,
         receiptNo: receiptNo,
+        copies: copies,
       );
 
-      receiptImageUrl.value = url;
+      final response = await _repository.getAccountStatement(request);
+      accountStatement.value = response;
+
+      if (!response.success) {
+        throw Exception('Failed to generate statement');
+      }
     } catch (e) {
-      receiptImageError.value = e.toString();
+      error.value = e.toString();
+      // Get.snackbar(
+      //   'Error',
+      //   e.toString(),
+      //   snackPosition: SnackPosition.BOTTOM,
+      //   backgroundColor: Colors.red,
+      //   colorText: Colors.white,
+      // );
     } finally {
-      isReceiptImageLoading.value = false;
+      isLoading.value = false;
     }
   }
 

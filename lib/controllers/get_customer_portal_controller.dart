@@ -36,9 +36,9 @@ class CustomerPortalController extends GetxController {
         return;
       }
 
-      final data = await _repo.getCustomerProfileData(username: userId);
+      final data = await _repo.getCustomerPortalData(username: userId);
 
-      if (data.statusCode == "201") {
+      if (data.statusCode == "200") {
         customerObj.value = data.obj;
       } else {
         showTopSnackBar(

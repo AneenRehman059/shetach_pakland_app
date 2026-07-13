@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:pakland/colors.dart';
 import 'package:pakland/constants/image_constant.dart';
-import 'package:pakland/view/signup_controller.dart';
+import 'package:pakland/controllers/signup_controller.dart';
 import 'package:pakland/login_screen.dart';
 import 'package:pakland/models/signup_model.dart';
 import 'package:pakland/customs/app_bar.dart';
@@ -11,7 +11,7 @@ import 'package:pakland/customs/custom_buttons.dart';
 import 'package:pakland/customs/custom_fields.dart';
 import 'package:pakland/verify_otp_screen.dart';
 
-import '../get_device_info.dart';
+import 'get_device_info.dart';
 
 class SignUpNScreen extends StatefulWidget {
   SignUpNScreen({super.key});
@@ -245,7 +245,7 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
         otp: "string",
         otpVia: "sms",
         // deviceId: deviceInfo['deviceId']!,
-        deviceId: '',
+        deviceId: "",
         deviceModel: "string",
         platform: "string",
         osVersion: "string",
@@ -285,14 +285,7 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(ImageConstant.sc),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: SafeArea(
+      body: SafeArea(
           child: Column(
             children: [
               SizedBox(height: 15,),
@@ -310,13 +303,13 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                     SizedBox(height: 8),
                     Text(
                       'Create your account to explore your dream place to live across the whole world',
-                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
                     ),
                   ],
                 ),
@@ -341,7 +334,7 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                               CustomTextField(
                                 controller: userNameController,
                                 label: 'First Name*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
+                                labelStyle: TextStyle(color: AppColors.black),
                                 hintText: 'First Name',
                                 imagePath: 'assets/images/user.png',
                                 borderRadius: 30,
@@ -368,7 +361,7 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                               CustomTextField(
                                 controller: lastNameController,
                                 label: 'Last Name*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
+                                labelStyle: TextStyle(color: AppColors.black),
                                 hintText: 'Last Name',
                                 imagePath: 'assets/images/user.png',
                                 borderRadius: 30,
@@ -395,7 +388,7 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                                 controller: cnicController,
                                 keyboardType: TextInputType.text,
                                 label: 'User Id*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
+                                labelStyle: TextStyle(color: AppColors.black),
                                 hintText: 'XXXXX-XXXXXXX-X',
                                 imagePath: 'assets/images/cnic.png',
                                 borderRadius: 30,
@@ -423,7 +416,7 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                                 controller: mobileNoController,
                                 keyboardType: TextInputType.phone,
                                 label: 'Mobile No*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
+                                labelStyle: TextStyle(color: AppColors.black),
                                 hintText: '(xxx) xxx-xxxxxxx',
                                 imagePath: 'assets/images/cell.png',
                                 borderRadius: 30,
@@ -450,7 +443,7 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                               CustomTextField(
                                 controller: emailController,
                                 label: 'Email*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
+                                labelStyle: TextStyle(color: AppColors.black),
                                 hintText: 'example@domain.com',
                                 imagePath: 'assets/images/mail.png',
                                 keyboardType: TextInputType.emailAddress,
@@ -474,7 +467,7 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                           CustomTextField(
                             controller: dobController,
                             label: 'Date of Birth',
-                            labelStyle: TextStyle(color: AppColors.whiteBg),
+                            labelStyle: TextStyle(color: AppColors.black),
                             hintText: 'DD-MM-YYYY',
                             imagePath: 'assets/images/birthday.png',
                             keyboardType: TextInputType.none,
@@ -492,13 +485,16 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                               CustomTextField(
                                 controller: passwordController,
                                 label: 'Password*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
+                                labelStyle: TextStyle(color: AppColors.black),
                                 hintText: 'XXXXXXXX',
                                 imagePath: 'assets/images/password.png',
                                 obscureText: true,
                                 showVisibilityIcon: true,
                                 borderRadius: 30,
                                 height: MediaQuery.of(context).size.height * 0.05,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                                ],
                               ),
 
                               // Password Strength Indicator
@@ -546,13 +542,16 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                               CustomTextField(
                                 controller: confirmPasswordController,
                                 label: 'Confirm Password*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
+                                labelStyle: TextStyle(color: AppColors.black),
                                 hintText: 'XXXXXXXX',
                                 imagePath: 'assets/images/password.png',
                                 obscureText: true,
                                 showVisibilityIcon: true,
                                 borderRadius: 30,
                                 height: MediaQuery.of(context).size.height * 0.05,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                                ],
                               ),
 
                               // Confirm Password Strength Indicator
@@ -627,7 +626,7 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                           Text(
                             'Select OTP Method:',
                             style: TextStyle(
-                              color: AppColors.whiteBg,
+                              color: AppColors.black,
                               fontSize: 16,
                             ),
                           ),
@@ -645,12 +644,12 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                                         _otpMethod = value!;
                                       });
                                     },
-                                    activeColor: AppColors.whiteBg,
-                                    fillColor: MaterialStateProperty.all(Colors.white),
+                                    activeColor: AppColors.appColor,
+                                    fillColor: MaterialStateProperty.all(AppColors.appColor),
                                   ),
                                   Text(
                                     'SMS',
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(color: Colors.black),
                                   ),
                                 ],
                               ),
@@ -664,12 +663,12 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                                         _otpMethod = value!;
                                       });
                                     },
-                                    activeColor: AppColors.whiteBg,
-                                    fillColor: MaterialStateProperty.all(Colors.white),
+                                    activeColor: AppColors.appColor,
+                                    fillColor: MaterialStateProperty.all(AppColors.appColor),
                                   ),
                                   Text(
                                     'EMAIL',
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(color: Colors.black),
                                   ),
                                 ],
                               ),
@@ -683,12 +682,12 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                                         _otpMethod = value!;
                                       });
                                     },
-                                    activeColor: AppColors.whiteBg,
-                                    fillColor: MaterialStateProperty.all(Colors.white),
+                                    activeColor: AppColors.appColor,
+                                    fillColor: MaterialStateProperty.all(AppColors.appColor),
                                   ),
                                   Text(
                                     'WHATSAPP',
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(color: Colors.black),
                                   ),
                                 ],
                               ),
@@ -719,12 +718,12 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
                               child: RichText(
                                 text: TextSpan(
                                   text: 'Already have an account? ',
-                                  style: const TextStyle(color: Colors.white70), // Changed for better visibility
+                                  style: const TextStyle(color: Colors.black), // Changed for better visibility
                                   children: [
                                     TextSpan(
                                       text: 'Sign In',
                                       style: TextStyle(
-                                        color: Colors.white, // Changed for better visibility
+                                        color: AppColors.appColor, // Changed for better visibility
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -744,7 +743,6 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../bottom_app_bar/bottom_app_bar.dart';
@@ -9,8 +8,10 @@ import '../login_screen.dart';
 import '../models/login_model.dart';
 import '../models/sos_models.dart';
 import '../repo/login_repo.dart';
-import '../repo/sos_repo.dart';
 import 'get_company_controller.dart';
+import 'package:flutter/material.dart';
+// Import your SOSRepository
+import '../repo/sos_repo.dart';
 
 class LoginController extends GetxController {
   var isLoading = false.obs;

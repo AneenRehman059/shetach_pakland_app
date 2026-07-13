@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:path/path.dart';
 import 'package:vibration/vibration.dart';
 import 'package:location/location.dart';
 import '../customs/toast_message.dart';
@@ -171,6 +170,7 @@ class SOSController extends GetxController {
     // _showInfoMessage('Emergency alert will be sent in $COUNTDOWN_DURATION_SECONDS seconds');
   }
 
+  // Execute SOS Emergency (Main Method)
   void _executeSOSEmergency() async {
     try {
       creating.value = true;
@@ -184,9 +184,10 @@ class SOSController extends GetxController {
         lastSOSTicketId.value = ticketId;
 
         await _notifyAdmins(userInfo, location, ticketId);
-        // _showSuccessAndNavigate(ticketId, Get.context!);
-        Get.toNamed('/emergencyScreen', arguments: {'ticket_id': ticketId});
+        _showSuccessAndNavigate(ticketId, Get.context!);
         _showSuccessMessage('sos_emergency');
+
+        await startAlarmSystem();
       } else {
         _showErrorMessage(null, null, customMessage: ticketResult['message']);
       }

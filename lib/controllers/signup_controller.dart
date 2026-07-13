@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pakland/models/signup_model.dart';
-import 'package:pakland/view/signup_repo.dart';
-import 'package:pakland/view/verify_otp_for_signup_screen.dart';
+import 'package:pakland/repo/signup_repo.dart';
 
 import '../customs/toast_message.dart';
 import '../login_screen.dart';
@@ -20,15 +19,22 @@ class SignUpController extends GetxController {
       final response = await _repo.signUp(model);
 
       if (response["StatusCode"] == "200") {
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (context) => VerifyOtpScreen(phoneNumber: model.mobileNo,userId: model.cnic,),
+        //   ),
+        // );
+
+        // showTopSnackBar(Get.overlayContext!, "Signed up successfully.", Colors.green.withOpacity(0.7), icon: Icons.check_circle);
+        print("Signed up successfully.");
+        showTopSnackBar(context, "Signed up successfully.", Colors.green.withOpacity(0.7), icon: Icons.check_circle);
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => VerifyOtpForSignUpScreen(phoneNumber: model.mobileNo,userId: model.cnic,),
+            builder: (context) => LoginScreen(),
           ),
         );
-
-        // showTopSnackBar(context, "Signed up successfully.", Colors.green.withOpacity(0.7), icon: Icons.check_circle);
-        print("Signed up successfully.");
         return;
       }
 
@@ -45,7 +51,7 @@ class SignUpController extends GetxController {
       }
 
     } catch (e) {
-      // showTopSnackBar(context, e.toString(), Colors.red.withOpacity(0.7), icon: Icons.warning);
+      showTopSnackBar(context, e.toString(), Colors.red.withOpacity(0.7), icon: Icons.warning);
       print("Exception.");
     } finally {
       isLoading.value = false;

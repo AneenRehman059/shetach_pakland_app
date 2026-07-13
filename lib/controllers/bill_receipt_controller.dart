@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:pakland/models/bill_receipt_model.dart';
 import '../constants/api_constant.dart';
-import '../customs/toast_message.dart';
 
 class BillReceiptController extends GetxController {
   final String registrationNo;
@@ -99,13 +98,7 @@ class BillReceiptController extends GetxController {
         }
       } else {
         receiptList.clear();
-        showTopSnackBar(
-            Get.context!,
-            title:"Alert",
-            "Some technical fault occured! Try again later.",
-            Colors.red.withOpacity(0.7),
-            icon: Icons.warning
-        );
+        showErrorSnackBar('Failed to load receipts: ${response.statusCode}');
         print('Response body: ${response.body}');
         print('Full URL that failed: $url');
       }

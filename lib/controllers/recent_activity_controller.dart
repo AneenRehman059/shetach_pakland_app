@@ -30,8 +30,8 @@ class RecentActivityController extends GetxController {
       String? userId = await _storage.read(key: "user_id");
       if (userId == null || userId.isEmpty) return;
 
-      String from = DateFormat("yyyy/MM/dd").format(fromDate.value);
-      String to = DateFormat("yyyy/MM/dd").format(toDate.value);
+      String from = DateFormat("dd/MM/yyyy").format(fromDate.value);
+      String to = DateFormat("dd/MM/yyyy").format(toDate.value);
 
       final list = await _repo.fetchActivity(userId, from, to);
       activityList.value = list;

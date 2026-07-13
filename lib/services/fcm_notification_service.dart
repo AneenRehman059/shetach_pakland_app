@@ -85,7 +85,6 @@ class FirebaseNotificationService {
 
     _setupForegroundListener();
     _setupNotificationClickListener();
-
   }
 
 
@@ -223,7 +222,7 @@ class FirebaseNotificationService {
             arguments: {'ticket': ticket},
           );
         } else {
-          Get.to('/SOSAlarm', arguments: {'ticket': ticket});
+          Get.offNamed('/SOSAlarm', arguments: {'ticket': ticket});
         }
       });
     } catch (e) {

@@ -13,7 +13,7 @@ class ForgotPasswordRepository {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception("Some technical fault occured! Try again later.");
+      throw Exception("Update failed: ${response.statusCode}");
     }
   }
 

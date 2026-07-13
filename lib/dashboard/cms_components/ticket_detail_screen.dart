@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:pakland/dashboard/cms_components/feedback_screen.dart';
@@ -13,16 +14,16 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:mime/mime.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../bottom_app_bar/bottom_app_bar.dart';
 import '../../colors.dart';
 import '../../constants/api_constant.dart';
 import '../../controllers/tickets_controller.dart';
 import '../../customs/widgets/app_bar.dart';
+import '../../function/screen_helper.dart';
 import '../../models/ticket_models.dart';
 import 'comments_view.dart';
-
-
+// update
 class TicketDetailView extends StatefulWidget {
   final TicketModel ticket;
 
@@ -52,33 +53,46 @@ class _TicketDetailViewState extends State<TicketDetailView> {
 
   @override
   Widget build(BuildContext context) {
-    return _buildTicketDetail();
+    return _buildTicketDetail(context);
   }
 
-  Widget _buildTicketDetail() {
+  Widget _buildTicketDetail(BuildContext context) {
     return DefaultTabController(
       length: 3,
       child: WillPopScope(
-
         onWillPop: () async {
-          final route = _userType.toLowerCase() == 'admin'
-              ? '/mainDashboard'
-              : _userType.toLowerCase() == 'customer'
-              ? '/adminDashboard'
-              : '/clintDashboard';
-          Get.offAllNamed(route);
+          Get.off(() => MainWrapper(initialIndex: 0));
           return false;
         },
         child: Scaffold(
-          appBar: CustomAppBar(
-            custom_RouteName: _userType.toLowerCase() == 'admin'
-                ? '/mainDashboard'
-                : _userType.toLowerCase() == 'customer'
-                ? '/adminDashboard'
-                : '/clintDashboard',
-            title: 'Ticket Details',
-            buttombar: true,
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(ScreenHelper.isTV(context) ? 90 : kToolbarHeight),
+            child: CustomAppBar(
+              custom_RouteName: _userType.toLowerCase() == 'admin'
+                  ? '/mainDashboard'
+                  : _userType.toLowerCase() == 'customer'
+                  ? '/adminDashboard'
+                  : '/clintDashboard',
+              title: 'Ticket Details',
+              buttombar: true,
+            ),
           ),
+          // AppBar(
+          //   backgroundColor: AppColors.primaryColor,
+          //   foregroundColor: Colors.white,
+          //   title: Center(child: const Text('Ticket Details')),
+          //   bottom: TabBar(
+          //     unselectedLabelColor: Colors.white12.withOpacity(0.5),
+          //     indicatorColor:Colors.green,
+          //     labelColor: Colors.white,
+          //     //foregroundColor: Colors.white,
+          //     tabs: const [
+          //       Tab(text: 'Details'),
+          //       Tab(text: 'Timeline'),
+          //       Tab(text: 'Comments'),
+          //     ],
+          //   ),
+          // ),
           body: TabBarView(
             children: [_buildDetails(), _buildTimeline(), _buildComments()],
           ),
@@ -743,6 +757,99 @@ class _AttachmentsPreDownloadState extends State<_AttachmentsPreDownload> {
         },
       ),
     );
+
+
+    // return SingleChildScrollView(
+    //   scrollDirection: Axis.horizontal,
+    //   physics: BouncingScrollPhysics(),
+    //   child: Row(
+    //     children: _urls.map((url) {
+    //       final urlMime = lookupMimeType(url) ?? '';
+    //       final pct = _progress[url] ?? 0.0;
+    //       final cached = _cached[url];
+    //
+    //       if (pct < 1.0 || cached == null) {
+    //         return _DownloadTile(url: url, mime: urlMime, progress: pct);
+    //       }
+    //
+    //       final effectiveMime = (lookupMimeType(cached.path) ?? urlMime);
+    //
+    //       try {
+    //         debugPrint(
+    //             '📎 Attachment ready -> file: ${url.split('?').first.split('/').last}, mime: $effectiveMime');
+    //       } catch (_) {}
+    //
+    //       if (effectiveMime.startsWith('image/')) {
+    //         return GestureDetector(
+    //           onTap: () => _openImageViewer(context, url),
+    //           child: Padding(
+    //             padding: const EdgeInsets.only(right: 12),
+    //             child: ClipRRect(
+    //               borderRadius: BorderRadius.circular(12),
+    //               child: Image.file(
+    //                 cached,
+    //                 width: 200,
+    //                 height: 200,
+    //                 fit: BoxFit.cover,
+    //               ),
+    //             ),
+    //           ),
+    //         );
+    //       }
+    //
+    //       if (effectiveMime.startsWith('video/')) {
+    //         return Padding(
+    //           padding: const EdgeInsets.only(right: 12),
+    //           child: _VideoPreviewTile(
+    //             file: cached,
+    //             onTap: () => widget.onOpen(url, effectiveMime),
+    //           ),
+    //         );
+    //       }
+    //
+    //       IconData icon;
+    //       Color color;
+    //       if (effectiveMime.startsWith('audio/')) {
+    //         icon = Icons.audiotrack;
+    //         color = Colors.blueAccent;
+    //       } else {
+    //         icon = Icons.insert_drive_file;
+    //         color = Colors.green;
+    //       }
+    //
+    //       return Padding(
+    //         padding: const EdgeInsets.only(right: 12),
+    //         child: InkWell(
+    //           onTap: () => widget.onOpen(url, effectiveMime),
+    //           child: Container(
+    //             width: 200,
+    //             height: 100,
+    //             decoration: BoxDecoration(
+    //               borderRadius: BorderRadius.circular(12),
+    //               color: Colors.grey[100],
+    //               border: Border.all(color: color.withOpacity(0.4)),
+    //             ),
+    //             padding: const EdgeInsets.all(12),
+    //             child: Row(
+    //               children: [
+    //                 Icon(icon, size: 40, color: color),
+    //                 const SizedBox(width: 12),
+    //                 Expanded(
+    //                   child: Text(
+    //                     url.split('?').first.split('/').last,
+    //                     style: const TextStyle(fontSize: 14),
+    //                     overflow: TextOverflow.ellipsis,
+    //                   ),
+    //                 ),
+    //               ],
+    //             ),
+    //           ),
+    //         ),
+    //       );
+    //     }).toList(),
+    //   ),
+    // );
+
   }
 }
 

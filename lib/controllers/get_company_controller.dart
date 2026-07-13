@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../customs/toast_message.dart';
 import '../repo/company_repo.dart';
 import '../constants/api_constant.dart';
 
@@ -120,13 +119,6 @@ class CompanyController extends GetxController {
         isLoading.value = false;
       }
     } catch (e) {
-      showTopSnackBar(
-          Get.context!,
-          title:"Alert",
-          "Some technical fault occured! Try again later.",
-          Colors.red.withOpacity(0.7),
-          icon: Icons.warning
-      );
       debugPrint("Error storing company details: $e");
       isLoading.value = false;
       rethrow;

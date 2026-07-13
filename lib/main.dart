@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pakland/dashboard/cms_components/emergency_request_screen.dart';
 import 'package:pakland/personal_detail_screen.dart';
 import 'package:pakland/server_date.dart';
 import 'package:pakland/services/fcm_notification_service.dart';
@@ -38,8 +37,7 @@ import 'dashboard/cms_components/ticket_detail_screen.dart';
 import 'dashboard/cms_components/ticket_list_view.dart';
 import 'help_support_screen.dart';
 import 'login_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
-
+import 'services/fcm_notification_service.dart';
 final notificationService = FirebaseNotificationService();
 
 void main() async {
@@ -91,6 +89,12 @@ void main() async {
     }
   }
 
+  // // Mobile pe portrait, TV pe landscape automatically handle hoga
+  // await SystemChrome.setPreferredOrientations([
+  //   DeviceOrientation.portraitUp,
+  //   DeviceOrientation.portraitDown,
+  // ]);
+
   runApp(const MyApp());
 }
 
@@ -139,7 +143,7 @@ class _MyAppState extends State<MyApp> {
         debugPrint("Current Version: $_currentVersion");
         debugPrint("Required Version: $_requiredVersion");
 
-        if (_currentVersion != _requiredVersion) {
+        if (_isVersionLower(_currentVersion, _requiredVersion)) {
           setState(() {
             _homeWidget = _buildUpdateDialog();
             _isCheckingVersion = false;
@@ -214,196 +218,117 @@ class _MyAppState extends State<MyApp> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.85,
-            constraints: BoxConstraints(maxWidth: 400),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: Offset(0, 10),
-                ),
-              ],
+        child: Container(
+          width: 280,
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top gradient section
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.blue.shade600,
-                        Colors.blue.shade800,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    "Update Available",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                   ),
-                  child: Column(
+                  SizedBox(height: 12),
+
+                  // Content text
+                  Text(
+                    "You can now update this app from",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+
+                  // Version information
+                  Row(
                     children: [
-                      Container(
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.system_update_alt,
-                          size: 48,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 16),
                       Text(
-                        "Update Available",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        "A new version is ready to be installed",
+                        _currentVersion,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Content section
-                Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "What's New:",
-                        style: TextStyle(
-                          fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade800,
+                          color: Colors.black,
                         ),
                       ),
-                      SizedBox(height: 12),
-                      _buildFeatureItem(Icons.bug_report, "Bug fixes & performance improvements"),
-                      SizedBox(height: 8),
-                      _buildFeatureItem(Icons.security, "Security updates"),
-                      SizedBox(height: 8),
-                      _buildFeatureItem(Icons.speed, "Enhanced user experience"),
-                      SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                SystemNavigator.pop();
-                              },
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                side: BorderSide(color: Colors.grey.shade400),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                "Later",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                const url = 'https://shetechnologies.com';
-                                try {
-                                  if (await canLaunchUrl(Uri.parse(url))) {
-                                    await launchUrl(
-                                      Uri.parse(url),
-                                      mode: LaunchMode.externalApplication,
-                                    );
-                                  }
-                                } catch (e) {
-                                  debugPrint("Error launching URL: $e");
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue.shade600,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 2,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.download, size: 20),
-                                  SizedBox(width: 2),
-                                  Text(
-                                    "Update Now",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                      SizedBox(width: 6),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        _requiredVersion,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  SizedBox(height: 20),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          SystemNavigator.pop();
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey[700],
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        ),
+                        child: Text(
+                          "Maybe Later",
+                          style: TextStyle(
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+
+                      ElevatedButton(
+                        onPressed: () {
+                          SystemNavigator.pop(); // Close for now
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[600],
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        child: Text(
+                          "Update",
+                          style: TextStyle(
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildFeatureItem(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 18,
-          color: Colors.blue.shade600,
-        ),
-        SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -494,7 +419,6 @@ class _MyAppState extends State<MyApp> {
 
 
           GetPage(name: '/tickets', page: () => TicketListView()),
-          GetPage(name: '/emergencyScreen', page: () => EmergencyRequestScreen()),
           GetPage(
               name: '/tickets/create',
               page: () => const TicketCreateView(),
@@ -530,3 +454,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 }
+
+//flutter build apk --release --no-shrink
+//cd C:\Users\Dell\Documents\FlutterProjects\AlRazzaqRoyals && flutter build apk --debug && %LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install -r build\app\outputs\flutter-apk\app-debug.apk
+//.

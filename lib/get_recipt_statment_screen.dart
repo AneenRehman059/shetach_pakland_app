@@ -3,13 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pakland/colors.dart';
-import 'package:pakland/customs/toast_message.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:pakland/show_receipt_attachment_screen.dart';
 import 'package:pakland/statment.dart';
+
 import 'bottom_app_bar/bottom_app_bar.dart';
 import 'controllers/account_recipt_controller.dart';
 import 'controllers/get_account_statement_controller.dart';
+import 'customs/toast_message.dart';
 import 'models/recipt_model.dart';
 
 class ReceiptTableView extends StatefulWidget {
@@ -36,6 +35,24 @@ class _ReceiptTableViewState extends State<ReceiptTableView> {
   late List<Receipt> _receipts;
   final Set<int> _loadingReceipts = {};
 
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    super.dispose();
+  }
+
   bool get isTablet {
     final shortestSide = MediaQuery.of(Get.context!).size.shortestSide;
     return shortestSide > 600;
@@ -47,34 +64,51 @@ class _ReceiptTableViewState extends State<ReceiptTableView> {
     });
 
     try {
-      final statementController =   Get.put(AccountStatementController());
-
-      await statementController.fetchReceiptImage(
-        brnCode: receipt.brnCode.toString(),
-        receiptNo: receipt.receiptNo.toString(),
+      final tempController = Get.put(
+        AccountStatementController(),
+        tag: 'receipt_${receipt.receiptNo}',
       );
 
-      if (statementController.receiptImageError.value.isNotEmpty) {
+      // Define the copies array
+      final List<String> copies = ["Client", "Office", "Account"];
+
+      await tempController.fetchReceiptStatement(
+        brnCode: widget.brnCode,
+        registrationNo: widget.registrationNo,
+        idNo: widget.idNo,
+        userName: widget.idNo,
+        reportId: 101591,
+        receiptNo: receipt.receiptNo.toString(),
+        copies: copies,
+      );
+
+      if (tempController.accountStatement.value?.reportUrl != null &&
+          tempController.accountStatement.value!.reportUrl!.isNotEmpty) {
+        final reportUrl = tempController.accountStatement.value!.reportUrl!;
+        await Get.to(() => PrintWebViewScreen(url: reportUrl));
+        await Get.delete<AccountStatementController>(tag: 'receipt_${receipt.receiptNo}');
+      } else {
         showTopSnackBar(
           context,
-         'No attachment found for this receipt.',
+          "Failed to generate statement. Please try again.",
           Colors.red.withOpacity(0.7),
-          title: 'Attachment Unavailable',
-          icon: Icons.error_outline,
+          icon: Icons.error,
         );
-        return;
       }
-
-      if (statementController.receiptImageUrl.value.isNotEmpty) {
-        Get.to(() => ReceiptImageScreen(
-          imageUrl: statementController.receiptImageUrl.value,
-          receiptNo: receipt.receiptNo.toString(),
-        ));
-      }
+    } catch (e) {
+      debugPrint("Error fetching receipt statement: $e");
+      showTopSnackBar(
+        context,
+        "Error loading statement: ${e.toString()}",
+        Colors.red.withOpacity(0.7),
+        icon: Icons.error,
+      );
     } finally {
-      setState(() {
-        _loadingReceipts.remove(receipt.receiptNo);
-      });
+      if (mounted) {
+        setState(() {
+          _loadingReceipts.remove(receipt.receiptNo);
+        });
+      }
     }
   }
 
@@ -195,11 +229,11 @@ class _ReceiptTableViewState extends State<ReceiptTableView> {
               ),
             ),
             children: [
-              _buildHeaderCell('Receipt No.'),
+              _buildHeaderCell('Receipt No'),
               _buildHeaderCell('Date'),
               _buildHeaderCell('Mode'),
               _buildHeaderCell('Amount'),
-              _buildHeaderCell('Action'),
+              _buildHeaderCell('View'),
             ],
           ),
           // Data Rows
@@ -304,14 +338,14 @@ class _ReceiptTableViewState extends State<ReceiptTableView> {
               ],
             )
                 : Center(
-                  child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   _buildInfoItem('Registration No:', widget.registrationNo, false),
                   _buildInfoItem('Member Name:', widget.memberName, false),
-                                ],
-                              ),
-                ),
+                ],
+              ),
+            ),
           ),
           Expanded(
             child: useTabletLayout
@@ -362,10 +396,17 @@ class _ReceiptTableViewState extends State<ReceiptTableView> {
             : InkWell(
           onTap: () => _viewReceiptStatement(receipt),
           borderRadius: BorderRadius.circular(8),
-          child: Icon(
-            Icons.visibility,
-            color: AppColors.appColor,
-            size: isTabletDevice ? 22 : 18,
+          child: Container(
+            padding: EdgeInsets.all(isTabletDevice ? 8 : 6),
+            decoration: BoxDecoration(
+              color: AppColors.appColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.visibility,
+              color: AppColors.appColor,
+              size: isTabletDevice ? 22 : 18,
+            ),
           ),
         ),
       ),

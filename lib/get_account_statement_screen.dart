@@ -6,9 +6,12 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pakland/colors.dart';
+import 'package:pakland/pdf_statment_service.dart';
 import 'package:printing/printing.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'controllers/get_account_statement_controller.dart';
 import 'customs/toast_message.dart';
+import 'models/get_statement_model.dart';
 
 class AccountStatementScreen extends StatefulWidget {
   final String registrationNo;
@@ -154,71 +157,71 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
                   child: Stack(
                     children: [
                       if (!_isDisposing)
-                      InAppWebView(
-                        initialUrlRequest: URLRequest(
-                          url: WebUri(reportUrl),
+                        InAppWebView(
+                          initialUrlRequest: URLRequest(
+                            url: WebUri(reportUrl),
+                          ),
+                          initialSettings: InAppWebViewSettings(
+                            javaScriptEnabled: true,
+                            useOnLoadResource: true,
+                            mediaPlaybackRequiresUserGesture: false,
+                            allowFileAccessFromFileURLs: true,
+                            allowsInlineMediaPlayback: true,
+                            transparentBackground: false,
+                            supportZoom: true,
+                            disableVerticalScroll: false,
+                            disableHorizontalScroll: false,
+                          ),
+                          onWebViewCreated: (controller) {
+                            webController = controller;
+                            setState(() {
+                              _isLoading = true;
+                            });
+                          },
+                          onProgressChanged: (controller, progressValue) {
+                            setState(() => progress = progressValue / 100);
+                          },
+                          onLoadStart: (controller, url) async {
+                            debugPrint("Account Statement Loading URL: $url");
+                            setState(() {
+                              _isLoading = true;
+                            });
+                          },
+                          onLoadStop: (controller, url) async {
+                            debugPrint("Account Statement Loaded: $url");
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          },
+                          onReceivedServerTrustAuthRequest: (controller, challenge) async {
+                            debugPrint("SSL Bypass for: ${challenge.protectionSpace.host}");
+                            return ServerTrustAuthResponse(
+                              action: ServerTrustAuthResponseAction.PROCEED,
+                            );
+                          },
+                          onReceivedHttpAuthRequest: (controller, challenge) async {
+                            debugPrint("HTTP Auth required: ${challenge.protectionSpace.host}");
+                            return HttpAuthResponse(
+                              action: HttpAuthResponseAction.PROCEED,
+                            );
+                          },
+                          // onReceivedError: (controller, request, error) {
+                          //   debugPrint("WebView Error: ${error.description}");
+                          //   setState(() {
+                          //     _isLoading = false;
+                          //   });
+                          //
+                          //   showTopSnackBar(
+                          //     context,
+                          //     "Failed to load content: ${error.description}",
+                          //     Colors.orange.withOpacity(0.7),
+                          //     icon: Icons.warning,
+                          //   );
+                          // },
+                          onConsoleMessage: (controller, consoleMessage) {
+                            debugPrint("WebView Console: ${consoleMessage.message}");
+                          },
                         ),
-                        initialSettings: InAppWebViewSettings(
-                          javaScriptEnabled: true,
-                          useOnLoadResource: true,
-                          mediaPlaybackRequiresUserGesture: false,
-                          allowFileAccessFromFileURLs: true,
-                          allowsInlineMediaPlayback: true,
-                          transparentBackground: false,
-                          supportZoom: true,
-                          disableVerticalScroll: false,
-                          disableHorizontalScroll: false,
-                        ),
-                        onWebViewCreated: (controller) {
-                          webController = controller;
-                          setState(() {
-                            _isLoading = true;
-                          });
-                        },
-                        onProgressChanged: (controller, progressValue) {
-                          setState(() => progress = progressValue / 100);
-                        },
-                        onLoadStart: (controller, url) async {
-                          debugPrint("Account Statement Loading URL: $url");
-                          setState(() {
-                            _isLoading = true;
-                          });
-                        },
-                        onLoadStop: (controller, url) async {
-                          debugPrint("Account Statement Loaded: $url");
-                          setState(() {
-                            _isLoading = false;
-                          });
-                        },
-                        onReceivedServerTrustAuthRequest: (controller, challenge) async {
-                          debugPrint("SSL Bypass for: ${challenge.protectionSpace.host}");
-                          return ServerTrustAuthResponse(
-                            action: ServerTrustAuthResponseAction.PROCEED,
-                          );
-                        },
-                        onReceivedHttpAuthRequest: (controller, challenge) async {
-                          debugPrint("HTTP Auth required: ${challenge.protectionSpace.host}");
-                          return HttpAuthResponse(
-                            action: HttpAuthResponseAction.PROCEED,
-                          );
-                        },
-                        // onReceivedError: (controller, request, error) {
-                        //   debugPrint("WebView Error: ${error.description}");
-                        //   setState(() {
-                        //     _isLoading = false;
-                        //   });
-                        //
-                        //   showTopSnackBar(
-                        //     context,
-                        //     "Failed to load content: ${error.description}",
-                        //     Colors.orange.withOpacity(0.7),
-                        //     icon: Icons.warning,
-                        //   );
-                        // },
-                        onConsoleMessage: (controller, consoleMessage) {
-                          debugPrint("WebView Console: ${consoleMessage.message}");
-                        },
-                      ),
 
                       if (_isLoading || progress < 1.0)
                         Positioned(

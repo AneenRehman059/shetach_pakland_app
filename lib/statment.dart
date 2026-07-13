@@ -35,12 +35,12 @@ class _PrintWebViewScreenState extends State<PrintWebViewScreen> {
             child: SizedBox(
               width: 22,
               height: 22,
-              child: CircularProgressIndicator(
-                  color: Colors.white, strokeWidth: 2.5),
+              child: SpinKitRipple(
+                  color: Colors.white,),
             ),
           )
               : IconButton(
-            icon: Icon(Icons.file_download, color: Colors.white),
+            icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
             tooltip: 'Save as PDF',
             onPressed: _saveAsPdf,
           ),

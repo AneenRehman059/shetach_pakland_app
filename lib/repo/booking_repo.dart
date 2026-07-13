@@ -43,8 +43,8 @@ class BookingRepository {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchPlotSizes(String branchCode,) async {
-    final url = Uri.parse("${ApiConstants.getPlotSizeUrl}?brn_code=$branchCode");
+  Future<List<Map<String, dynamic>>> fetchPlotSizes(String branchCode, String blockNo) async {
+    final url = Uri.parse("${ApiConstants.getPlotSizeUrl}?brn_code=$branchCode&block_no=$blockNo");
 
     final response = await http.get(
       url,
@@ -124,34 +124,6 @@ class BookingRepository {
       }
     } else {
       throw Exception("Error: ${response.statusCode}");
-    }
-  }
-
-  Future<bool> createBookingCRM(Map<String, dynamic> payload) async {
-    try {
-      print("CRM Payload: $payload");
-      final response = await http.post(
-        Uri.parse(ApiConstants.addLeadBaseUrl),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(payload),
-      );
-
-      print('CRM Response: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        if (decoded["status"] == "success") {
-
-          return true;
-        } else {
-          throw Exception(decoded["message"] ?? "CRM Booking failed");
-        }
-      } else {
-        throw Exception("Error: ${response.statusCode}");
-      }
-    } catch (e) {
-      print('CRM error: $e');
-      throw Exception("Error: $e");
     }
   }
 }

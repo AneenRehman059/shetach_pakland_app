@@ -39,6 +39,7 @@ class BaseScreen extends StatelessWidget {
             : Brightness.dark,
       ),
     );
+
     return child;
   }
 }

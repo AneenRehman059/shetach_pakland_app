@@ -1,13 +1,10 @@
-// cms_dashboard_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-
-import '../../bottom_app_bar/bottom_app_bar.dart';
 import '../../colors.dart';
 import '../../controllers/tickets_controller.dart';
 import '../../customs/widgets/app_bar.dart';
+import '../../function/screen_helper.dart';
 import 'admin_dashboard.dart';
 import 'admin_main_dashbord.dart';
 import 'client_dashboard.dart';
@@ -15,15 +12,13 @@ import 'default_dashboard.dart';
 
 class CMSDashboardScreen extends StatefulWidget {
   const CMSDashboardScreen({super.key});
-
   @override
   State<CMSDashboardScreen> createState() => _CMSDashboardScreenState();
 }
 
 class _CMSDashboardScreenState extends State<CMSDashboardScreen> {
   final TicketController ticketController = Get.find<TicketController>();
-
-  bool _hasNavigated = false; // Prevent multiple navigation calls
+  bool _hasNavigated = false;
 
   @override
   void initState() {
@@ -41,109 +36,55 @@ class _CMSDashboardScreenState extends State<CMSDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async{
-        Get.offAll(() => MainWrapper());
-        return true;
-      },
-      child: Scaffold(
-        appBar: CustomAppBar(title: "Loading...", custom_RouteName: "/"),
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Obx(() {
+    final bool isTV = ScreenHelper.isTV(context);
 
-            if (ticketController.isLoading.value) {
-              return Center(
-                child: SpinKitWave(
-                  color: AppColors.primaryColor,
-                  size: 24.0,
-                ),
-              );
-            }
-
-            final userType = ticketController.userType.value;
-
-            /// 🔹 2️⃣ Invalid User State
-            if (userType.isEmpty || userType == "Invalid") {
-              return _buildInvalidUserUI();
-            }
-
-            /// 🔹 3️⃣ Valid User → Navigate Once
-            if (!_hasNavigated) {
-              _hasNavigated = true;
-
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _navigateToDashboard(userType);
-              });
-            }
-
-            return const SizedBox(); // Empty while navigating
-          }),
-        ),
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isTV ? 70 : kToolbarHeight),
+        child: CustomAppBar(title: "Loading...", custom_RouteName: "/"),
+      ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Obx(() {
+          if (ticketController.isLoading.value) {
+            return Center(child: SpinKitWave(color: AppColors.primaryColor, size: 24.0));
+          }
+          final userType = ticketController.userType.value;
+          if (userType.isEmpty || userType == "Invalid") return _buildInvalidUserUI();
+          if (!_hasNavigated) {
+            _hasNavigated = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) => _navigateToDashboard(userType));
+          }
+          return const SizedBox();
+        }),
       ),
     );
   }
 
-  /// 🔴 Invalid User UI
   Widget _buildInvalidUserUI() {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Invalid User'),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(
-                Icons.error_outline,
-                color: Colors.red,
-                size: 60,
-              ),
-              SizedBox(height: 12),
-              Text(
-                "Invalid User",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Invalid User')),
+      body: SafeArea(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [
+        Icon(Icons.error_outline, color: Colors.red, size: 60),
+        SizedBox(height: 12),
+        Text("Invalid User", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red)),
+      ]))),
     );
   }
 
-  /// 🚀 Navigation Based On User Type
   void _navigateToDashboard(String userType) {
     switch (userType) {
       case 'Admin':
-        Get.off(() => AdminMainDashboard(
-          ticketController: ticketController,
-          userType: userType,
-          userId: ticketController.userId.value,
-        ));
+        Get.off(() => AdminMainDashboard(ticketController: ticketController, userType: userType, userId: ticketController.userId.value));
         break;
-
       case 'Customer':
-        Get.off(() => AdminDashboard(
-          ticketController: ticketController,
-          userType: userType,
-        ));
+        Get.off(() => AdminDashboard(ticketController: ticketController, userType: userType));
         break;
-
       case 'Client':
-        Get.off(() => ClientDashboard(
-          ticketController: ticketController,
-        ));
+        Get.off(() => ClientDashboard(ticketController: ticketController));
         break;
-
       default:
-        Get.off(() => DefaultDashboard(
-          ticketController: ticketController,
-        ));
+        Get.off(() => DefaultDashboard(ticketController: ticketController));
         break;
     }
   }

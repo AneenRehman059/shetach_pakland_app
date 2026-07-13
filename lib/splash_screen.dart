@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -9,6 +6,8 @@ import 'package:pakland/bottom_app_bar/bottom_app_bar.dart';
 import 'package:pakland/services/fcm_notification_service.dart';
 import 'constants/image_constant.dart';
 
+// Get the global notification service instance
+final notificationService = FirebaseNotificationService();
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -38,13 +37,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // ✅ No need to capture here anymore — already done in main()
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) _checkLoginStatus(context);
-    });
+    Future.delayed(const Duration(seconds: 3), _checkLoginStatus);
   }
 
-  Future<void> _checkLoginStatus(BuildContext context) async {
+  Future<void> _checkLoginStatus() async {
     String? userId;
 
     try {
@@ -69,6 +65,7 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
+
   @override
   void dispose() {
     _controller.dispose();
@@ -88,11 +85,11 @@ class _SplashScreenState extends State<SplashScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
+                padding: EdgeInsets.symmetric(horizontal: 15),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'WELCOME TO',
                       style: TextStyle(
                         fontSize: 26,
@@ -100,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Text(
+                    Text(
                       'PAKLAND HOUSING',
                       style: TextStyle(
                         fontSize: 26,
@@ -109,7 +106,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                     // Text(
-                    //   'A Project of BSM Developers',
+                    //   'A Project of Sukhera Developers',
                     //   style: TextStyle(
                     //     fontSize: 14,
                     //     color: Colors.black,

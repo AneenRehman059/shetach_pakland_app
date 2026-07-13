@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pakland/colors.dart';
 import 'package:pakland/dashboard/dashboard_menus/bookiong_screen.dart';
@@ -16,6 +17,7 @@ import '../constants/image_constant.dart';
 import '../controllers/get_company_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../customs/login_check_util.dart';
+import '../function/screen_helper.dart';
 import '../status_bar_wrapper.dart';
 import 'cms_components/cms_dashboard_screen.dart';
 import 'dashboard_menus/bill_reg_no_screen.dart';
@@ -36,57 +38,34 @@ class _DashboardMenusState extends State<DashboardMenus> {
   final activeGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      AppColors.appColor,
-      AppColors.lightAppColor,
-    ],
+    colors: [AppColors.appColor, AppColors.lightAppColor],
   );
 
   late ScrollController _scrollController;
   bool _showDownArrow = true;
 
-  // Map to handle navigation based on tab_name
   Widget _getScreenForTab(String tabName) {
     switch (tabName.toLowerCase()) {
-      case 'customer portal':
-        return CustomerPortalScreen();
-      case 'cms':
-        return CMSDashboardScreen();
-      case 'billing':
-        return ClientListScreen();
-      case 'booking':
-        return BookingScreen();
-      case 'payment plan':
-        return PaymentPlanScreen();
-      case 'social':
-        return SocialScreen();
+      case 'customer portal': return CustomerPortalScreen();
+      case 'cms': return CMSDashboardScreen();
+      case 'billing': return ClientListScreen();
+      case 'booking': return BookingScreen();
+      case 'payment plan': return PaymentPlanScreen();
+      case 'social': return SocialScreen();
       case 'dev progress':
-      case 'development progress':
-        return GetDevelopmentProgressScreen();
-      case 'events':
-        return GetEventsScreen();
-      case 'downloads':
-        return DocumentsScreen();
-      case 'sops':
-        return SOPsScreen();
-      case 'privacy policy':
-        return PrivacyPolicyScreen();
-      case 'form validation':
-        return VerifyFormNumberScreen();
-      default:
-        return Container(); // Fallback
+      case 'development progress': return GetDevelopmentProgressScreen();
+      case 'events': return GetEventsScreen();
+      case 'downloads': return DocumentsScreen();
+      case 'sops': return SOPsScreen();
+      case 'privacy policy': return PrivacyPolicyScreen();
+      case 'form validation': return VerifyFormNumberScreen();
+      default: return Container();
     }
   }
 
-  // Check if screen requires login
   bool _requiresLogin(String tabName) {
-    final loginRequiredTabs = [
-      'customer portal',
-      'cms',
-      'billing',
-      'online payments',
-    ];
-    return loginRequiredTabs.contains(tabName.toLowerCase());
+    return ['customer portal', 'cms', 'billing', 'online payments']
+        .contains(tabName.toLowerCase());
   }
 
   @override
@@ -94,7 +73,6 @@ class _DashboardMenusState extends State<DashboardMenus> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_handleScroll);
-
     themeController.updateStatusBar();
   }
 
@@ -121,68 +99,50 @@ class _DashboardMenusState extends State<DashboardMenus> {
     );
   }
 
-  void _handleNavigationWithLoginCheck(BuildContext context, Widget screen, {bool requiresLogin = false}) async {
+  void _handleNavigationWithLoginCheck(BuildContext context, Widget screen,
+      {bool requiresLogin = false}) async {
     if (requiresLogin) {
       final isLoggedIn = await LoginCheckUtil.isUserLoggedIn();
-
       if (!isLoggedIn) {
         LoginCheckUtil.showLoginRequiredDialog(
           context,
           onYesPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => LoginScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => LoginScreen()));
           },
         );
         return;
       }
     }
-
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => StatusBarWrapper(child: screen)),
+      MaterialPageRoute(builder: (_) => StatusBarWrapper(child: screen)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return StatusBarWrapper(
-      child: _buildMainUI(context),
-    );
+    return StatusBarWrapper(child: _buildMainUI(context));
   }
 
   Widget _buildMainUI(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final isTablet = screenSize.shortestSide > 600;
+    final bool isTV = ScreenHelper.isTV(context);
+    final int crossAxisCount = isTV ? 4 : 3;
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: activeGradient,
-      ),
+      decoration: BoxDecoration(gradient: activeGradient),
       child: Obx(() {
         final tempTabs = companyController.mobileTabs;
-        final temp=[];
-        for(var tab in tempTabs){
-          if(tab['isActive']==true){
-            temp.add(tab);
-          }
-        }
-
-        final tabs = temp;
+        final tabs = tempTabs.where((tab) => tab['isActive'] == true).toList();
 
         if (companyController.isLoading.value && tabs.isEmpty) {
-          return Center(
-            child: CircularProgressIndicator(color: Colors.white),
-          );
+          return Center(child: CircularProgressIndicator(color: Colors.white));
         }
 
         if (tabs.isEmpty) {
           return Center(
-            child: Text(
-              'No menu items available',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
+            child: Text('No menu items available',
+                style: TextStyle(color: Colors.white, fontSize: 16)),
           );
         }
 
@@ -200,43 +160,40 @@ class _DashboardMenusState extends State<DashboardMenus> {
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isTablet ? 3 : 3,
-                    crossAxisSpacing: screenSize.width * 0.09,
-                    mainAxisSpacing: screenSize.height * 0.01,
-                    childAspectRatio: 0.85,
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: isTV
+                        ? screenSize.width * 0.03
+                        : screenSize.width * 0.09,
+                    mainAxisSpacing: screenSize.height * 0.02,
+                    childAspectRatio: isTV ? 1.1 : 0.85,
                   ),
                   itemCount: tabs.length,
                   itemBuilder: (context, index) {
                     final tab = tabs[index];
-                    final tabName = tab['home_menu_en'] ?? tab['home_menu_en'] ?? 'Unknown';
+                    final tabName = tab['home_menu_en'] ?? 'Unknown';
                     final iconPath = tab['icon']?.toString() ?? '';
-                    final isActive = tab['isActive'] ?? true;
-
-                    // // Skip inactive tabs
-                    // if (!isActive) return SizedBox.shrink();
-
-                    return _buildMenuItem(
-                      context,
-                      iconPath,
-                      tabName,
+                    return isTV
+                        ? _TVMenuItem(
+                      iconUrl: companyController.getFullImageUrl(iconPath),
+                      text: tabName,
+                      screenSize: screenSize,
                       onTap: () {
-                        final screen = _getScreenForTab(tabName);
-                        final requiresLogin = _requiresLogin(tabName);
                         _handleNavigationWithLoginCheck(
                           context,
-                          screen,
-                          requiresLogin: requiresLogin,
+                          _getScreenForTab(tabName),
+                          requiresLogin: _requiresLogin(tabName),
                         );
                       },
-                    );
+                    )
+                        : _buildMobileMenuItem(context, iconPath, tabName);
                   },
                 ),
               ),
             ),
+
+            // Bottom gradient
             Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
+              bottom: 0, left: 0, right: 0,
               child: Container(
                 height: screenSize.height * 0.1,
                 decoration: BoxDecoration(
@@ -253,10 +210,11 @@ class _DashboardMenusState extends State<DashboardMenus> {
                 ),
               ),
             ),
+
+            // Scroll arrow
             Positioned(
               bottom: screenSize.height * 0.02,
-              left: 0,
-              right: 0,
+              left: 0, right: 0,
               child: Center(
                 child: GestureDetector(
                   onTap: () => _scrollTo(_showDownArrow),
@@ -268,11 +226,12 @@ class _DashboardMenusState extends State<DashboardMenus> {
                     ),
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
-                      transitionBuilder: (child, animation) {
-                        return ScaleTransition(scale: animation, child: child);
-                      },
+                      transitionBuilder: (child, animation) =>
+                          ScaleTransition(scale: animation, child: child),
                       child: Icon(
-                        _showDownArrow ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                        _showDownArrow
+                            ? Icons.keyboard_arrow_down
+                            : Icons.keyboard_arrow_up,
                         key: ValueKey<bool>(_showDownArrow),
                         color: Colors.white,
                         size: screenSize.width * 0.06,
@@ -288,22 +247,28 @@ class _DashboardMenusState extends State<DashboardMenus> {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, String iconPath, String text, {VoidCallback? onTap}) {
+  // Mobile menu item — same as before
+  Widget _buildMobileMenuItem(BuildContext context, String iconPath, String text) {
     final screenSize = MediaQuery.of(context).size;
-    final isTablet = screenSize.shortestSide > 600;
-
-    // Get full image URL from controller
     String fullImageUrl = companyController.getFullImageUrl(iconPath);
+    final double containerSize = screenSize.width * 0.18;
+    final double iconSize = containerSize * 0.6; // icon = 60% of container
 
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        _handleNavigationWithLoginCheck(
+          context,
+          _getScreenForTab(text),
+          requiresLogin: _requiresLogin(text),
+        );
+      },
       borderRadius: BorderRadius.circular(screenSize.width * 0.03),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: isTablet ? screenSize.width * 0.16 : screenSize.width * 0.18,
-            height: isTablet ? screenSize.width * 0.16 : screenSize.width * 0.18,
+            width: containerSize,
+            height: containerSize,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(screenSize.width * 0.03),
               color: AppColors.whiteBg,
@@ -315,40 +280,31 @@ class _DashboardMenusState extends State<DashboardMenus> {
                 ),
               ],
             ),
-            child: Center(
-              child: fullImageUrl.isNotEmpty
-                  ? Image.network(
-                fullImageUrl,
-                fit: BoxFit.cover,
-                width: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                height: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
+            // ClipRRect prevents image from going outside
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(screenSize.width * 0.03),
+              child: Center(
+                child: fullImageUrl.isNotEmpty
+                    ? Image.network(
+                  fullImageUrl,
+                  fit: BoxFit.contain,
+                  width: iconSize,
+                  height: iconSize,
+                  errorBuilder: (c, e, s) => Icon(
                     Icons.image_not_supported,
-                    size: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
+                    size: iconSize,
                     color: Colors.grey,
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return SizedBox(
-                    width: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                    height: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
-                    ),
-                  );
-                },
-              )
-                  : Icon(
-                Icons.image_not_supported,
-                size: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                color: Colors.grey,
+                  ),
+                  loadingBuilder: (c, child, progress) {
+                    if (progress == null) return child;
+                    return SizedBox(
+                      width: iconSize,
+                      height: iconSize,
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    );
+                  },
+                )
+                    : Icon(Icons.image_not_supported, size: iconSize, color: Colors.grey),
               ),
             ),
           ),
@@ -362,7 +318,7 @@ class _DashboardMenusState extends State<DashboardMenus> {
               text,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: isTablet ? screenSize.width * 0.025 : screenSize.width * 0.03,
+                fontSize: screenSize.width * 0.03,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
                 height: 1.1,
@@ -372,6 +328,120 @@ class _DashboardMenusState extends State<DashboardMenus> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// TV Menu Item with focus
+class _TVMenuItem extends StatefulWidget {
+  final String iconUrl;
+  final String text;
+  final Size screenSize;
+  final VoidCallback? onTap;
+
+  const _TVMenuItem({
+    required this.iconUrl,
+    required this.text,
+    required this.screenSize,
+    required this.onTap,
+  });
+
+  @override
+  State<_TVMenuItem> createState() => _TVMenuItemState();
+}
+
+class _TVMenuItemState extends State<_TVMenuItem> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final double containerSize = widget.screenSize.width * 0.09;
+    final double iconSize = containerSize * 0.6;
+
+    return Focus(
+      onFocusChange: (focused) => setState(() => _isFocused = focused),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.select ||
+                event.logicalKey == LogicalKeyboardKey.enter)) {
+          widget.onTap?.call();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _isFocused ? 1.08 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: containerSize,
+                height: containerSize,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(widget.screenSize.width * 0.02),
+                  color: AppColors.whiteBg,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _isFocused
+                          ? Colors.white.withOpacity(0.9)
+                          : Colors.black.withOpacity(0.1),
+                      blurRadius: _isFocused ? 20 : 4,
+                      spreadRadius: _isFocused ? 3 : 0,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                  border: _isFocused
+                      ? Border.all(color: Colors.white, width: 3)
+                      : null,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(widget.screenSize.width * 0.02),
+                  child: Center(
+                    child: widget.iconUrl.isNotEmpty
+                        ? Image.network(
+                      widget.iconUrl,
+                      fit: BoxFit.contain,
+                      width: iconSize,
+                      height: iconSize,
+                      errorBuilder: (c, e, s) => Icon(
+                        Icons.image_not_supported,
+                        size: iconSize,
+                        color: Colors.grey,
+                      ),
+                      loadingBuilder: (c, child, progress) {
+                        if (progress == null) return child;
+                        return SizedBox(
+                          width: iconSize,
+                          height: iconSize,
+                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        );
+                      },
+                    )
+                        : Icon(Icons.image_not_supported, size: iconSize, color: Colors.grey),
+                  ),
+                ),
+              ),
+              SizedBox(height: widget.screenSize.height * 0.008),
+              Text(
+                widget.text,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: widget.screenSize.width * 0.016,
+                  fontWeight: FontWeight.bold,
+                  color: _isFocused ? Colors.white : Colors.white70,
+                  height: 1.1,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

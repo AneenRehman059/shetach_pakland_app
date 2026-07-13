@@ -73,13 +73,7 @@ class AccountReciptController extends GetxController {
         }
       } else {
         receiptList.clear();
-        showTopSnackBar(
-            Get.context!,
-            title:"Alert",
-            "Some technical fault occured! Try again later.",
-            Colors.red.withOpacity(0.7),
-            icon: Icons.warning
-        );
+        _showSnackBar('Failed to load receipts: ${response.statusCode}', Colors.red.withOpacity(0.7));
       }
     } catch (e) {
       receiptList.clear();

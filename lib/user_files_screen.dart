@@ -166,10 +166,14 @@ class _UserFilesScreenState extends State<UserFilesScreen> {
             ),
           ),
           SizedBox(height: 6),
-          Text(
-            brnName,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Flexible(
+            child: Text(
+              brnName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          )
         ],
       ),
     );

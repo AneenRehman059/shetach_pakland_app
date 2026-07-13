@@ -302,7 +302,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 fontSize: hintFontSize,
               ),
               hintTextDirection: TextDirection.ltr,
-             // contentPadding: widget.contentPadding ?? contentPadding,
+              // contentPadding: widget.contentPadding ?? contentPadding,
               contentPadding: widget.contentPadding ??
                   EdgeInsets.symmetric(
                     horizontal: horizontalPadding,

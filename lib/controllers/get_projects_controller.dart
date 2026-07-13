@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:path/path.dart';
 import '../bottom_app_bar/bottom_app_bar.dart';
 import '../customs/toast_message.dart';
 import '../repo/booking_repo.dart';
@@ -36,7 +35,7 @@ class BookingController extends GetxController {
       final data = await _repo.fetchPlotNatures();
       plotNatures.assignAll(data);
     } catch (e) {
-      showTopSnackBar(context ?? Get.overlayContext!, title: "Alert",e.toString(), Colors.red.withOpacity(0.7),icon: Icons.warning);
+      showTopSnackBar( context ?? Get.overlayContext!, title: "Alert",e.toString(), Colors.red.withOpacity(0.7),icon: Icons.warning);
     } finally {
       isLoading.value = false;
     }
@@ -76,7 +75,6 @@ class BookingController extends GetxController {
     selectedBranchCode.value = branch["brn_code"] ?? "";
 
     if (selectedBranchCode.value.isNotEmpty) {
-      await fetchPlotSizes(selectedBranchCode.value);
       await fetchBlocks(selectedBranchCode.value);
     }
   }
@@ -93,10 +91,10 @@ class BookingController extends GetxController {
     }
   }
 
-  Future<void> fetchPlotSizes(String branchCode, {BuildContext? context}) async {
+  Future<void> fetchPlotSizes(String branchCode, String blockNo,{BuildContext? context}) async {
     try {
       isLoading.value = true;
-      final data = await _repo.fetchPlotSizes(branchCode,);
+      final data = await _repo.fetchPlotSizes(branchCode, blockNo);
       plotSizes.assignAll(data);
     } catch (e) {
       showTopSnackBar(context ?? Get.overlayContext!, title: "Alert",e.toString(), Colors.red.withOpacity(0.7),icon: Icons.warning);
@@ -107,7 +105,6 @@ class BookingController extends GetxController {
 
   Future<void> submitBooking({
     required String brnCode,
-    required String selectedProject,
     // required String idNo,
     required String contactName,
     required String contactNo,
@@ -142,43 +139,22 @@ class BookingController extends GetxController {
         "status": "",
       };
 
-      final createBookingCRM = {
-        "token": "ba333a9e5fccf418e14ad44027c3ef992f44399c523bb3a1475f64601b0b5227",
-        "website_title": "SHE Technologies",
-        "client_name": contactName,
-        "client_number":contactNo,
-        //"project": selectedProject,
-        "project": "CRM",
-        "remarks": "",
-        "interest_in_nature": plotNature,
-        "plot_category": plotType,
-        "plot_size": plotSizeCode,
-        "lead_source": "Mobile App Form"
-      };
-
       final success = await _repo.createBooking(payload);
-     final successCrm = await _repo.createBookingCRM(createBookingCRM);
 
-     if (success && successCrm) {
-      if (success ) {
+      if (success) {
+
+        showTopSnackBar(context,"Your request submitted successfully.", Colors.green.withOpacity(0.7),icon: Icons.check_circle);
+
         Get.offAll(() => MainWrapper());
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-
-          showTopSnackBar(
-              context,
-              title: "Success",
-              "Your request submitted successfully.",
-              Colors.green.withOpacity(0.7),
-              icon: Icons.check_circle
-          );
-        });
-      }}
+      }
     } catch (e) {
+
       showTopSnackBar(context, title: "Alert",e.toString(), Colors.red.withOpacity(0.7),icon: Icons.warning);
     } finally {
       isLoading.value = false;
     }
   }
+
 
   void selectBlock(String name) async {
     selectedBlockName.value = name;
@@ -187,5 +163,9 @@ class BookingController extends GetxController {
       orElse: () => {},
     );
     selectedBlockCode.value = block["block_no"] ?? "";
+
+    if (selectedBranchCode.value.isNotEmpty && selectedBlockCode.value.isNotEmpty) {
+      await fetchPlotSizes(selectedBranchCode.value, selectedBlockCode.value);
+    }
   }
 }

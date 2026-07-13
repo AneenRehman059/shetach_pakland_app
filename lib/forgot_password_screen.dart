@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:pakland/verify_otp_screen.dart';
 import 'constants/image_constant.dart';
 import 'controllers/forgot_password_controller.dart';
 import 'controllers/login_controller.dart';
 import 'customs/app_bar.dart';
 import 'customs/custom_buttons.dart';
+import 'package:flutter/services.dart';
 import 'customs/custom_fields.dart';
 import 'package:pakland/colors.dart';
 import 'package:get/get.dart';
@@ -214,6 +214,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
 
       if (response["StatusCode"] == "200") {
+        showTopSnackBar(
+            context,
+            "Password updated successfully",
+            Colors.green.withOpacity(0.7),
+            icon: Icons.check_circle
+        );
 
         Future.delayed(const Duration(milliseconds: 1500), () {
           Navigator.push(
@@ -291,7 +297,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: size.width * 0.06,
-                vertical: size.height * 0.04
               ),
               child: ListView(
                 children: [
@@ -315,6 +320,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         showVisibilityIcon: true,
                         borderRadius: 30,
                         height: MediaQuery.of(context).size.height * 0.05,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                        ],
                       ),
 
                       // New Password Strength Indicator
@@ -369,6 +377,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         obscureText: true,
                         showVisibilityIcon: true,   borderRadius: 30,
                         height: MediaQuery.of(context).size.height * 0.05,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                        ],
                       ),
 
                       // Confirm Password Strength Indicator
@@ -415,7 +426,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               Text(
                                 newPasswordController.text == confirmPasswordController.text
                                     ? 'Passwords match'
-                                    : '',
+                                    : 'Passwords do not match',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: newPasswordController.text == confirmPasswordController.text
