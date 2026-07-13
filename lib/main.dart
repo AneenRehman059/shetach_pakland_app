@@ -66,6 +66,7 @@ void main() async {
   await PakistanDateHelper.initialize();
   await notificationService.initialize();
 
+  // notification
   // ✅ Capture kill-state message HERE — earliest possible point
   initialNotificationMessage = await FirebaseMessaging.instance.getInitialMessage();
   print('📌 main() captured initialMessage: ${initialNotificationMessage?.data}');
