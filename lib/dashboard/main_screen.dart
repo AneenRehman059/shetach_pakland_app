@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pakland/colors.dart';
 import 'package:pakland/constants/image_constant.dart';
-import '../constants/api_constant.dart';
 import '../controllers/get_company_controller.dart';
 import '../controllers/login_controller.dart';
 import '../controllers/tickets_controller.dart';
@@ -190,7 +189,7 @@ class _MainScreenState extends State<MainScreen> {
   List<Widget> _buildSliderItems(BuildContext context) {
     return companyController.sliders.map((e) {
       final rawPath = e['image_path'] ?? "";
-      final url = "${ApiConstants.baseUrl}/$rawPath";
+      final url = companyController.getFullImageUrl(rawPath);
       return SizedBox(
         width: double.infinity,
         child: Image.network(

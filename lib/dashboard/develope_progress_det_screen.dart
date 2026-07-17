@@ -8,6 +8,7 @@ import '../../models/get_events_model.dart';
 import '../bottom_app_bar/bottom_app_bar.dart';
 import '../constants/full_screen_image_view.dart';
 import '../../function/screen_helper.dart';
+import '../constants/image_url_helper.dart';
 
 class DevelopmentProgressDetailScreen extends StatelessWidget {
   final String eventId;
@@ -55,8 +56,10 @@ class DevelopmentProgressDetailScreen extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final dev = devImages[index];
-                final imageUrl = "${ApiConstants.baseUrl}${dev.imagePath}";
-                final List<String> allImageUrls = devImages.map((e) => "${ApiConstants.baseUrl}${e.imagePath}").toList();
+                final imageUrl = ImageUrlHelper.resolve(dev.imagePath, ApiConstants.baseUrl);
+                final List<String> allImageUrls = devImages
+                    .map((e) => ImageUrlHelper.resolve(e.imagePath, ApiConstants.baseUrl))
+                    .toList();
 
                 return isTV
                     ? _TVImageCard(imageUrl: imageUrl, allImageUrls: allImageUrls, index: index)

@@ -57,7 +57,6 @@ class SOSController extends GetxController {
       snackPosition: SnackPosition.TOP,
       duration: Duration(seconds: 3),
     );
-    showTopSnackBar(Get.context!, message,Colors.green.withOpacity(0.7), icon: Icons.check_circle);
   }
 
   // ✅ Helper method to show error message

@@ -58,7 +58,7 @@ class LoginController extends GetxController {
     return userType.value;
   }
 
-  Future<bool> login({required String username, required String password, required String latitude, required String longitude, required String deviceId,required BuildContext context}) async {
+  Future<bool> login({required String username, required String password, required String latitude, required String longitude,required String deviceId,required BuildContext context}) async {
     try {
       isLoading.value = true;
 

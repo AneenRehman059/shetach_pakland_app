@@ -159,28 +159,38 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      bool hasLocationPermission = await LocationPermissionService.isLocationPermissionGranted();
-      if (!hasLocationPermission) {
-        _showLocationPermissionError();
-        return;
-      }
+      // bool hasLocationPermission = await LocationPermissionService.isLocationPermissionGranted();
+      // if (!hasLocationPermission) {
+      //   _showLocationPermissionError();
+      //   return;
+      // }
+      //
+      // Position? userLocation = await LocationPermissionService.getCurrentPosition();
+      // if (userLocation == null) {
+      //   _showLocationError();
+      //   return;
+      // }
+      //
+      // // ✅ Get device ID before login
+      // final String deviceId = await DeviceInfoService.getDeviceIdentifier();
+      //
+      // bool isSuccess = await loginController.login(
+      //     username: usernameController.text.trim(),
+      //     password: passwordController.text.trim(),
+      //     latitude: userLocation.latitude.toString(),
+      //     longitude: userLocation.longitude.toString(),
+      //     deviceId: deviceId,
+      //     context: context
+      // );
 
-      Position? userLocation = await LocationPermissionService.getCurrentPosition();
-      if (userLocation == null) {
-        _showLocationError();
-        return;
-      }
-
-      // ✅ Get device ID before login
       final String deviceId = await DeviceInfoService.getDeviceIdentifier();
-
       bool isSuccess = await loginController.login(
-          username: usernameController.text.trim(),
-          password: passwordController.text.trim(),
-          latitude: userLocation.latitude.toString(),
-          longitude: userLocation.longitude.toString(),
-          deviceId: deviceId,
-          context: context
+        username: usernameController.text.trim(),
+        password: passwordController.text.trim(),
+        latitude: "",
+        longitude: "",
+        deviceId: deviceId,
+        context: context
       );
 
       if (isSuccess) {

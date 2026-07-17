@@ -6,6 +6,7 @@ import 'package:pakland/customs/app_bar.dart';
 import '../../bottom_app_bar/bottom_app_bar.dart';
 import '../../colors.dart';
 import '../../constants/full_screen_image_view.dart';
+import '../../constants/image_url_helper.dart';
 import '../../models/get_events_model.dart';
 import '../../constants/api_constant.dart';
 import '../../controllers/get_events_controller.dart';
@@ -61,28 +62,28 @@ class EventDetailScreen extends StatelessWidget {
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     //crossAxisSpacing: screenWidth * 0.02,
-                  //  mainAxisSpacing: screenWidth * 0.02,
+                    //  mainAxisSpacing: screenWidth * 0.02,
                     childAspectRatio: 1.2,
                   ),
                   itemCount: eventImages.length,
                   itemBuilder: (context, index) {
                     final event = eventImages[index];
-                    final imageUrl = "${ApiConstants.baseUrl}${event.imagePath}";
+                    final imageUrl = ImageUrlHelper.resolve(event.imagePath, ApiConstants.baseUrl);
                     final List<String> allImageUrls = eventImages
-                        .map((e) => "${ApiConstants.baseUrl}${e.imagePath}")
+                        .map((e) => ImageUrlHelper.resolve(e.imagePath, ApiConstants.baseUrl))
                         .toList();
 
                     return GestureDetector(
-                        onTap: () {
-                          Get.to(() => FullScreenImageView(
-                            imageUrl: imageUrl,
-                            allImages: allImageUrls,  // ✅
-                            initialIndex: index,      // ✅ jis pe tap kiya
-                          ));
-                        },
+                      onTap: () {
+                        Get.to(() => FullScreenImageView(
+                          imageUrl: imageUrl,
+                          allImages: allImageUrls,  // ✅
+                          initialIndex: index,      // ✅ jis pe tap kiya
+                        ));
+                      },
                       child: Container(
                         decoration: BoxDecoration(
-                         // borderRadius: BorderRadius.circular(12),
+                          // borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: Colors.white,
                             width: 0.5,

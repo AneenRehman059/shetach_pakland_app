@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../controllers/get_events_controller.dart';
 import '../../constants/api_constant.dart';
+import 'constants/image_url_helper.dart';
 import 'dashboard/develope_progress_det_screen.dart';
 import '../../colors.dart';
 import '../../function/screen_helper.dart';
@@ -61,7 +62,7 @@ class GetDevelopmentProgressScreen extends StatelessWidget {
                 itemCount: eventsController.uniqueDevelopment.length,
                 itemBuilder: (context, index) {
                   final dev = eventsController.uniqueDevelopment[index];
-                  final imageUrl = "${ApiConstants.baseUrl}${dev.imagePath}";
+                  final imageUrl = ImageUrlHelper.resolve(dev.imagePath, ApiConstants.baseUrl);
 
                   return isTV
                       ? _TVDevCard(

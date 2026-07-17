@@ -8,6 +8,7 @@ import 'package:pakland/controllers/get_company_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../constants/download_contant.dart';
+import '../../constants/image_url_helper.dart';
 import '../../controllers/theme_controller.dart';
 import '../../customs/toast_message.dart';
 import '../../function/screen_helper.dart';
@@ -102,7 +103,7 @@ class _SOPsScreenState extends State<SOPsScreen> with TickerProviderStateMixin {
                 itemBuilder: (context, index) {
                   final sop = _companyController.mobileSOPs[index];
                   final path = sop['image_path']?.toString() ?? '';
-                  final fullUrl = '${ApiConstants.baseUrl}$path';
+                  final fullUrl = ImageUrlHelper.resolve(path, ApiConstants.baseUrl);
                   final sopName = sop['SOPs_name']?.toString() ?? 'Unnamed SOP';
                   final fileType = fullUrl.toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOC';
                   return _TVSOPItem(context, sopName, fileType, fullUrl, index);
@@ -115,7 +116,7 @@ class _SOPsScreenState extends State<SOPsScreen> with TickerProviderStateMixin {
               itemBuilder: (context, index) {
                 final sop = _companyController.mobileSOPs[index];
                 final path = sop['image_path']?.toString() ?? '';
-                final fullUrl = '${ApiConstants.baseUrl}$path';
+                final fullUrl = ImageUrlHelper.resolve(path, ApiConstants.baseUrl);
                 final sopName = sop['SOPs_name']?.toString() ?? 'Unnamed SOP';
                 final fileType = fullUrl.toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOC';
                 return Padding(padding: const EdgeInsets.all(8.0), child: _buildSOPItem(context, sopName, fileType, fullUrl, index));

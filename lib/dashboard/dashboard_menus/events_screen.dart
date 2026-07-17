@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../colors.dart';
 import '../../constants/api_constant.dart';
+import '../../constants/image_url_helper.dart';
 import '../../controllers/get_events_controller.dart';
 import '../../models/get_events_model.dart';
 import '../../function/screen_helper.dart';
@@ -63,7 +64,7 @@ class GetEventsScreen extends StatelessWidget {
                 itemCount: eventsController.uniqueEvents.length,
                 itemBuilder: (context, index) {
                   final event = eventsController.uniqueEvents[index];
-                  final imageUrl = '${ApiConstants.baseUrl}${event.imagePath}';
+                  final imageUrl = ImageUrlHelper.resolve(event.imagePath, ApiConstants.baseUrl);
 
                   // TV pe focus wrapper
                   if (isTV) {

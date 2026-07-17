@@ -11,6 +11,7 @@ import 'package:pakland/controllers/get_company_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../constants/download_contant.dart';
+import '../../constants/image_url_helper.dart';
 import '../../customs/toast_message.dart';
 import '../../permission_service.dart';
 
@@ -194,7 +195,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                         children: [
                           SpinKitWave(
                             color: AppColors.appColor,
-                           size: 50,
+                            size: 50,
                           ),
                           Text(
                             "Loading",
@@ -222,7 +223,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                     itemBuilder: (context, index) {
                       final document = _companyController.mobileDocuments[index];
                       final path = document['path']?.toString() ?? '';
-                      final fullUrl = '${ApiConstants.baseUrl}$path';
+                      final fullUrl = ImageUrlHelper.resolve(path, ApiConstants.baseUrl);
                       final fileName =
                           document['file_name']?.toString() ?? 'Unnamed Document';
                       final fileType =

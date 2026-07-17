@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../constants/image_url_helper.dart';
 import '../repo/company_repo.dart';
 import '../constants/api_constant.dart';
 
@@ -189,14 +190,11 @@ class CompanyController extends GetxController {
     isLoading.value = false;
   }
 
+  /// Resolves an image path coming from the API into a URL that
+  /// Image.network can actually load (handles "/Upload/..." relative
+  /// paths and Google Drive share links).
   String getFullImageUrl(String path) {
-    if (path.isEmpty) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    String cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    return '${baseUrl.value}/$cleanPath';
+    return ImageUrlHelper.resolve(path, baseUrl.value);
   }
 
   bool get isDataLoaded => _dataLoaded;
