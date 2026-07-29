@@ -10,9 +10,7 @@ import '../../colors.dart';
 import '../../controllers/get_customer_portal_controller.dart';
 import '../../function/screen_helper.dart';
 import '../../payment_plan_detail_screen.dart';
-import 'online_payments_screen.dart';
-
-class CustomerPortalScreen extends StatefulWidget {
+import 'online_payments_screen.dart';class CustomerPortalScreen extends StatefulWidget {
   @override
   State<CustomerPortalScreen> createState() => _CustomerPortalScreenState();
 }
@@ -797,3 +795,4 @@ class _TVDetailsButtonState extends State<_TVDetailsButton> {
     );
   }
 }
+

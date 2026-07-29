@@ -215,15 +215,15 @@ class _MainScreenState extends State<MainScreen> {
     return Obx(() => Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: companyController.sliders.asMap().entries.map((entry) {
-        return Container(
-          width: currentIndex.value == entry.key ? 12 : 8,
-          height: currentIndex.value == entry.key ? 12 : 8,
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        final selected = currentIndex.value == entry.key;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          width: selected ? 18 : 6,
+          height: 6,
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 3),
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: currentIndex.value == entry.key
-                ? AppColors.appColor
-                : Colors.white.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(3),
+            color: selected ? Colors.white : Colors.white.withOpacity(0.5),
           ),
         );
       }).toList(),
