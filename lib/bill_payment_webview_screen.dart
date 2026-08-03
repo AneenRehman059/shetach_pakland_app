@@ -115,7 +115,7 @@ class _BillPaymentWebViewScreenState extends State<BillPaymentWebViewScreen> {
 
                 if (url != null &&
                     url.toString().contains(
-                      "paklandhousing.shesoft.com.pk/Privacy/PaymentProceed",
+                      "paklandhousingdemo.shesoft.com.pk/Privacy/PaymentProceed",
                     ) &&
                     !hasReloadedFinalPage) {
                   hasReloadedFinalPage = true;

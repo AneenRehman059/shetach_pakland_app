@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class ApiConstants {
-  static const String baseUrl = "https://paklandhousing.shesoft.com.pk";
+  static const String baseUrl = "https://paklandhousingdemo.shesoft.com.pk";
   static const String apiKey = 'BRE-crm-mobile-app-2025-secure-key';
   // static const String baseUrl = "https://peakish-mitchel-noncontextually.ngrok-free.dev";
 
@@ -43,11 +43,7 @@ class ApiConstants {
   // ==================== CMS APIs ====================
 
   // Tickets APIs
-  //static const String baseUrl2="https://cms.shesoft.com.pk";
-  static const String baseUrl2="https://paklandhousing.shesoft.com.pk";
-
-  // Tickets APIs
-  static const String cmsBase = "$baseUrl2/api/CMS";
+  static const String cmsBase = "$baseUrl/api/CMS";
   // Ticket endpoints
   static const String createTicketUrl = "$cmsBase/CreateTicket"; // POST
   static const String updateTicketUrl = "$cmsBase/UpdateTicket"; // PUT + /{id}
@@ -130,7 +126,7 @@ class ApiConstants {
     }
 
     // Build the URL - simply append the path to your server base
-    final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl2/';
+    final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
     return '$base$path';
   }
 
