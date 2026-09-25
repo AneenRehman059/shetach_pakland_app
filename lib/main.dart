@@ -9,35 +9,36 @@ import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pakland/dashboard/cms_components/emergency_request_screen.dart';
-import 'package:pakland/personal_detail_screen.dart';
-import 'package:pakland/server_date.dart';
-import 'package:pakland/services/fcm_notification_service.dart';
-import 'package:pakland/splash_screen.dart';
-import 'app_permissions/location_permission_handler.dart';
-import 'bottom_app_bar/bottom_app_bar.dart';
-import 'change_password_screen.dart';
-import 'colors.dart';
-import 'controllers/get_company_controller.dart';
-import 'controllers/internet_connectivity_controller.dart';
-import 'controllers/login_controller.dart';
-import 'controllers/sos_controller.dart';
-import 'controllers/theme_controller.dart';
-import 'controllers/tickets_controller.dart';
-import 'dashboard/about_us_screen.dart';
-import 'dashboard/cms_components/admin_dashboard.dart';
-import 'dashboard/cms_components/admin_main_dashbord.dart';
-import 'dashboard/cms_components/client_dashboard.dart';
-import 'dashboard/cms_components/cms_dashboard_screen.dart';
-import 'dashboard/cms_components/feedback_screen.dart';
-import 'dashboard/cms_components/sos_alarm_screen.dart';
-import 'dashboard/cms_components/sos_list_screen.dart';
-import 'dashboard/cms_components/sos_screen.dart';
-import 'dashboard/cms_components/ticket_create_screen.dart';
-import 'dashboard/cms_components/ticket_detail_screen.dart';
-import 'dashboard/cms_components/ticket_list_view.dart';
-import 'help_support_screen.dart';
-import 'login_screen.dart';
+import 'package:pakland/features/sos/presentation/screens/emergency_request_screen.dart';
+import 'package:pakland/features/profile/presentation/screens/personal_detail_screen.dart';
+import 'package:pakland/core/services/server_date.dart';
+import 'package:pakland/core/services/fcm_notification_service.dart';
+import 'package:pakland/features/splash/presentation/screens/splash_screen.dart';
+import 'package:pakland/core/permissions/location_permission_handler.dart';
+import 'package:pakland/core/permissions/microphone_permission_handler.dart';
+import 'package:pakland/core/widgets/bottom_app_bar.dart';
+import 'package:pakland/features/auth/presentation/screens/change_password_screen.dart';
+import 'package:pakland/core/theme/colors.dart';
+import 'package:pakland/features/company/presentation/controllers/get_company_controller.dart';
+import 'package:pakland/core/controllers/internet_connectivity_controller.dart';
+import 'package:pakland/features/auth/presentation/controllers/login_controller.dart';
+import 'package:pakland/features/sos/presentation/controllers/sos_controller.dart';
+import 'package:pakland/core/controllers/theme_controller.dart';
+import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
+import 'package:pakland/features/dashboard/presentation/screens/about_us_screen.dart';
+import 'package:pakland/features/cms/presentation/screens/admin_dashboard.dart';
+import 'package:pakland/features/cms/presentation/screens/admin_main_dashbord.dart';
+import 'package:pakland/features/cms/presentation/screens/client_dashboard.dart';
+import 'package:pakland/features/cms/presentation/screens/cms_dashboard_screen.dart';
+import 'package:pakland/features/feedback/presentation/screens/cms_feedback_screen.dart';
+import 'package:pakland/features/sos/presentation/screens/sos_alarm_screen.dart';
+import 'package:pakland/features/sos/presentation/screens/sos_list_screen.dart';
+import 'package:pakland/features/sos/presentation/screens/sos_screen.dart';
+import 'package:pakland/features/tickets/presentation/screens/ticket_create_screen.dart';
+import 'package:pakland/features/tickets/presentation/screens/ticket_detail_screen.dart';
+import 'package:pakland/features/tickets/presentation/screens/ticket_list_view.dart';
+import 'package:pakland/features/help_support/presentation/screens/help_support_screen.dart';
+import 'package:pakland/features/auth/presentation/screens/login_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final notificationService = FirebaseNotificationService();
@@ -146,18 +147,24 @@ class _MyAppState extends State<MyApp> {
           });
         } else {
           setState(() {
-            _homeWidget = LocationPermissionHandler(
-              child: const SplashScreen(),
+            _homeWidget = MicrophonePermissionHandler(
               loadingWidget: _buildLoadingScreen(''),
+              child: LocationPermissionHandler(
+                child: const SplashScreen(),
+                loadingWidget: _buildLoadingScreen(''),
+              ),
             );
             _isCheckingVersion = false;
           });
         }
       } else {
         setState(() {
-          _homeWidget = LocationPermissionHandler(
-            child: const SplashScreen(),
+          _homeWidget = MicrophonePermissionHandler(
             loadingWidget: _buildLoadingScreen('Initializing app...'),
+            child: LocationPermissionHandler(
+              child: const SplashScreen(),
+              loadingWidget: _buildLoadingScreen('Initializing app...'),
+            ),
           );
           _isCheckingVersion = false;
         });
@@ -166,9 +173,12 @@ class _MyAppState extends State<MyApp> {
       debugPrint("Error checking app version: $e");
 
       setState(() {
-        _homeWidget = LocationPermissionHandler(
-          child: const SplashScreen(),
+        _homeWidget = MicrophonePermissionHandler(
           loadingWidget: _buildLoadingScreen('Initializing app...'),
+          child: LocationPermissionHandler(
+            child: const SplashScreen(),
+            loadingWidget: _buildLoadingScreen('Initializing app...'),
+          ),
         );
         _isCheckingVersion = false;
       });
