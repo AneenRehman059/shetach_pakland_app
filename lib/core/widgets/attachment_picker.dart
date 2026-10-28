@@ -97,7 +97,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -128,7 +127,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
                 ),
               ),
 
-              // Attachment Options Grid
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: GridView.count(
@@ -160,7 +158,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
                       iconColor: Colors.green,
                       title: 'Location',
                       onTap: () {
-                        // Handle location picker
                         Navigator.pop(context);
                       },
                     ),
@@ -169,7 +166,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
                       iconColor: Colors.orange,
                       title: 'Contact',
                       onTap: () {
-                        // Handle contact picker
                         Navigator.pop(context);
                       },
                     ),
@@ -196,7 +192,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
                       iconColor: Colors.brown,
                       title: 'Poll',
                       onTap: () {
-                        // Handle poll creation
                         Navigator.pop(context);
                       },
                     ),
@@ -205,7 +200,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
                       iconColor: Colors.red,
                       title: 'Event',
                       onTap: () {
-                        // Handle event creation
                         Navigator.pop(context);
                       },
                     ),
@@ -257,29 +251,14 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
       ),
     );
   }
-  // Future<void> _pickMedia() async {
-  //   final result = await FilePicker.platform.pickFiles(
-  //     allowMultiple: true,
-  //     type: FileType.media, // Images + Videos
-  //   );
-  //
-  //   if (result != null) {
-  //     List<File> files =
-  //     result.paths.map((path) => File(path!)).toList();
-  //
-  //     _addFiles(files);
-  //   }
-  // }
 
   Future<void> _pickMedia() async {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: [
-        // Video formats
         'mp4', 'mov', 'mkv', '3gp', 'avi', 'flv', 'webm',
 
-        //  Image formats
         'jpg', 'jpeg', 'png', 'gif', 'heic', 'webp'
       ],
     );
@@ -310,21 +289,11 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
     }
   }
 
-  // Future<void> _pickAudio() async {
-  //   final result = await FilePicker.platform.pickFiles(
-  //     allowMultiple: true,
-  //     type: FileType.audio,
-  //   );
-  //   if (result != null && result.files.isNotEmpty) {
-  //     _addFiles(result.files.map((e) => File(e.path!)).toList());
-  //   }
-  // }
   Future<void> _pickAudio() async {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: [
-        // 🎵 Audio formats
         'mp3', 'm4a', 'wav', 'aac', 'opus', 'ogg', 'amr',
       ],
     );
@@ -364,7 +333,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Selected Files Preview
         if (_files.isNotEmpty)
           Container(
             height: 100,
@@ -441,7 +409,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
             ),
           ),
 
-        // Add Attachment Button
         GestureDetector(
           onTap: _showAttachmentOptions,
           child: Container(
@@ -450,7 +417,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
             decoration: BoxDecoration(
               color: Colors.grey[200],
               borderRadius: BorderRadius.circular(24),
-              //border: Border.all(color: Colors.grey[300]!),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -474,7 +440,6 @@ class _WhatsAppAttachmentPickerState extends State<WhatsAppAttachmentPicker> {
           ),
         ),
 
-        // Total Size Info
         if (_files.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8.0, left: 8.0),

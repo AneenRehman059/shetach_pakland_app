@@ -1,11 +1,12 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
 import 'package:pakland/core/widgets/app_text_field.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 
 class FeedbackScreen extends StatefulWidget {
@@ -76,7 +77,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: AppHeaderBar(
         automaticallyImplyLeading: false,
         //leading: IconButton(onPressed: () => Get.back(),
         leading: IconButton(onPressed: () => Get.offAllNamed('/main_screen'),
@@ -308,10 +309,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             Container(
               color: Colors.black.withOpacity(0.3),
               child: Center(
-                child: SpinKitWave(
-                  color: AppColors.primaryColor,
-                  size: 50.0,
-                ),
+                child: AppLoader(size: 100),
               ),
             ),
         ],

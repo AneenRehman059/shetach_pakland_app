@@ -1,6 +1,6 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/core/constants/image_constant.dart';
@@ -10,6 +10,7 @@ import 'package:pakland/features/social/presentation/controllers/social_controll
 import 'package:pakland/features/billing/presentation/screens/payment_plan_detail_screen.dart';
 import 'package:pakland/core/widgets/status_bar_wrapper.dart';
 import 'package:pakland/core/controllers/theme_controller.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class UserFilesScreen extends StatefulWidget {
   @override
@@ -35,7 +36,7 @@ class _UserFilesScreenState extends State<UserFilesScreen> {
           return false;
         },
         child: Scaffold(
-          appBar: AppBar(
+          appBar: AppHeaderBar(
             title: Text("Pay Online",style: TextStyle(color: AppColors.whiteBg),),
             centerTitle: true,
             backgroundColor: AppColors.appColor,
@@ -60,7 +61,7 @@ class _UserFilesScreenState extends State<UserFilesScreen> {
                 height: double.infinity,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage(ImageConstant.pay_online_bg),
+                    image: AssetImage('assets/images/pay_online_bg_img.jpg'),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -76,10 +77,7 @@ class _UserFilesScreenState extends State<UserFilesScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SpinKitWave(
-                                color: AppColors.appColor,
-                                size: 50.0,
-                              ),
+                              AppLoader(size: 100),
                               SizedBox(height: 16),
                               Text(
                                 'Loading',
@@ -175,24 +173,3 @@ class _UserFilesScreenState extends State<UserFilesScreen> {
     );
   }
 }
-
-//
-// Container(
-// width: size,
-// height: size,
-// decoration: BoxDecoration(
-// shape: BoxShape.circle,
-// color: AppColors.whiteBg,
-// boxShadow: [
-// BoxShadow(
-// color: Colors.black.withOpacity(0.2),
-// blurRadius: 4,
-// offset: Offset(0, 2),
-// ),
-// ],
-// image: DecorationImage(
-// image: NetworkImage(imageUrl),
-// fit: BoxFit.contain,
-// ),
-// ),
-// ),

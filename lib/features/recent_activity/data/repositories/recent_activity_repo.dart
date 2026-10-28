@@ -6,7 +6,6 @@ import 'package:pakland/features/recent_activity/data/models/recent_activity_mod
 
 class RecentActivityRepository {
   Future<List<RecentActivityModel>> fetchActivity(String userId, String fromDate, String toDate) async {
-    // Construct the GET URL with query parameters
     final url = Uri.parse("${ApiConstants.recentActivityUrl}?user_id=$userId&from_date=$fromDate&to_date=$toDate");
 
     final response = await http.get(

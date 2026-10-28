@@ -1,13 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Reusable TextFormField matching the style used in FeedbackScreen
-/// Usage:
-/// AppTextField(
-///   label: 'Email *',
-///   controller: emailController,
-///   keyboardType: TextInputType.emailAddress,
-///   validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-/// )
 class AppTextField extends StatefulWidget {
   final String label;
   final TextEditingController? controller;
@@ -26,7 +18,7 @@ class AppTextField extends StatefulWidget {
   final Color borderColor;
   final double borderRadius;
   final Color fillColor;
-  final bool showCounter; // 👈 New: control counter visibility
+  final bool showCounter;
 
   const AppTextField({
     super.key,
@@ -47,7 +39,7 @@ class AppTextField extends StatefulWidget {
     this.borderColor = const Color.fromRGBO(142, 62, 99, 0.9),
     this.borderRadius = 8,
     this.fillColor = const Color(0xFFF5F7FB),
-    this.showCounter = false, // 👈 Default false
+    this.showCounter = false,
   });
 
   @override
@@ -87,8 +79,8 @@ class _AppTextFieldState extends State<AppTextField> {
       prefixIcon: widget.prefixIcon,
       suffixIcon: widget.suffixIcon,
       counterText: widget.showCounter && widget.maxLength != null
-          ? '$_charCount / ${widget.maxLength}' // 👈 Counter text
-          : '', // Hide counter if disabled
+          ? '$_charCount / ${widget.maxLength}'
+          : '',
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(color: widget.borderColor, width: 1),
         borderRadius: BorderRadius.circular(widget.borderRadius),

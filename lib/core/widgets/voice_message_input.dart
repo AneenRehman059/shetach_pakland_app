@@ -12,9 +12,9 @@ import 'package:pakland/core/widgets/chat_attachments_picker.dart';
 
 
 class VoiceMessageInput extends StatefulWidget {
-  final ValueChanged<File?> onSend; // This expects nullable
+  final ValueChanged<File?> onSend;
   final ValueChanged<String>? onTextSend;
-  final ValueChanged<File?>? onAttach; // This expects nullable
+  final ValueChanged<File?>? onAttach;
   final Function(File file, Function(double progress)? onProgress)? onUpload;
 
   const VoiceMessageInput({
@@ -189,38 +189,28 @@ class _VoiceMessageInputState extends State<VoiceMessageInput>
     }
   }
 
-  /// ----------------------------------------------------------------------
-  /// NEW: OPEN WHATSAPP ATTACHMENT PICKER SHEET
-  /// ----------------------------------------------------------------------
-  // In VoiceMessageInput widget, modify the _openAttachmentPicker function:
 
   void _openAttachmentPicker() {
     ChatFilePicker.openPickerSheet(
       context: context,
       onFilesSelected: (files) async {
         if (files.isNotEmpty) {
-          // Show WhatsApp-style preview before sending
           final shouldSend = await Navigator.of(context).push<bool>(
             MaterialPageRoute(
               builder: (context) => WhatsAppMultiFilePreview(
                 files: files,
                 onSend: () {
-                  // Just return true - don't send files here
                   Navigator.pop(context, true);
                 },
                 onCancel: () {
-                  // Return false to indicate cancel
                   Navigator.pop(context, false);
                 },
               ),
             ),
           );
 
-          // Only send files if user pressed send button
           if (shouldSend == true) {
-            // Send each file individually
             for (var file in files) {
-              // Add a small delay between sends to prevent overwhelming
               await Future.delayed(Duration(milliseconds: 100));
               widget.onAttach?.call(file);
             }
@@ -250,7 +240,6 @@ class _VoiceMessageInputState extends State<VoiceMessageInput>
       top: false,
       child: Column(
         children: [
-          // ---------------- UPLOADING UI ----------------
           if (_isUploading)
             Container(
               width: double.infinity,
@@ -271,7 +260,6 @@ class _VoiceMessageInputState extends State<VoiceMessageInput>
               ),
             ),
 
-          // ---------------- RECORDING UI ----------------
           if (_isRecording)
             Container(
               padding: EdgeInsets.all(10),
@@ -306,10 +294,8 @@ class _VoiceMessageInputState extends State<VoiceMessageInput>
               ),
             ),
 
-          // ---------------- MAIN INPUT AREA ----------------
           Row(
             children: [
-              // WhatsApp style attachment button
               Container(
                 margin: const EdgeInsets.only(left: 8),
                 child: IconButton(
@@ -322,7 +308,6 @@ class _VoiceMessageInputState extends State<VoiceMessageInput>
                 ),
               ),
 
-              // ---------------- TEXT FIELD ----------------
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -345,7 +330,6 @@ class _VoiceMessageInputState extends State<VoiceMessageInput>
                 ),
               ),
 
-              // ---------------- MIC OR SEND BUTTON ----------------
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 child: hasText

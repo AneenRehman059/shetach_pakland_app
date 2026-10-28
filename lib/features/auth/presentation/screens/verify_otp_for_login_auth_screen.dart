@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:pakland/features/auth/presentation/controllers/resend_otp_controller.dart';
 import 'package:pakland/features/auth/presentation/controllers/verify_otp_controller.dart';
-import 'package:pakland/features/auth/presentation/controllers/verify_otp_forLoginAuth_controller.dart';
+import 'package:pakland/features/auth/presentation/controllers/verify_otp_for_login_auth_controller.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/core/widgets/app_bar.dart';
@@ -128,10 +128,10 @@ class _VerifyOtpForLoginAuthScreenState extends State<VerifyOtpForLoginAuthScree
           children: [
             CustomAppBar(showBackButton: true),
             Expanded(
-              child: SingleChildScrollView( // Add this
+              child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: screenWidth * 0.06,
-                  vertical: screenHeight * 0.02, // Reduced vertical padding
+                  vertical: screenHeight * 0.02,
                 ),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
@@ -140,10 +140,10 @@ class _VerifyOtpForLoginAuthScreenState extends State<VerifyOtpForLoginAuthScree
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(height: screenHeight * 0.05), // Reduced spacing
+                      SizedBox(height: screenHeight * 0.05),
                       Icon(
                         Icons.lock_outline,
-                        size: screenHeight * 0.08, // Reduced icon size
+                        size: screenHeight * 0.08,
                         color: AppColors.appColor,
                       ),
                       SizedBox(height: screenHeight * 0.02),
@@ -164,7 +164,7 @@ class _VerifyOtpForLoginAuthScreenState extends State<VerifyOtpForLoginAuthScree
                             : "Enter the 4-digit code sent to\n${widget.phoneNumber}",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: screenWidth * 0.038, // Slightly reduced
+                          fontSize: screenWidth * 0.038,
                           color: Colors.grey.shade600,
                         ),
                       ),
@@ -179,8 +179,8 @@ class _VerifyOtpForLoginAuthScreenState extends State<VerifyOtpForLoginAuthScree
                         pinTheme: PinTheme(
                           shape: PinCodeFieldShape.box,
                           borderRadius: BorderRadius.circular(screenWidth * 0.03),
-                          fieldHeight: screenHeight * 0.06, // Reduced height
-                          fieldWidth: screenWidth * 0.15, // Adjusted width
+                          fieldHeight: screenHeight * 0.06,
+                          fieldWidth: screenWidth * 0.15,
                           activeFillColor: Colors.white,
                           inactiveFillColor: Colors.grey.shade100,
                           selectedFillColor: Colors.white,
@@ -229,7 +229,7 @@ class _VerifyOtpForLoginAuthScreenState extends State<VerifyOtpForLoginAuthScree
                           ),
                         ],
                       ),
-                      SizedBox(height: screenHeight * 0.05), // Add bottom padding
+                      SizedBox(height: screenHeight * 0.05),
                     ],
                   ),
                 ),

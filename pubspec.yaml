@@ -1,7 +1,7 @@
 name: pakland
 description: "A new Flutter project."
 publish_to: 'none'
-version: 1.0.4+6
+version: 1.0.5+6
 
 environment:
   sdk: ^3.7.0
@@ -66,6 +66,8 @@ dependencies:
   audioplayers: ^6.5.1
   google_maps_flutter: ^2.11.0
   gallery_saver_plus: ^3.2.9
+  intl_phone_field: ^3.2.0
+  lottie: ^3.3.3
 
 dev_dependencies:
   flutter_launcher_icons: "^0.14.4"
@@ -84,4 +86,19 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
-#    - assets/sounds/sos_alarm.mp3
+    - assets/icons/
+    - assets/videos/splash_video.mp4
+    - assets/images/loading.json
+    - assets/sounds/sos_alarm.mp3
+
+  fonts:                     # <-- NEW (app-wide font)
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700

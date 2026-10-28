@@ -34,16 +34,36 @@ class AccountStatementRequest {
 class AccountStatementResponse {
   final bool success;
   final String reportUrl;
+  final String message;
 
   AccountStatementResponse({
     required this.success,
     required this.reportUrl,
+    this.message = '',
   });
 
+  static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      for (final entry in json.entries) {
+        if (entry.key.toLowerCase() == key.toLowerCase() && entry.value != null) {
+          return entry.value;
+        }
+      }
+    }
+    return null;
+  }
+
   factory AccountStatementResponse.fromJson(Map<String, dynamic> json) {
+    final obj = json['obj'] is Map<String, dynamic> ? json['obj'] as Map<String, dynamic> : const <String, dynamic>{};
+    final rawSuccess = _pick(json, ['success']) ?? _pick(obj, ['success']);
+    final url = (_pick(json, ['reportUrl', 'report_url']) ?? _pick(obj, ['reportUrl', 'report_url']) ?? '').toString().trim();
+
     return AccountStatementResponse(
-      success: json['success'] ?? false,
-      reportUrl: json['reportUrl'] ?? '',
+      success: rawSuccess == null
+          ? url.isNotEmpty
+          : rawSuccess == true || rawSuccess.toString().toLowerCase() == 'true' || rawSuccess.toString() == '1',
+      reportUrl: url,
+      message: (_pick(json, ['message', 'msg']) ?? '').toString(),
     );
   }
 }

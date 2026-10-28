@@ -13,7 +13,6 @@ class EmergencyRequestScreen extends StatelessWidget {
     final topPadding = mediaQuery.padding.top;
     final bottomPadding = mediaQuery.padding.bottom;
 
-    // Responsive sizing
     final headerHeight = screenHeight * 0.32;
     final horizontalPadding = screenWidth * 0.06;
     final titleFontSize = screenWidth * 0.072;
@@ -29,7 +28,6 @@ class EmergencyRequestScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         body: Column(
           children: [
-            // ── Orange Header Section ──────────────────────────────
             Container(
               width: double.infinity,
               height: headerHeight,
@@ -50,7 +48,6 @@ class EmergencyRequestScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Title
                   Text(
                     'Emergency\nRequest sent!',
                     style: TextStyle(
@@ -62,7 +59,6 @@ class EmergencyRequestScreen extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: screenHeight * 0.022),
-                  // Subtitle
                   Text(
                     'Please stay calm!',
                     style: TextStyle(
@@ -84,7 +80,6 @@ class EmergencyRequestScreen extends StatelessWidget {
               ),
             ),
 
-            // ── "What next?" Section ───────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
@@ -104,7 +99,6 @@ class EmergencyRequestScreen extends StatelessWidget {
                     ),
                     SizedBox(height: screenHeight * 0.03),
 
-                    // Step 1
                     _StepItem(
                       isFirst: true,
                       isLast: false,
@@ -116,20 +110,7 @@ class EmergencyRequestScreen extends StatelessWidget {
                       screenHeight: screenHeight,
                     ),
 
-                    // Step 2
-                    // _StepItem(
-                    //   isFirst: false,
-                    //   isLast: false,
-                    //   isCompleted: false,
-                    //   description: 'Responder will reach your\nlocation',
-                    //   hasLink: true,
-                    //   linkText: 'Update location',
-                    //   stepFontSize: stepFontSize,
-                    //   screenWidth: screenWidth,
-                    //   screenHeight: screenHeight,
-                    // ),
 
-                    // Step 3
                     _StepItem(
                       isFirst: false,
                       isLast: true,
@@ -145,7 +126,6 @@ class EmergencyRequestScreen extends StatelessWidget {
               ),
             ),
 
-            // ── Bottom safe area ───────────────────────────────────
             SizedBox(height: bottomPadding),
           ],
         ),
@@ -154,7 +134,6 @@ class EmergencyRequestScreen extends StatelessWidget {
   }
 }
 
-// ── Step Item Widget ─────────────────────────────────────────────────────────
 
 class _StepItem extends StatelessWidget {
   const _StepItem({
@@ -194,12 +173,10 @@ class _StepItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Timeline column ──────────────────────────────────
           SizedBox(
             width: circleSize + screenWidth * 0.04,
             child: Column(
               children: [
-                // Top line (hidden for first item)
                 if (!isFirst)
                   Container(
                     width: lineWidth,
@@ -209,7 +186,6 @@ class _StepItem extends StatelessWidget {
                 else
                   SizedBox(height: screenHeight * 0.012),
 
-                // Circle dot
                 Container(
                   width: circleSize,
                   height: circleSize,
@@ -230,7 +206,6 @@ class _StepItem extends StatelessWidget {
                       : null,
                 ),
 
-                // Bottom line (hidden for last item)
                 if (!isLast)
                   Expanded(
                     child: Container(
@@ -244,7 +219,6 @@ class _StepItem extends StatelessWidget {
             ),
           ),
 
-          // ── Content column ───────────────────────────────────
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(
@@ -268,7 +242,6 @@ class _StepItem extends StatelessWidget {
                     SizedBox(height: screenHeight * 0.006),
                     GestureDetector(
                       onTap: () {
-                        // TODO: handle update location
                       },
                       child: Text(
                         linkText!,

@@ -12,10 +12,8 @@ class SocialController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // First time → show loader
     fetchBranches(showLoader: true);
 
-    // Poll every 10s silently → no loader, no blinking
     _timer = Timer.periodic(const Duration(seconds: 10), (_) {
       fetchBranches(showLoader: false);
     });
@@ -35,7 +33,6 @@ class SocialController extends GetxController {
         if (decoded["StatusCode"] == "200") {
           final List branchList = decoded["obj"]["Branchlist"];
 
-          // Skip the first item (code "000000" which is "All")
           final updatedBranches = branchList.skip(1).map<Map<String, dynamic>>((b) {
             return {
               'brn_code': b['brn_code'],
@@ -52,7 +49,6 @@ class SocialController extends GetxController {
             };
           }).toList();
 
-          // ✅ Only update if data changed
           if (branches.toString() != updatedBranches.toString()) {
             branches.assignAll(updatedBranches);
           }

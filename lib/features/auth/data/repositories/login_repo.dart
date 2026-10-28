@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/auth/data/models/login_model.dart';
+import 'package:pakland/features/auth/domain/repositories/login_repository.dart';
 
-class LoginRepository {
+class LoginRepository implements ILoginRepository {
   Future<Map<String, dynamic>> login(LoginRequestModel model) async {
     final response = await http.post(
       Uri.parse(ApiConstants.loginUrl),

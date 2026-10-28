@@ -9,12 +9,15 @@ import 'package:pakland/features/auth/presentation/screens/login_screen.dart';
 import 'package:pakland/features/auth/data/models/login_model.dart';
 import 'package:pakland/features/sos/data/models/sos_models.dart';
 import 'package:pakland/features/auth/data/repositories/login_repo.dart';
+import 'package:pakland/features/auth/domain/usecases/login_usecase.dart';
+import 'package:pakland/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:pakland/features/sos/data/repositories/sos_repo.dart';
 import 'package:pakland/features/company/presentation/controllers/get_company_controller.dart';
 
 class LoginController extends GetxController {
   var isLoading = false.obs;
-  final _repo = LoginRepository();
+  final LoginUseCase _loginUseCase = LoginUseCase(LoginRepository());
+  final LogoutUseCase _logoutUseCase = LogoutUseCase(LoginRepository());
   final _storage = const FlutterSecureStorage();
   final CompanyController companyController = Get.put(CompanyController());
   final SOSRepository _sosRepo = SOSRepository();
@@ -62,7 +65,7 @@ class LoginController extends GetxController {
       isLoading.value = true;
 
       final model = LoginRequestModel(username: username, password: password, latitude: latitude, longitude: longitude, deviceId: deviceId);
-      final response = await _repo.login(model);
+      final response = await _loginUseCase(model);
 
       lastStatusCode.value = response["StatusCode"]?.toString() ?? "";
 
@@ -87,14 +90,6 @@ class LoginController extends GetxController {
         return true;
 
       } else if (response["StatusCode"] == "409") {
-        // final message = response["Message"]?.toString() ?? "Access denied from this device.";
-        // showTopSnackBar(
-        //   context,
-        //   title: "Access Denied",
-        //   message,
-        //   Colors.red.withOpacity(0.7),
-        //   icon: Icons.warning,
-        // );
         return false;
 
       }
@@ -132,7 +127,7 @@ class LoginController extends GetxController {
 
       if (userId != null && userId.isNotEmpty) {
         try {
-          final response = await _repo.logoutApi(userId);
+          final response = await _logoutUseCase(userId);
           if (response["StatusCode"] == "200") {
             print('✅ Logout API called successfully');
           } else {
@@ -140,7 +135,6 @@ class LoginController extends GetxController {
           }
         } catch (e) {
           print('❌ Logout API error: $e');
-          // Continue logout even if API fails
         }
 
         if (userId != null && userId.isNotEmpty) {
@@ -156,27 +150,19 @@ class LoginController extends GetxController {
         await _storage.delete(key: "profile_image_path");
         await _storage.delete(key: "user_password");
 
-        // Optional: Delete biometric data as well
-        await _storage.delete(key: "biometric_enabled");
-        await _storage.delete(key: "biometric_username");
-        await _storage.delete(key: "biometric_password");
 
-        // Clear user type
         userType.value = "";
 
-        // Navigate to login screen
         Get.offAll(() => LoginScreen());
 
       }} catch (e) {
       print('❌ Error during logout: $e');
-      // Even if there's an error, still navigate to login
       Get.offAll(() => LoginScreen());
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Helper method to clear FCM token from server
   Future<void> _clearFCMToken(String userId) async {
     try {
       print('🔄 Clearing FCM token for user: $userId');
@@ -209,7 +195,6 @@ class LoginController extends GetxController {
         print('⚠️ No FCM token found to clear');
       }
 
-      // Also delete the token from Firebase
       await messaging.deleteToken();
       print('✅ FCM token deleted from Firebase');
 

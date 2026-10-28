@@ -6,8 +6,9 @@ import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/core/widgets/other_app_bar.dart';
 
 import 'package:pakland/core/constants/image_constant.dart';
-import 'package:pakland/core/constants/text_contants.dart';
+import 'package:pakland/core/constants/text_constants.dart';
 import 'package:pakland/core/widgets/app_bar.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class AboutUsScreen extends StatefulWidget {
   const AboutUsScreen({super.key,});
@@ -27,14 +28,12 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
     final isTablet = screenWidth > 600 && screenWidth < 1200;
     final isDesktop = screenWidth >= 1200;
 
-    // Responsive font sizes
     final double titleFontSize = isSmallScreen ? 14 : (isMediumScreen ? 15 : (isLargeScreen ? 16 : 18));
     final double bodyFontSize = isSmallScreen ? 12 : (isMediumScreen ? 13 : (isLargeScreen ? 14 : 15));
     final double quoteFontSize = isSmallScreen ? 12 : (isMediumScreen ? 13 : 14);
     final double marqueeFontSize = isSmallScreen ? 14 : (isMediumScreen ? 15 : 16);
     final double sectionTitleFontSize = isSmallScreen ? 16 : (isMediumScreen ? 17 : (isLargeScreen ? 18 : 20));
 
-    // Responsive spacing
     final double smallSpacing = screenHeight * 0.008;
     final double mediumSpacing = screenHeight * 0.012;
     final double largeSpacing = screenHeight * 0.02;
@@ -42,12 +41,10 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
     final double horizontalPadding = screenWidth * 0.04;
     final double sectionHorizontalPadding = isLargeScreen ? screenWidth * 0.1 : screenWidth * 0.04;
 
-    // Responsive image heights
     final double topImageHeight = isSmallScreen ? 130 : (isMediumScreen ? 150 : (isLargeScreen ? 300 : 220));
     final double metroImageHeight = isSmallScreen ? 150 : (isMediumScreen ? 180 : (isLargeScreen ? 200 : 220));
     final double bottomImageHeight = isSmallScreen ? 200 : (isMediumScreen ? 250 : (isLargeScreen ? 300 : 350));
 
-    // Responsive container widths
     final double journeyTextWidth = isSmallScreen ? screenWidth * 0.7 : (isMediumScreen ? 250 : (isLargeScreen ? 300 : 350));
     final double missionContainerWidth = isSmallScreen ? screenWidth * 0.8 : (isMediumScreen ? screenWidth * 0.75 : screenWidth * 0.7);
     final double successTextPadding = isLargeScreen ? screenWidth * 0.2 : screenWidth * 0.15;
@@ -58,7 +55,7 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppHeaderBar(
           title: Text(
             "About Us",
             style: TextStyle(
@@ -224,7 +221,7 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
                       SizedBox(height: sectionSpacing),
                       Image.asset(
                         height: metroImageHeight,
-                        ImageConstant.metro,
+                        'assets/images/metro.jpg',
                         fit: BoxFit.cover,
                         width: double.infinity,
                       ),
@@ -281,7 +278,7 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
                                     children: [
                                       Image.asset(
                                         height: bottomImageHeight,
-                                        ImageConstant.bsm_g,
+                                        'assets/images/bsm_g.jpg',
                                         fit: BoxFit.cover,
                                         width: double.infinity,
                                       ),

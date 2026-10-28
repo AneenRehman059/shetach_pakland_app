@@ -1,14 +1,13 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/core/constants/image_constant.dart';
 import 'package:pakland/features/social/presentation/controllers/social_controller.dart';
 import 'package:pakland/features/social/presentation/screens/social_media_links_screen.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class SocialScreen extends StatefulWidget {
-
   SocialScreen({super.key});
 
   @override
@@ -17,138 +16,226 @@ class SocialScreen extends StatefulWidget {
 
 class _SocialScreenState extends State<SocialScreen> {
   final SocialController controller = Get.put(SocialController());
+
+  static const Color _pageBg = Color(0xFFF4F7FA);
+
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final buttonSize = screenSize.width * 0.20;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth > 900 ? 4 : (screenWidth > 600 ? 3 : 2);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Social",style: TextStyle(color: AppColors.whiteBg),),
+      backgroundColor: _pageBg,
+      appBar: AppHeaderBar(
+        title: const Text("Social"),
         centerTitle: true,
-        backgroundColor: AppColors.appColor,
-        iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: Stack(
-        children: [
-          Opacity(
-            opacity: 0.3,
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/social1.jpg'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-
-          Column(
-            children: [
-              SizedBox(height: 10,),
-              Obx(() {
-                if (controller.isLoading.value && controller.branches.isEmpty) {
-
-                  return Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SpinKitWave(
-                            color: AppColors.appColor,
-                            size: 50.0,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Loading',
-                            style: TextStyle(color: AppColors.appColor),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                return Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 30,
-                      childAspectRatio: 1.1,
-                      children: controller.branches.map((branch) {
-                        return _buildSocialButton(
-                          branch['image_url'] ?? '',
-                          branch['brn_code'] ?? '',
-                          branch['brn_name'] ?? '',
-                          buttonSize,
-                          context,
-                        );
-                      }).toList(),
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.isLoading.value && controller.branches.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppLoader(size: (screenWidth * 0.14) * 1.8),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.appColor,
                     ),
                   ),
-                );
-              }),
-            ],
-          ),
-
-          /// Bottom overlay image
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Opacity(
-              opacity: 0.2,
-              child: Image.asset(
-                'assets/images/social2.png',
-                height: 200,
-                fit: BoxFit.fitWidth,
+                ],
               ),
-            ),
-          ),
-        ],
+            );
+          }
+
+          if (controller.branches.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: AppColors.appColor.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.share_rounded,
+                        size: 40, color: AppColors.appColor.withOpacity(0.6)),
+                  ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    "No projects found",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2B3A42),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final branches = controller.branches;
+
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(child: _buildHeader(branches.length)),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: 0.95,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                      final branch = branches[index];
+                      return _buildProjectCard(
+                        branch['brn_code'] ?? '',
+                        branch['brn_name'] ?? '',
+                      );
+                    },
+                    childCount: branches.length,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
       ),
     );
   }
 
-  Widget _buildSocialButton( String imageUrl, String brnCode, String brnName, double size, BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Get.to(() => SocialMediaLinksScreen(brnCode: brnCode));
-        print(brnCode);
-      },
-      child:Column(
-        children: [
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.whiteBg,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
+  Widget _buildHeader(int count) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.appColor, AppColors.lightAppColor],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.appColor.withOpacity(0.25),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Icon(Icons.share_rounded, color: Colors.white, size: 26),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Stay Connected",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Select a project to follow it on social media ($count available).",
+                    style: const TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.35),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProjectCard(String brnCode, String brnName) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => Get.to(() => SocialMediaLinksScreen(brnCode: brnCode)),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.appColor.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.all(14),
+                    child: Image.asset(ImageConstant.logo, fit: BoxFit.contain),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  brnName,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                    color: AppColors.appColor,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "View links",
+                      style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(width: 3),
+                    Icon(Icons.arrow_forward_rounded, size: 13, color: Colors.grey.shade600),
+                  ],
                 ),
               ],
             ),
-            child: Padding(
-              padding: EdgeInsets.all(8.0),
-              child: ClipOval(
-                child: Image.asset(
-                  ImageConstant.logo,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
           ),
-          SizedBox(height: 6),
-          Text(
-            brnName,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ],
+        ),
       ),
     );
   }

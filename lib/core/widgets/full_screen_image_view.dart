@@ -1,3 +1,4 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -37,7 +38,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
 
       onVerticalDragEnd: (details) {
         if (details.primaryVelocity! > 300) {
-          Navigator.pop(context); // swipe down -> close screen
+          Navigator.pop(context);
         }
       },
 
@@ -75,7 +76,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
           },
 
           loadingBuilder: (context, event) => const Center(
-            child: CircularProgressIndicator(color: Colors.white),
+            child: AppLoader(),
           ),
 
           backgroundDecoration: const BoxDecoration(color: Colors.black),

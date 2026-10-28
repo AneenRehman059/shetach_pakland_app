@@ -10,7 +10,6 @@ class PayOnlineController extends GetxController {
   var errorMessage = ''.obs;
   var hasData = false.obs;
 
-  // Store parameters for later use
   var currentUsername = ''.obs;
   var currentBrnCode = ''.obs;
   var currentBlockNo = ''.obs;
@@ -26,7 +25,6 @@ class PayOnlineController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
-      // Store parameters
       currentUsername.value = username;
       currentBrnCode.value = brnCode;
       currentBlockNo.value = blockNo;
@@ -40,7 +38,7 @@ class PayOnlineController extends GetxController {
             "&plot_no=$plotNo",
       );
 
-      print('Fetching client details from: $uri'); // Debug log
+      print('Fetching client details from: $uri');
 
       final response = await http.get(
         uri,
@@ -68,13 +66,11 @@ class PayOnlineController extends GetxController {
     }
   }
 
-  // Helper method to check if Clientdetaillist is empty
   bool isClientDetailListEmpty() {
     return clientDetailModel.value?.obj.clientDetailList == null ||
         clientDetailModel.value!.obj.clientDetailList!.isEmpty;
   }
 
-  // Helper method to get all brn_codes from Clientdetaillist
   List<String> getAllBrnCodes() {
     if (isClientDetailListEmpty()) {
       return [];
@@ -89,7 +85,6 @@ class PayOnlineController extends GetxController {
     return brnCodes;
   }
 
-  // Helper method to get first brn_code
   String getFirstBrnCode() {
     if (isClientDetailListEmpty()) {
       return '';
@@ -97,7 +92,6 @@ class PayOnlineController extends GetxController {
     return clientDetailModel.value!.obj.clientDetailList!.first.brnCode;
   }
 
-  // Helper method to get Clientdetaillist count
   int getClientDetailListCount() {
     if (isClientDetailListEmpty()) {
       return 0;
@@ -105,7 +99,6 @@ class PayOnlineController extends GetxController {
     return clientDetailModel.value!.obj.clientDetailList!.length;
   }
 
-  // Helper method to get client details by index
   ClientDetail? getClientDetailByIndex(int index) {
     if (isClientDetailListEmpty() ||
         index < 0 ||
@@ -115,7 +108,6 @@ class PayOnlineController extends GetxController {
     return clientDetailModel.value!.obj.clientDetailList![index];
   }
 
-  // Helper method to iterate through all client details
   void iterateThroughClientDetails(Function(ClientDetail) callback) {
     if (isClientDetailListEmpty()) {
       return;
@@ -126,7 +118,6 @@ class PayOnlineController extends GetxController {
     }
   }
 
-  // Method to refresh client details with current stored parameters
   Future<void> refreshClientDetails() async {
     if (currentUsername.value.isNotEmpty &&
         currentBrnCode.value.isNotEmpty &&
@@ -141,7 +132,6 @@ class PayOnlineController extends GetxController {
     }
   }
 
-  // Optional: Add a method to reset data if needed
   void resetData() {
     clientDetailModel.value = null;
     hasData.value = false;

@@ -1,3 +1,4 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -23,10 +24,9 @@ class AppDialogs {
       ),
       child: Row(
         children: [
-          // Use a back button that matches the platform's style
           IconButton(
             onPressed: () => Get.back(),
-            icon: Icon(Icons.close, color: AppColors.textPrimaryColor), // Changed to 'close' for dialogs
+            icon: Icon(Icons.close, color: AppColors.textPrimaryColor),
           ),
           Expanded(
             child: Text(
@@ -39,7 +39,7 @@ class AppDialogs {
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(width: 48), // Spacer to balance the title
+          const SizedBox(width: 48),
         ],
       ),
     );
@@ -205,7 +205,6 @@ class AppDialogs {
     );
   }
 
-// ===== OPTIMIZED STATUS & PRIORITY DIALOG =====
   static Future<Map<String, String>?> pickStatusAndPriority({
     String initialStatus = 'Open',
     String initialPriority = 'Medium',
@@ -238,7 +237,6 @@ class AppDialogs {
         child: SingleChildScrollView(
           child: StatefulBuilder(
             builder: (context, setState) {
-              // Determine if Save button should be enabled
               final bool isSaveEnabled = userType == "Admin"
                   ? (selectedStatus != null && selectedPriority != null)
                   : selectedStatus != null;
@@ -252,7 +250,6 @@ class AppDialogs {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Status Dropdown
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -298,7 +295,6 @@ class AppDialogs {
                         ),
                         const SizedBox(height: 16),
 
-                        // Priority Dropdown - Only for Admin
                         userType == "Admin"
                             ? Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +340,6 @@ class AppDialogs {
                         )
                             : const SizedBox(height: 0),
 
-                        // Closing Remarks Field
                         if (selectedStatus == 'Closed') ...[
                           const SizedBox(height: 16),
                           TextField(
@@ -361,7 +356,6 @@ class AppDialogs {
                       ],
                     ),
                   ),
-                  // Dialog Actions
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -397,7 +391,7 @@ class AppDialogs {
                                 'remarks': commentController.text.trim(),
                             });
                           }
-                              : null, // Disable button when not enabled
+                              : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isSaveEnabled
                                 ? AppColors.primaryColor
@@ -422,12 +416,11 @@ class AppDialogs {
       ),
     );
   }
-  // ===== ASSIGNMENT DIALOG (Uses int for User ID) =====
   static Future<Map<String, dynamic>?> showAssignmentDialog({
     required List<Map<String, dynamic>> departmentUsers,
     required bool isLoadingUsers,
   }) {
-    String? selectedUserId; // Use int? for the user ID
+    String? selectedUserId;
     DateTime? dueDate;
     String? remarks;
 
@@ -443,7 +436,6 @@ class AppDialogs {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  //header(title: 'Assign Ticket'),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -458,10 +450,10 @@ class AppDialogs {
                             height: 50,
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.appColor)),
-                            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                            child: const Center(child: AppLoader()),
                           )
                         else
-                          AppDropdown<String>( // Use AppDropdown<int>
+                          AppDropdown<String>(
                             dropdownWidth: MediaQuery.of(context).size.width * 0.8,
                             hint: const Text('Select User', style: TextStyle(fontSize: 14, color: Colors.black54)),
                             value: selectedUserId,
@@ -471,13 +463,13 @@ class AppDialogs {
                               final userName = user['user_name']?.toString() ?? 'Unknown';
                               final userType = user['user_type']?.toString() ?? '';
 
-                              if (userId == null) return null; // Skip if user ID is invalid
+                              if (userId == null) return null;
 
                               return DropdownMenuItem<String>(
                                 value: userId,
                                 child: Text(userName, style: const TextStyle(fontWeight: FontWeight.w500)),
                               );
-                            }).whereType<DropdownMenuItem<String>>().toList(), // Filter out nulls
+                            }).whereType<DropdownMenuItem<String>>().toList(),
                             onChanged: (val) => setState(() => selectedUserId = val),
                           ),
                         if (departmentUsers.isEmpty && !isLoadingUsers)
@@ -542,46 +534,7 @@ class AppDialogs {
     );
   }
 
-  // ===== Helper Widgets for Dialogs =====
 
-  // static Widget _buildDropdown({
-  //   required String hintText,
-  //   required String label,
-  //   String? value,
-  //   required List<String> items,
-  //   required void Function(String?) onChanged,
-  // }) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Text(
-  //         label,
-  //         style: TextStyle(
-  //           fontSize: 16,
-  //           fontWeight: FontWeight.bold,
-  //           color: AppColors.textSecondaryColor,
-  //         ),
-  //       ),
-  //       const SizedBox(height: 8),
-  //       AppDropdown<String>(
-  //         hint: Text(
-  //           hintText,
-  //           style: const TextStyle(fontSize: 14, color: Colors.black54),
-  //         ),
-  //         value: value, // ✅ null allowed
-  //         items: items
-  //             .map(
-  //               (e) => DropdownMenuItem<String>(
-  //             value: e,
-  //             child: Text(e),
-  //           ),
-  //         )
-  //             .toList(),
-  //         onChanged: onChanged,
-  //       ),
-  //     ],
-  //   );
-  // }
 
 
 
@@ -600,12 +553,11 @@ class AppDialogs {
   static Widget _buildOptionalFields({
     required ValueChanged<DateTime?> onDueDateChanged,
     required ValueChanged<String?> onRemarksChanged,
-    DateTime? initialDueDate, // Allow passing an initial due date
+    DateTime? initialDueDate,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Due Date Picker
         Text('Optional Fields', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondaryColor)),
         const SizedBox(height: 8),
         ListTile(
@@ -626,7 +578,6 @@ class AppDialogs {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: AppColors.dividerColor)),
         ),
         const SizedBox(height: 16),
-        // Remarks Field
         TextField(
           maxLines: 2,
           onChanged: onRemarksChanged,

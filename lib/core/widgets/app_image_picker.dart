@@ -17,7 +17,7 @@ class AppImagePicker extends StatefulWidget {
     required this.onChanged,
     this.multiple = true,
     this.initialPaths,
-    this.accentColor = const Color.fromRGBO(142, 62, 99, 1), // Use a constant value as default
+    this.accentColor = const Color.fromRGBO(142, 62, 99, 1),
   });
 
   @override

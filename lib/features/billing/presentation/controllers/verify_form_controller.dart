@@ -58,15 +58,15 @@ class VerifyFormController extends GetxController {
   Color get statusColor {
     switch (formStatus.value.toUpperCase()) {
       case 'I':
-        return Colors.green; // bg-success-custom
+        return Colors.green;
       case 'R':
-        return Colors.orange; // bg-warning-custom
+        return Colors.orange;
       case 'C':
-        return Colors.red; // bg-danger-custom
+        return Colors.red;
       case 'A':
-        return Colors.blue; // bg-info-custom
+        return Colors.blue;
       default:
-        return Colors.grey; // bg-secondary
+        return Colors.grey;
     }
   }
 

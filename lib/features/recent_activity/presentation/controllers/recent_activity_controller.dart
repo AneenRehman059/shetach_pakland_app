@@ -13,7 +13,6 @@ class RecentActivityController extends GetxController {
   RxBool isLoading = false.obs;
   RxList<RecentActivityModel> activityList = <RecentActivityModel>[].obs;
 
-  // For date filtering
   Rx<DateTime> fromDate = DateTime.now().obs;
   Rx<DateTime> toDate = DateTime.now().obs;
 

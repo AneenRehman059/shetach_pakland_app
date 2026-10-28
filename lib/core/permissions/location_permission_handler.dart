@@ -1,7 +1,8 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:pakland/core/permissions/location_permisson.dart';
+import 'package:pakland/core/permissions/location_permission.dart';
 
 class LocationPermissionHandler extends StatefulWidget {
   final Widget child;
@@ -31,14 +32,14 @@ class _LocationPermissionHandlerState extends State<LocationPermissionHandler> {
       _isChecking = true;
     });
 
-    // Check current permission status
     final status = await LocationPermissionService.checkLocationPermission();
 
-    // If permission is not granted, directly request it
     if (!status.isGranted) {
       await LocationPermissionService.requestLocationPermission();
+      await Future.delayed(const Duration(milliseconds: 400));
     }
 
+    if (!mounted) return;
     setState(() {
       _isChecking = false;
     });
@@ -54,7 +55,7 @@ class _LocationPermissionHandlerState extends State<LocationPermissionHandler> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
+                  AppLoader(),
                   SizedBox(height: 20),
                   Text('Checking location permission...'),
                 ],
@@ -63,7 +64,6 @@ class _LocationPermissionHandlerState extends State<LocationPermissionHandler> {
           );
     }
 
-    // Always return the child widget, regardless of permission status
     return widget.child;
   }
 }

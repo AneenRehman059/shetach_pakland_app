@@ -2,9 +2,11 @@ import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:pakland/features/auth/data/repositories/forgot_password_repo.dart';
+import 'package:pakland/features/auth/domain/usecases/send_otp_auth_device_usecase.dart';
 
 class SendOtpAuthDeviceController extends GetxController {
-  final _repo = ForgotPasswordRepository();
+  final SendOtpAuthDeviceUseCase _sendOtpAuthDeviceUseCase =
+      SendOtpAuthDeviceUseCase(ForgotPasswordRepository());
   final _storage = const FlutterSecureStorage();
   var isLoading = false.obs;
 
@@ -34,7 +36,7 @@ class SendOtpAuthDeviceController extends GetxController {
         "webViewVersion": "string"
       };
 
-      final response = await _repo.sendOtpToAuthDev(body);
+      final response = await _sendOtpAuthDeviceUseCase(body);
       print("~~~~~~~~~~~~~~~~~~~~~$response~~~~~~~~~~~~~~~~~~~~~~~~");
       return response;
     } catch (e) {

@@ -8,7 +8,7 @@ class MessageTextField extends StatelessWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
-  final bool readOnly; // Added readOnly parameter
+  final bool readOnly;
   final double? borderRadius;
 
   const MessageTextField({
@@ -19,7 +19,7 @@ class MessageTextField extends StatelessWidget {
     this.controller,
     this.onChanged,
     this.validator,
-    this.readOnly = false, // Default to false for backward compatibility
+    this.readOnly = false,
     this.borderRadius,
   });
 
@@ -39,12 +39,12 @@ class MessageTextField extends StatelessWidget {
         Container(
           height: 120,
           decoration: BoxDecoration(
-            color: readOnly ? Colors.grey[100] : AppColors.bgColor, // Different background when read-only
+            color: readOnly ? Colors.grey[100] : AppColors.bgColor,
             borderRadius:  BorderRadius.circular(
     borderRadius ?? 8,
     ),
             border: Border.all(
-              color: readOnly ? Colors.grey : AppColors.appColor, // Different border color when read-only
+              color: readOnly ? Colors.grey : AppColors.appColor,
             ),
           ),
           child: Stack(
@@ -56,8 +56,8 @@ class MessageTextField extends StatelessWidget {
                 maxLines: null,
                 expands: true,
                 maxLength: 500,
-                readOnly: readOnly, // Added readOnly property
-                enabled: !readOnly, // Disable when read-only
+                readOnly: readOnly,
+                enabled: !readOnly,
                 textAlignVertical: TextAlignVertical.top,
                 decoration: InputDecoration(
                   contentPadding: const EdgeInsets.symmetric(
@@ -67,7 +67,7 @@ class MessageTextField extends StatelessWidget {
                   hintText: hintText,
                   hintStyle: TextStyle(
                     fontSize: 14,
-                    color: readOnly ? Colors.grey : Colors.black38, // Different hint color when read-only
+                    color: readOnly ? Colors.grey : Colors.black38,
                   ),
                   border: UnderlineInputBorder(
                     borderSide: BorderSide.none,
@@ -92,13 +92,13 @@ class MessageTextField extends StatelessWidget {
                     borderRadius: BorderRadius.circular(
                       borderRadius ?? 8,
                     ),
-                  ), // Added for read-only state
-                  counterText: "", // Hide the default counter
-                  filled: readOnly, // Fill background when read-only
-                  fillColor: readOnly ? Colors.grey[100] : null, // Fill color when read-only
+                  ),
+                  counterText: "",
+                  filled: readOnly,
+                  fillColor: readOnly ? Colors.grey[100] : null,
                 ),
                 style: TextStyle(
-                  color: readOnly ? Colors.grey[700] : Colors.black, // Different text color when read-only
+                  color: readOnly ? Colors.grey[700] : Colors.black,
                 ),
               ),
               Positioned(

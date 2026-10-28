@@ -22,7 +22,7 @@ class DateFilterButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() => SizedBox(
-      height: 35, // ✅ Match height with search bar
+      height: 35,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: AppColors.primaryColor, width: 1.2),
@@ -30,7 +30,7 @@ class DateFilterButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           padding:
-          const EdgeInsets.symmetric(horizontal: 8, vertical: 0), // Compact
+          const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
         ),
         iconAlignment: IconAlignment.start,
         icon: Icon(Icons.calendar_today,

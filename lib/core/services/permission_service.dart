@@ -1,4 +1,3 @@
-// Permission Service Class
 import 'dart:io';
 
 import 'package:permission_handler/permission_handler.dart';
@@ -6,11 +5,9 @@ import 'package:permission_handler/permission_handler.dart';
 class PermissionService {
   static Future<bool> requestStoragePermission() async {
     if (Platform.isAndroid) {
-      // This will show the system dialog
       final status = await Permission.storage.request();
       return status.isGranted;
     } else {
-      // For iOS
       final status = await Permission.photos.request();
       return status.isGranted;
     }

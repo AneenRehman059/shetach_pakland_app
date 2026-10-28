@@ -17,8 +17,6 @@ class BiometricLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!isEnabled) return const SizedBox.shrink();
-
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -27,10 +25,14 @@ class BiometricLoginButton extends StatelessWidget {
             icon: Icon(
               Icons.fingerprint,
               size: size,
-              color: AppColors.whiteBg,
+              color: isEnabled
+                  ? AppColors.whiteBg
+                  : AppColors.whiteBg.withOpacity(0.4),
             ),
             onPressed: onPressed,
-            tooltip: 'Login with fingerprint',
+            tooltip: isEnabled
+                ? 'Login with fingerprint'
+                : 'Enable biometric login from app settings',
           ),
         ],
       ),

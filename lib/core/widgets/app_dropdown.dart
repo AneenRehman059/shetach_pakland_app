@@ -3,15 +3,6 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 
 import 'package:pakland/core/theme/colors.dart';
 
-/// Reusable dropdown widget matching the style used in BookingScreen
-///
-/// Example:
-/// AppDropdown<String>(
-///   hint: Text('Select Project', style: TextStyle(fontSize: 14, color: Colors.black54)),
-///   value: selected,
-///   items: options.map((e) => DropdownMenuItem<String>(value: e, child: Text(e))).toList(),
-///   onChanged: (v) => setState(() => selected = v),
-/// )
 class AppDropdown<T> extends StatelessWidget {
   final Widget? hint;
   final T? value;
@@ -20,7 +11,6 @@ class AppDropdown<T> extends StatelessWidget {
   final bool isExpanded;
   final bool enabled;
 
-  // Style overrides
   final double buttonHeight;
   final EdgeInsetsGeometry buttonPadding;
   final double borderRadius;
@@ -40,11 +30,10 @@ class AppDropdown<T> extends StatelessWidget {
     required this.onChanged,
     this.isExpanded = true,
     this.enabled = true,
-    // defaults copied from BookingScreen
     this.buttonHeight = 35,
     this.buttonPadding = const EdgeInsets.only(left: 14, right: 14),
     this.borderRadius = 10,
-    this.borderColor = const Color(0xFF8E3E63), // AppColors.appColor fallback literal
+    this.borderColor = const Color(0xFF8E3E63),
     this.backgroundColor = Colors.white,
     this.iconSize = 30,
     this.iconColor = Colors.black45,

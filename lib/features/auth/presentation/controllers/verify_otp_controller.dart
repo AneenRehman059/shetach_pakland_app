@@ -5,6 +5,7 @@ import 'package:pakland/features/auth/data/models/signup_model.dart';
 import 'package:pakland/features/auth/data/repositories/signup_repo.dart';
 import 'package:pakland/features/auth/data/repositories/verify_otp_repo.dart';
 import 'package:pakland/features/auth/data/repositories/login_repo.dart';
+import 'package:pakland/features/auth/domain/usecases/verify_otp_usecase.dart';
 
 import 'package:pakland/core/widgets/toast_message.dart';
 import 'package:pakland/features/auth/presentation/screens/login_screen.dart';
@@ -12,7 +13,7 @@ import 'package:pakland/features/auth/presentation/screens/verify_otp_screen.dar
 
 class VerifyOtpController extends GetxController {
   var isLoading = false.obs;
-  final _repo = VerifyOtpRepo();
+  final VerifyOtpUseCase _verifyOtpUseCase = VerifyOtpUseCase(VerifyOtpRepo());
   final _loginRepo = LoginRepository();
   final _storage = const FlutterSecureStorage();
   String? phoneNumber;
@@ -21,7 +22,7 @@ class VerifyOtpController extends GetxController {
     try {
       isLoading.value = true;
       phoneNumber = model.mobileNo;
-      final response = await _repo.verifyOtp(model);
+      final response = await _verifyOtpUseCase(model);
 
       if (response["StatusCode"] == "200") {
         Navigator.push(
@@ -31,7 +32,6 @@ class VerifyOtpController extends GetxController {
           ),
         );
 
-        // showTopSnackBar(context, "Otp Verify successfully.", Colors.green.withOpacity(0.7), icon: Icons.check_circle);
         showTopSnackBar(context, "Password updated successfully.", Colors.green.withOpacity(0.7), icon: Icons.check_circle);
         print("Signed up successfully.");
         return;
@@ -49,7 +49,6 @@ class VerifyOtpController extends GetxController {
         return;
       }
 
-      // Handle any other status codes
       showTopSnackBar(context, "Unexpected response. Please try again.", Colors.red.withOpacity(0.7), icon: Icons.warning);
 
     } catch (e) {
@@ -64,7 +63,7 @@ class VerifyOtpController extends GetxController {
     try {
       isLoading.value = true;
       phoneNumber = model.mobileNo;
-      final response = await _repo.verifyOtp(model);
+      final response = await _verifyOtpUseCase(model);
 
       if (response["StatusCode"] == "200") {
         Navigator.push(
@@ -74,7 +73,6 @@ class VerifyOtpController extends GetxController {
           ),
         );
 
-        // showTopSnackBar(context, "Otp Verify successfully.", Colors.green.withOpacity(0.7), icon: Icons.check_circle);
         showTopSnackBar(context, "Signed up successfully.", Colors.green.withOpacity(0.7), icon: Icons.check_circle);
         print("Signed up successfully.");
         return;
@@ -92,7 +90,6 @@ class VerifyOtpController extends GetxController {
         return;
       }
 
-      // Handle any other status codes
       showTopSnackBar(context, "Unexpected response. Please try again.", Colors.red.withOpacity(0.7), icon: Icons.warning);
 
     } catch (e) {

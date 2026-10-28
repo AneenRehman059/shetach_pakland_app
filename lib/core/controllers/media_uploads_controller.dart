@@ -9,7 +9,6 @@ import 'package:pakland/core/constants/api_constant.dart';
 
 
 class MediaController extends GetxController {
-  /// Upload one or many media files to CMS API
   Future<List<Map<String, dynamic>>?> uploadMedia(
       List<File> files,
       String userId,
@@ -43,21 +42,18 @@ class MediaController extends GetxController {
             file.path,
             filename: fileName,
           ));
-          // The server reads file.FileName for OriginalFileName; optional hint:
-          request.fields['UserId'] = userId; // ensure present
-          request.fields['TicketId'] = TicketId; // ensure present
+          request.fields['UserId'] = userId;
+          request.fields['TicketId'] = TicketId;
           if (module != null) request.fields['Module'] = module;
           if (moduleItemId != null) request.fields['ModuleItemId'] = moduleItemId.toString();
           if (commentId != null) request.fields['CommentId'] = commentId.toString();
           if (purposeName != null) request.fields['PurposeName'] = purposeName;
         }
 
-        // Send request
         final streamedResponse = await request.send();
         return await http.Response.fromStream(streamedResponse);
       }
 
-      // Attempt 1: use repeated 'File'
       http.Response response = await _send(List.filled(files.length, 'File'));
 
       if (response.statusCode == 200) {
@@ -69,14 +65,12 @@ class MediaController extends GetxController {
             final obj = responseData['obj'];
             print('📎 Upload obj: $obj');
 
-            // Handle response format from your backend
             if (obj is List) {
               if (obj.isEmpty) {
                 print('❌ Upload failed: Empty result list');
                 return null;
               }
               return obj.map<Map<String, dynamic>>((result) {
-                // Handle different response formats from backend
                 return {
                   'id': result['id'] ?? result['Id'],
                   'path': result['path'] ?? result['FilePath'],
@@ -86,7 +80,6 @@ class MediaController extends GetxController {
                 };
               }).toList();
             } else if (obj is Map<String, dynamic>) {
-              // Single file returned
               return [
                 {
                   'id': obj['id'] ?? obj['Id'],
@@ -111,7 +104,6 @@ class MediaController extends GetxController {
         }
       } else {
         print('❌ Upload failed: HTTP ${response.statusCode} - ${response.body}');
-        // If first attempt failed and retry enabled, try indexed field names
         if (retryAlternateFieldNames) {
           final altFields = List<String>.generate(files.length, (i) => 'File[$i]');
           final altResponse = await _send(altFields);
@@ -150,7 +142,6 @@ class MediaController extends GetxController {
     }
   }
 
-  /// Wrapper: Upload single file
   Future<Map<String, dynamic>?> uploadSingleFile(
       File file,
       String userId,
@@ -175,7 +166,6 @@ class MediaController extends GetxController {
       onProgress: onProgress,
     );
 
-    // Safe access to first element
     if (result != null && result.isNotEmpty) {
       return result.first;
     } else {
@@ -184,7 +174,6 @@ class MediaController extends GetxController {
     }
   }
 
-  /// Wrapper: Upload multiple files
   Future<List<Map<String, dynamic>>?> uploadMultipleFiles(
       List<File> files,
       String userId,
@@ -206,7 +195,6 @@ class MediaController extends GetxController {
     );
   }
 
-  /// Deletes a media file by its ID
   Future<bool> deleteMedia(int mediaId) async {
     try {
       final response = await http.delete(
@@ -229,7 +217,6 @@ class MediaController extends GetxController {
     }
   }
 
-  /// Retrieves media info by ID
   Future<Map<String, dynamic>?> getMedia(int mediaId) async {
     try {
       final response = await http.get(
@@ -251,7 +238,6 @@ class MediaController extends GetxController {
     }
   }
 
-  /// Updates media metadata
   Future<bool> updateMedia(int mediaId, String fileType, String originalFileName) async {
     try {
       final response = await http.put(
@@ -276,14 +262,12 @@ class MediaController extends GetxController {
     }
   }
 
-  /// Build media URL
   String getMediaUrl(String filePath) {
     if (filePath.startsWith('http')) return filePath;
     final baseUrl = ApiConstants.baseUrl;
     return filePath.startsWith('/') ? '$baseUrl$filePath' : '$baseUrl/$filePath';
   }
 
-  /// File type helpers
   bool isImageFile(String fileName) =>
       ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'].contains(p.extension(fileName).toLowerCase());
 
@@ -296,19 +280,16 @@ class MediaController extends GetxController {
   bool isVideoFile(String fileName) =>
       ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm'].contains(p.extension(fileName).toLowerCase());
 
-  /// Validate file size (10MB limit as per your backend)
   bool validateFileSize(File file, [int maxSizeMB = 10]) {
     final sizeInBytes = file.lengthSync();
     final sizeInMB = sizeInBytes / (1024 * 1024);
     return sizeInMB <= maxSizeMB;
   }
 
-  /// Get file extension from path
   String getFileExtension(String fileName) {
     return p.extension(fileName).toLowerCase();
   }
 
-  /// Check if file extension is allowed
   bool isAllowedExtension(String fileName) {
     return isImageFile(fileName) ||
         isDocumentFile(fileName) ||

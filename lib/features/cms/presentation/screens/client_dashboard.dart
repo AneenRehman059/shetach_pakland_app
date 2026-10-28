@@ -5,10 +5,10 @@ import 'package:pakland/features/social/presentation/controllers/social_controll
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/sos/presentation/controllers/sos_controller.dart';
 import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
-import 'package:pakland/core/widgets/charts/PieChartWidget.dart';
+import 'package:pakland/core/widgets/charts/pie_chart_widget.dart';
 import 'package:pakland/core/widgets/app_bar2.dart';
-import 'package:pakland/core/widgets/sos_buttton.dart';
-import 'package:pakland/core/widgets/statusCard.dart';
+import 'package:pakland/core/widgets/sos_button.dart';
+import 'package:pakland/core/widgets/status_card.dart';
 
 
 class ClientDashboard extends StatefulWidget {
@@ -53,10 +53,8 @@ class _ClientDashboardState extends State<ClientDashboard> {
   Widget build(BuildContext context) {
     final SocialController socialController = Get.put(SocialController());
     return WillPopScope(
-      onWillPop: () async {
-        Get.toNamed('/main_screen');
-        return false;
-      },
+      // Default back: sirf pop karo (naya main_screen push nahi)
+      onWillPop: () async => true,
       child: Scaffold(
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => Get.toNamed('/tickets/create'),
@@ -69,7 +67,6 @@ class _ClientDashboardState extends State<ClientDashboard> {
         ),
         appBar:
         CustomAppBar(
-          custom_RouteName: '/main_screen',
           title: 'Client Dashboard',
           rightWidget: Row(
             mainAxisSize: MainAxisSize.min,

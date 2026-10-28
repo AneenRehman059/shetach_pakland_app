@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
-import 'package:pakland/features/auth/presentation/controllers/resend_otp_controller.dart';
+import 'package:pakland/features/auth/presentation/controllers/forgot_password_controller.dart';
 import 'package:pakland/features/auth/presentation/controllers/verify_otp_controller.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:pakland/core/theme/colors.dart';
@@ -17,12 +17,16 @@ class VerifyOtpScreen extends StatefulWidget {
   final String phoneNumber;
   final String userId;
   final bool isPasswordReset;
+  final String otpVia;
+  final String password;
 
   const VerifyOtpScreen({
     Key? key,
     required this.phoneNumber,
     required this.userId,
     this.isPasswordReset = false,
+    this.otpVia = 'sms',
+    this.password = '',
   }) : super(key: key);
 
   @override
@@ -33,18 +37,42 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   TextEditingController otpController = TextEditingController();
   var isLoading = false.obs;
   final _signUpController = Get.put(VerifyOtpController());
-  final _resendOtpController = Get.put(ResendOtpController());
+  final _forgotPasswordController = Get.put(ForgotPasswordController());
   final _storage = const FlutterSecureStorage();
   String emailNo1 = "";
   String mobileNo1 = "";
   String userPassword = "";
   String userName = "";
 
+  // Simple resend countdown so the "Resend" action feels intentional
+  // rather than something that can be spammed.
+  int _resendSeconds = 30;
+  bool _canResend = false;
+
   @override
   void initState() {
     super.initState();
     _loadStoredData();
+    _startResendTimer();
   }
+
+  void _startResendTimer() {
+    _resendSeconds = 30;
+    _canResend = false;
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
+      setState(() {
+        _resendSeconds--;
+      });
+      if (_resendSeconds <= 0) {
+        setState(() => _canResend = true);
+        return false;
+      }
+      return true;
+    });
+  }
+
   Future<void> _loadStoredData() async {
     try {
       emailNo1 = await _storage.read(key: "email_no1") ?? "";
@@ -55,7 +83,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
         setState(() {});
       }
     } catch (e) {
-      print("Error loading stored data: $e");
+      debugPrint("Error loading stored data: $e");
     }
   }
 
@@ -69,12 +97,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       final signUpData = SignUpRequestModel(
         cnic: widget.userId,
         password: "",
-        mobileNo: "",
+        mobileNo: widget.phoneNumber,
         emailAddress: "string",
         address: "lahore",
         userName: "string",
         otp: otpController.text,
-        otpVia: "sms",
+        otpVia: widget.otpVia,
         deviceId: "string",
         deviceModel: "string",
         platform: "string",
@@ -93,27 +121,51 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     }
   }
 
-  void _resendOtp() {
-    final signUpData = SignUpRequestModel(
-      cnic: widget.userId,
-      password: userPassword.isNotEmpty ? userPassword : "string",
-      mobileNo: mobileNo1.isNotEmpty ? mobileNo1 : widget.phoneNumber,
-      emailAddress: emailNo1.isNotEmpty ? emailNo1 : "string",
-      address: "lahore",
-      userName: userName.isNotEmpty ? userName : "string",
-      otp: "string",
-      otpVia: "sms",
-      deviceId: "string",
-      deviceModel: "string",
-      platform: "string",
-      osVersion: "string",
-      latitude: "string",
-      longitude: "string",
-      manufacturer: "string",
-      operatingSystem: "string",
-      webViewVersion: "string",
-    );
-    _resendOtpController.resendOtp(context,signUpData);
+  Future<void> _resendOtp() async {
+    if (!_canResend) return;
+
+    // Timer pehle restart kar dein taake dobara tap spam na ho
+    _startResendTimer();
+
+    try {
+      final response = await _forgotPasswordController.updatePassword(
+        cnic: widget.userId,
+        password: widget.password,
+        mobileNo: widget.phoneNumber.isNotEmpty ? widget.phoneNumber : mobileNo1,
+        emailAddress: emailNo1,
+        userName: userName,
+        otpVia: widget.otpVia,
+      );
+
+      if (!mounted) return;
+
+      if (response["StatusCode"] == "200") {
+        showTopSnackBar(
+          context,
+          title: "Success",
+          "OTP has been resent",
+          Colors.green.withOpacity(0.7),
+          icon: Icons.check_circle,
+        );
+      } else {
+        showTopSnackBar(
+          context,
+          title: "Alert",
+          "Some technical fault occured! Try again later.",
+          Colors.red.withOpacity(0.7),
+          icon: Icons.warning,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      showTopSnackBar(
+        context,
+        title: "Alert",
+        "Alert: ${e.toString()}",
+        Colors.red.withOpacity(0.7),
+        icon: Icons.warning,
+      );
+    }
   }
 
   @override
@@ -130,10 +182,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
           children: [
             CustomAppBar(showBackButton: true),
             Expanded(
-              child: SingleChildScrollView( // Add this
+              child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: screenWidth * 0.06,
-                  vertical: screenHeight * 0.02, // Reduced vertical padding
+                  vertical: screenHeight * 0.02,
                 ),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
@@ -142,10 +194,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(height: screenHeight * 0.05), // Reduced spacing
+                      SizedBox(height: screenHeight * 0.05),
                       Icon(
                         Icons.lock_outline,
-                        size: screenHeight * 0.08, // Reduced icon size
+                        size: screenHeight * 0.08,
                         color: AppColors.appColor,
                       ),
                       SizedBox(height: screenHeight * 0.02),
@@ -166,7 +218,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                             : "Enter the 4-digit code sent to\n${widget.phoneNumber}",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: screenWidth * 0.038, // Slightly reduced
+                          fontSize: screenWidth * 0.038,
                           color: Colors.grey.shade600,
                         ),
                       ),
@@ -181,8 +233,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         pinTheme: PinTheme(
                           shape: PinCodeFieldShape.box,
                           borderRadius: BorderRadius.circular(screenWidth * 0.03),
-                          fieldHeight: screenHeight * 0.06, // Reduced height
-                          fieldWidth: screenWidth * 0.15, // Adjusted width
+                          fieldHeight: screenHeight * 0.06,
+                          fieldWidth: screenWidth * 0.15,
                           activeFillColor: Colors.white,
                           inactiveFillColor: Colors.grey.shade100,
                           selectedFillColor: Colors.white,
@@ -219,19 +271,21 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: _resendOtp,
+                            onPressed: _canResend ? _resendOtp : null,
                             child: Text(
-                              "Resend",
+                              _canResend ? "Resend" : "Resend in ${_resendSeconds}s",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.appColor,
+                                color: _canResend
+                                    ? AppColors.appColor
+                                    : Colors.grey.shade400,
                                 fontSize: screenWidth * 0.035,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: screenHeight * 0.05), // Add bottom padding
+                      SizedBox(height: screenHeight * 0.05),
                     ],
                   ),
                 ),

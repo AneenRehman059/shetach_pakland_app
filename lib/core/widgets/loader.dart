@@ -1,63 +1,39 @@
-// // Replace the SpinKitFadingCircle with any of these:
-//
-// // 1. Pulse animation
-// import 'colors.dart';
-//
-// SpinKitPulse(
-// color: AppColors.appColor,
-// size: 50.0,
-// )
-//
-// // 2. Double bounce
-// SpinKitDoubleBounce(
-// color: AppColors.appColor,
-// size: 50.0,
-// )
-//
-// // 3. Wave animation
-// SpinKitWave(
-// color: AppColors.appColor,
-// size: 50.0,
-// )
-//
-// // 4. Three bounce dots
-// SpinKitThreeBounce(
-// color: AppColors.appColor,
-// size: 30.0, // Smaller size for this one
-// )
-//
-// // 5. Chasing dots
-// SpinKitChasingDots(
-// color: AppColors.appColor,
-// size: 50.0,
-// )
-//
-// // 6. Folding cube
-// SpinKitFoldingCube(
-// color: AppColors.appColor,
-// size: 40.0, // Smaller size for this one
-// )
-//
-// // 7. Circle with multiple colors
-// SpinKitCircle(
-// color: AppColors.appColor,
-// size: 50.0,
-// )
-//
-// // 8. Rotating circle
-// SpinKitRotatingCircle(
-// color: AppColors.appColor,
-// size: 50.0,
-// )
-//
-// // 9. Fading four circles
-// SpinKitFadingFour(
-// color: AppColors.appColor,
-// size: 50.0,
-// )
-//
-// // 10. Ripple effect
-// SpinKitRipple(
-// color: AppColors.appColor,
-// size: 50.0,
-// )
+import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
+
+/// App-wide loader. Every loading indicator in the app uses this widget
+/// so that `assets/images/loading.json` is the only loader animation.
+///
+/// * If the parent gives it a tight size (e.g. `SizedBox(width: 20, height: 20)`)
+///   it fills that space.
+/// * Otherwise it uses [size] (default 60).
+class AppLoader extends StatelessWidget {
+  final double? size;
+
+  const AppLoader({super.key, this.size});
+
+  static const String asset = 'assets/images/loading.json';
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool tight = constraints.hasTightWidth &&
+            constraints.hasTightHeight &&
+            constraints.maxWidth.isFinite &&
+            constraints.maxHeight.isFinite;
+
+        if (size == null && tight) {
+          return Lottie.asset(asset, fit: BoxFit.contain);
+        }
+
+        final double s = size ?? 60;
+        return SizedBox(
+          width: s,
+          height: s,
+          child: Lottie.asset(asset, fit: BoxFit.contain),
+        );
+      },
+    );
+  }
+}

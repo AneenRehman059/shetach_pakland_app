@@ -5,8 +5,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
-import 'package:pakland/core/widgets/charts/BarChartWidget.dart';
-import 'package:pakland/core/widgets/charts/PieChartWidget.dart';
+import 'package:pakland/core/widgets/charts/bar_chart_widget.dart';
+import 'package:pakland/core/widgets/charts/pie_chart_widget.dart';
 import 'package:pakland/core/widgets/app_bar2.dart';
 
 class DefaultDashboard extends StatefulWidget {
@@ -258,7 +258,6 @@ class _DefaultDashboardState extends State<DefaultDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        custom_RouteName: '/dashboard',
         title: 'Dashboard',
       ),
       body: RefreshIndicator(

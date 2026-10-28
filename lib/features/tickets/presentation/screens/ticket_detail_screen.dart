@@ -1,3 +1,4 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
@@ -21,6 +22,7 @@ import 'package:pakland/features/tickets/presentation/controllers/tickets_contro
 import 'package:pakland/core/widgets/app_bar2.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
 import 'package:pakland/features/feedback/presentation/widgets/comments_view.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 
 class TicketDetailView extends StatefulWidget {
@@ -102,7 +104,6 @@ class _TicketDetailViewState extends State<TicketDetailView> {
         final userType = snapshot.data?['userType'] ?? 'Client';
 
 
-        // Check if this is an SOS ticket
         final isSOSTicket = widget.ticket.title.toLowerCase().contains('sos') ||
             widget.ticket.description.toLowerCase().contains('emergency');
 
@@ -111,7 +112,6 @@ class _TicketDetailViewState extends State<TicketDetailView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // SOS Emergency Header (only for SOS tickets)
               if (isSOSTicket) ...[
                 Card(
                   color: Colors.red.withOpacity(0.1),
@@ -184,11 +184,8 @@ class _TicketDetailViewState extends State<TicketDetailView> {
                       _kv('Ticket Id', widget.ticket.id.toString().padLeft(5, '0')),
                       _kv('Status', widget.ticket.status.toString().padLeft(5, '')),
                       _kv('Date & Time', _formatDate(widget.ticket.createdAt)),
-                      // _kv('DUE DATE', _formatDate(ticket.dueDate ?? DateTime.now())),
-                      //_kv('SENDER DEP', '--'),
                       _kv('Description', widget.ticket.description.toString()),
                       const SizedBox(height: 12),
-                      // Attachments section
                       if (!widget.ticket.id.toString().toUpperCase().contains('SOS')) ...[
                         const SizedBox(height: 12),
                         Text(
@@ -282,7 +279,6 @@ class _TicketDetailViewState extends State<TicketDetailView> {
                               if (widget.ticket.status.toLowerCase() != 'closed') ...[
                                 ElevatedButton.icon(
                                   onPressed: () {
-                                    // Navigate to feedback screen
                                     Get.to(
                                           () => FeedbackScreen(
                                         ticket: widget.ticket,
@@ -351,9 +347,9 @@ class _TicketDetailViewState extends State<TicketDetailView> {
   Widget _kv(String k, String v) {
     return Table(
       columnWidths: const {
-        0: FixedColumnWidth(120), // Fixed width for key column
-        1: FixedColumnWidth(16),  // Spacing column
-        2: FlexColumnWidth(),     // Flexible width for value column
+        0: FixedColumnWidth(120),
+        1: FixedColumnWidth(16),
+        2: FlexColumnWidth(),
       },
       children: [
         TableRow(
@@ -376,7 +372,7 @@ class _TicketDetailViewState extends State<TicketDetailView> {
                 ),
               ),
             ),
-            SizedBox(), // Empty cell for spacing
+            SizedBox(),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
@@ -419,7 +415,6 @@ class _TicketDetailViewState extends State<TicketDetailView> {
       );
       return;
     }
-    // For docs/others: download to cache then open with installed app
     final file = await _cacheFile(url);
     if (!Navigator.of(context).mounted) return;
     final result = await OpenFilex.open(file.path);
@@ -448,7 +443,6 @@ class _TicketDetailViewState extends State<TicketDetailView> {
     return outFile;
   }
 
-  // Deprecated sheet methods retained for reference; full-screen pages are used instead.
   Widget buildFilePreview(BuildContext context, String filePath) {
     final url = ApiConstants.buildImageUrl(filePath);
     final mimeType = lookupMimeType(url) ?? '';
@@ -470,7 +464,7 @@ class _TicketDetailViewState extends State<TicketDetailView> {
                 width: 200,
                 height: 200,
                 alignment: Alignment.center,
-                child: const CircularProgressIndicator(),
+                child: const AppLoader(),
               );
             },
             errorBuilder: (context, error, stackTrace) => Container(
@@ -484,7 +478,6 @@ class _TicketDetailViewState extends State<TicketDetailView> {
         ),
       );
     } else {
-      // Common UI for audio, video, docs
       IconData icon;
       Color color;
 
@@ -537,7 +530,7 @@ class _TicketDetailViewState extends State<TicketDetailView> {
         child: PhotoView(
           imageProvider: NetworkImage(url),
           heroAttributes: PhotoViewHeroAttributes(tag: url),
-          loadingBuilder: (_, __) => const Center(child: CircularProgressIndicator()),
+          loadingBuilder: (_, __) => const Center(child: AppLoader()),
         ),
       ),
     );
@@ -553,7 +546,7 @@ void _openImageViewer(BuildContext context, String url) {
       child: PhotoView(
         imageProvider: NetworkImage(url),
         heroAttributes: PhotoViewHeroAttributes(tag: url),
-        loadingBuilder: (_, __) => const Center(child: CircularProgressIndicator()),
+        loadingBuilder: (_, __) => const Center(child: AppLoader()),
       ),
     ),
   );
@@ -574,7 +567,7 @@ class _AttachmentsPreDownload extends StatefulWidget {
 
 class _AttachmentsPreDownloadState extends State<_AttachmentsPreDownload> {
   late final List<String> _urls;
-  final Map<String, double> _progress = {}; // 0..1
+  final Map<String, double> _progress = {};
   final Map<String, File?> _cached = {};
   bool _started = false;
 
@@ -582,14 +575,12 @@ class _AttachmentsPreDownloadState extends State<_AttachmentsPreDownload> {
   void initState() {
     super.initState();
 
-    // ✅ Handle both List<String> and String gracefully
     final raw = widget.rawAttachmentPath;
     _urls = raw
         .where((e) => e.trim().isNotEmpty)
         .map((e) => ApiConstants.buildImageUrl(e.trim()))
         .toList();
 
-    // Debug logs
     try {
       debugPrint('📎 Parsed ${_urls.length} attachment(s) from ticket.');
       for (final url in _urls) {
@@ -656,7 +647,7 @@ class _AttachmentsPreDownloadState extends State<_AttachmentsPreDownload> {
       return const _EmptyAttachmentPlaceholder();
     }
     return SizedBox(
-      height: 220, // height for images/videos/audio/docs
+      height: 220,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -670,7 +661,6 @@ class _AttachmentsPreDownloadState extends State<_AttachmentsPreDownload> {
 
           Widget child;
 
-          // Show progress if downloading
           if (pct < 1.0 || cached == null) {
             child = _DownloadTile(url: url, mime: urlMime, progress: pct);
           } else {
@@ -695,7 +685,6 @@ class _AttachmentsPreDownloadState extends State<_AttachmentsPreDownload> {
                 onTap: () => widget.onOpen(url, effectiveMime),
               );
             } else {
-              // Audio or Document
               IconData icon;
               Color color;
               if (effectiveMime.startsWith('audio/')) {
@@ -735,7 +724,6 @@ class _AttachmentsPreDownloadState extends State<_AttachmentsPreDownload> {
             }
           }
 
-          // Wrap in MouseRegion for cursor support
           return MouseRegion(
             cursor: SystemMouseCursors.click,
             child: child,
@@ -860,7 +848,6 @@ class _VideoPreviewTileState extends State<_VideoPreviewTile> {
         if (!mounted) return;
         setState(() { _init = true; });
       }).catchError((_) {
-        // ignore preview error, fallback to icon via not-initialized state
       });
   }
 
@@ -907,7 +894,7 @@ class _VideoPreviewTileState extends State<_VideoPreviewTile> {
   }
 }
 class _AudioPlayerPage extends StatefulWidget {
-  final String filePath; // local cached file path
+  final String filePath;
   const _AudioPlayerPage({required this.filePath});
 
   @override
@@ -948,7 +935,7 @@ class _AudioPlayerPageState extends State<_AudioPlayerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Audio Player')),
+      appBar: AppHeaderBar(title: const Text('Audio Player')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1008,7 +995,7 @@ class _AudioPlayerPageState extends State<_AudioPlayerPage> {
 }
 
 class _VideoPlayerPage extends StatefulWidget {
-  final String filePath; // local cached file path
+  final String filePath;
   const _VideoPlayerPage({required this.filePath});
 
   @override
@@ -1054,11 +1041,11 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Video Player')),
+      appBar: AppHeaderBar(title: const Text('Video Player')),
       body: Center(
         child: _initialized && _chewieController != null
             ? Chewie(controller: _chewieController!)
-            : const CircularProgressIndicator(),
+            : const AppLoader(),
       ),
     );
   }

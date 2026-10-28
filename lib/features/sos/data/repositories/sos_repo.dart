@@ -1,15 +1,13 @@
-// sos_repo.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/sos/data/models/sos_models.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
-import 'package:pakland/core/network/httpMassageMapper.dart';
+import 'package:pakland/core/network/http_message_mapper.dart';
 
 class SOSRepository {
   final String baseUrl = ApiConstants.cmsBase;
 
-  // ✅ Update FCM Token
   Future<dynamic> updateFCMToken(FCMTokenUpdateRequest request) async {
     try {
       print('🔄 Updating FCM token: ${request.toJson()}');
@@ -67,7 +65,6 @@ class SOSRepository {
     }
   }
 
-  // ✅ Get All SOS Users
   Future<dynamic> getAllSOSUsers() async {
     try {
       print('🔄 Fetching all SOS users');
@@ -122,7 +119,6 @@ class SOSRepository {
     }
   }
 
-  // ✅ Send SOS Notification to Admins and Staff
   Future<dynamic> sendSOSNotification(SOSNotificationRequest request) async {
     try {
       print('📤 Sending SOS notification request to: ${ApiConstants.sendSOSNotificationUrl}');
@@ -183,7 +179,6 @@ class SOSRepository {
     }
   }
 
-  // ✅ Stop SOS Alarm
   Future<dynamic> stopSOSAlarm({
     required String ticketId,
     required String userId,
@@ -249,7 +244,6 @@ class SOSRepository {
     }
   }
 
-  // ✅ Respond to SOS (Go & Respond)
   Future<dynamic> respondToSOS({
     required String ticketId,
     required String responderUserId,
@@ -317,7 +311,6 @@ class SOSRepository {
     }
   }
 
-  // ✅ Get Active SOS Emergencies
   Future<dynamic> getActiveSOSEmergencies() async {
     try {
       print('🔄 Fetching active SOS emergencies');
@@ -372,7 +365,6 @@ class SOSRepository {
     }
   }
 
-  // Helper method to extract list from response (TicketRepository style)
   List<dynamic> _extractList(dynamic body) {
     if (body is List) return body;
     if (body is Map) {
@@ -386,7 +378,6 @@ class SOSRepository {
     return [];
   }
 
-  // Helper method to extract map from response (TicketRepository style)
   Map<String, dynamic>? _extractMap(dynamic body) {
     if (body is Map) {
       if (body['obj'] is Map) return body['obj'] as Map<String, dynamic>;

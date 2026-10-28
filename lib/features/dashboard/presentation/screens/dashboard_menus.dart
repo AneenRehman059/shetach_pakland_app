@@ -1,7 +1,9 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
+import 'package:pakland/core/utils/screen_helper.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/theme/colors.dart';
-import 'package:pakland/features/booking/presentation/screens/bookiong_screen.dart';
+import 'package:pakland/features/booking/presentation/screens/booking_screen.dart';
 import 'package:pakland/features/customer_portal/presentation/screens/customer_portal_screen.dart';
 import 'package:pakland/features/dashboard/presentation/screens/downloads_screen.dart';
 import 'package:pakland/features/events/presentation/screens/events_screen.dart';
@@ -33,19 +35,11 @@ class DashboardMenus extends StatefulWidget {
 class _DashboardMenusState extends State<DashboardMenus> {
   final themeController = Get.find<ThemeController>();
   final companyController = Get.find<CompanyController>();
-  final activeGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      AppColors.appColor,
-      AppColors.lightAppColor,
-    ],
-  );
+  static const Color _screenBg = Color(0xFFF2F6F8);
 
   late ScrollController _scrollController;
   bool _showDownArrow = true;
 
-  // Map to handle navigation based on tab_name
   Widget _getScreenForTab(String tabName) {
     switch (tabName.toLowerCase()) {
       case 'customer portal':
@@ -74,11 +68,10 @@ class _DashboardMenusState extends State<DashboardMenus> {
       case 'form validation':
         return VerifyFormNumberScreen();
       default:
-        return Container(); // Fallback
+        return Container();
     }
   }
 
-  // Check if screen requires login
   bool _requiresLogin(String tabName) {
     final loginRequiredTabs = [
       'customer portal',
@@ -154,17 +147,15 @@ class _DashboardMenusState extends State<DashboardMenus> {
 
   Widget _buildMainUI(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final isTablet = screenSize.shortestSide > 600;
+    final isTablet = ScreenHelper.isTablet(context);
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: activeGradient,
-      ),
+      color: _screenBg,
       child: Obx(() {
         final tempTabs = companyController.mobileTabs;
-        final temp=[];
-        for(var tab in tempTabs){
-          if(tab['isActive']==true){
+        final temp = [];
+        for (var tab in tempTabs) {
+          if (tab['isActive'] == true) {
             temp.add(tab);
           }
         }
@@ -173,7 +164,7 @@ class _DashboardMenusState extends State<DashboardMenus> {
 
         if (companyController.isLoading.value && tabs.isEmpty) {
           return Center(
-            child: CircularProgressIndicator(color: Colors.white),
+            child: AppLoader(),
           );
         }
 
@@ -181,7 +172,7 @@ class _DashboardMenusState extends State<DashboardMenus> {
           return Center(
             child: Text(
               'No menu items available',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+              style: TextStyle(color: AppColors.darkGrey, fontSize: 16),
             ),
           );
         }
@@ -196,60 +187,67 @@ class _DashboardMenusState extends State<DashboardMenus> {
                   horizontal: screenSize.width * 0.04,
                   vertical: screenSize.height * 0.02,
                 ),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isTablet ? 3 : 3,
-                    crossAxisSpacing: screenSize.width * 0.09,
-                    mainAxisSpacing: screenSize.height * 0.01,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemCount: tabs.length,
-                  itemBuilder: (context, index) {
-                    final tab = tabs[index];
-                    final tabName = tab['home_menu_en'] ?? tab['home_menu_en'] ?? 'Unknown';
-                    final iconPath = tab['icon']?.toString() ?? '';
-                    final isActive = tab['isActive'] ?? true;
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, bottom: 12, top: 4),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: AppColors.t2,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'QUICK ACCESS',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                              color: AppColors.appColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: isTablet ? 3 : 2,
+                        crossAxisSpacing: screenSize.width * 0.04,
+                        mainAxisSpacing: screenSize.height * 0.02,
+                        childAspectRatio: isTablet ? 2.2 : 2.35,
+                      ),
+                      itemCount: tabs.length,
+                      itemBuilder: (context, index) {
+                        final tab = tabs[index];
+                        final tabName = tab['home_menu_en'] ?? tab['home_menu_en'] ?? 'Unknown';
+                        final iconPath = tab['icon']?.toString() ?? '';
+                        final isActive = tab['isActive'] ?? true;
 
-                    // // Skip inactive tabs
-                    // if (!isActive) return SizedBox.shrink();
-
-                    return _buildMenuItem(
-                      context,
-                      iconPath,
-                      tabName,
-                      onTap: () {
-                        final screen = _getScreenForTab(tabName);
-                        final requiresLogin = _requiresLogin(tabName);
-                        _handleNavigationWithLoginCheck(
+                        return _buildMenuItem(
                           context,
-                          screen,
-                          requiresLogin: requiresLogin,
+                          iconPath,
+                          tabName,
+                          onTap: () {
+                            final screen = _getScreenForTab(tabName);
+                            final requiresLogin = _requiresLogin(tabName);
+                            _handleNavigationWithLoginCheck(
+                              context,
+                              screen,
+                              requiresLogin: requiresLogin,
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: screenSize.height * 0.1,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      AppColors.appColor.withOpacity(0.1),
-                      AppColors.appColor.withOpacity(0.3),
-                      AppColors.appColor.withOpacity(0.7),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -262,9 +260,16 @@ class _DashboardMenusState extends State<DashboardMenus> {
                   onTap: () => _scrollTo(_showDownArrow),
                   child: Container(
                     padding: EdgeInsets.all(screenSize.width * 0.015),
-                    decoration: const BoxDecoration(
-                      color: Colors.black38,
+                    decoration: BoxDecoration(
+                      color: AppColors.appColor,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.appColor.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
@@ -290,88 +295,78 @@ class _DashboardMenusState extends State<DashboardMenus> {
 
   Widget _buildMenuItem(BuildContext context, String iconPath, String text, {VoidCallback? onTap}) {
     final screenSize = MediaQuery.of(context).size;
-    final isTablet = screenSize.shortestSide > 600;
-
-    // Get full image URL from controller
     String fullImageUrl = companyController.getFullImageUrl(iconPath);
+    final iconColor = AppColors.appColor;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(screenSize.width * 0.03),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: isTablet ? screenSize.width * 0.16 : screenSize.width * 0.18,
-            height: isTablet ? screenSize.width * 0.16 : screenSize.width * 0.18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(screenSize.width * 0.03),
-              color: AppColors.whiteBg,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Center(
-              child: fullImageUrl.isNotEmpty
-                  ? Image.network(
-                fullImageUrl,
-                fit: BoxFit.cover,
-                width: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                height: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.image_not_supported,
-                    size: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                    color: Colors.grey,
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return SizedBox(
-                    width: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                    height: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            color: Colors.white,
+            border: Border.all(color: const Color(0xFFE3EAEF), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.appColor.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: screenSize.width * 0.12,
+                height: screenSize.width * 0.12,
+                alignment: Alignment.center,
+                child: fullImageUrl.isNotEmpty
+                    ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    fullImageUrl,
+                    fit: BoxFit.contain,
+                    width: screenSize.width * 0.3,
+                    height: screenSize.width * 0.3,
+                    errorBuilder: (c, e, s) => Icon(
+                      Icons.image_not_supported,
+                      size: screenSize.width * 0.06,
+                      color: iconColor,
                     ),
-                  );
-                },
-              )
-                  : Icon(
-                Icons.image_not_supported,
-                size: isTablet ? screenSize.width * 0.08 : screenSize.width * 0.09,
-                color: Colors.grey,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return SizedBox(
+                        width: screenSize.width * 0.05,
+                        height: screenSize.width * 0.05,
+                        child: AppLoader(),
+                      );
+                    },
+                  ),
+                )
+                    : Icon(Icons.image_not_supported, size: screenSize.width * 0.06, color: iconColor),
               ),
-            ),
-          ),
-          SizedBox(height: screenSize.height * 0.005),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: screenSize.width * 0.25,
-              maxHeight: screenSize.height * 0.06,
-            ),
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: isTablet ? screenSize.width * 0.025 : screenSize.width * 0.03,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                height: 1.1,
+              SizedBox(width: screenSize.width * 0.03),
+              Expanded(
+                child: Text(
+                  text,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: screenSize.width * 0.033,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1B2733),
+                    height: 1.2,
+                  ),
+                ),
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

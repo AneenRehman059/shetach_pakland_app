@@ -65,10 +65,9 @@ class BookingRepository {
     }
   }
 
-  // Add this method to your BookingRepository class
   Future<List<Map<String, dynamic>>> fetchPlotNatures() async {
     final response = await http.get(
-      Uri.parse(ApiConstants.getPlotNatureUrl), // Define this constant
+      Uri.parse(ApiConstants.getPlotNatureUrl),
       headers: {"Content-Type": "application/json"},
     );
 

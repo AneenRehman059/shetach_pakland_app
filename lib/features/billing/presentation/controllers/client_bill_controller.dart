@@ -1,4 +1,3 @@
-// controllers/client_bill_controller.dart
 import 'package:get/get.dart';
 
 import 'package:pakland/features/billing/data/models/client_bill_model.dart';

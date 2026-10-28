@@ -61,10 +61,8 @@ class PaymentController extends GetxController {
 
       final response = await _repo.processPayment(body);
 
-      // Check the response structure based on your API
       print(response["StatusCode"]);
       if (response["StatusCode"] == "0") {
-        // Success case - navigate to payment webview
         final String? paymentUrl = response["obj"]["Url"];
 
         if (paymentUrl != null && paymentUrl.isNotEmpty) {
@@ -74,12 +72,6 @@ class PaymentController extends GetxController {
             brnName: brnName,
           ));
 
-          // showTopSnackBar(
-          //     context,
-          //     response["Message"] ?? "Payment processed successfully",
-          //     Colors.green.withOpacity(0.7),
-          //     icon: Icons.check_circle
-          // );
           return true;
         } else {
           showTopSnackBar(
@@ -91,7 +83,6 @@ class PaymentController extends GetxController {
           return false;
         }
       } else {
-        // Error case
         showTopSnackBar(
             context,
             response["Message"] ?? "Payment processing failed",
@@ -162,10 +153,8 @@ class PaymentController extends GetxController {
 
       final response = await _repo.processPayment(body);
 
-      // Check the response structure based on your API
       print(response["StatusCode"]);
       if (response["StatusCode"] == "0") {
-        // Success case - navigate to payment webview
         final String? paymentUrl = response["obj"]["Url"];
 
         if (paymentUrl != null && paymentUrl.isNotEmpty) {
@@ -175,12 +164,6 @@ class PaymentController extends GetxController {
             brnName: brnName,
           ));
 
-          // showTopSnackBar(
-          //     context,
-          //     response["Message"] ?? "Payment processed successfully",
-          //     Colors.green.withOpacity(0.7),
-          //     icon: Icons.check_circle
-          // );
           return true;
         } else {
           showTopSnackBar(
@@ -192,7 +175,6 @@ class PaymentController extends GetxController {
           return false;
         }
       } else {
-        // Error case
         showTopSnackBar(
             context,
             response["Message"] ?? "Payment processing failed",

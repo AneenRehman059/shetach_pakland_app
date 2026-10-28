@@ -1,17 +1,18 @@
 // cms_dashboard_screen.dart
 
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
 import 'package:pakland/core/widgets/app_bar2.dart';
 import 'package:pakland/features/cms/presentation/screens/admin_dashboard.dart';
-import 'package:pakland/features/cms/presentation/screens/admin_main_dashbord.dart';
+import 'package:pakland/features/cms/presentation/screens/admin_main_dashboard.dart';
 import 'package:pakland/features/cms/presentation/screens/client_dashboard.dart';
 import 'package:pakland/features/cms/presentation/screens/default_dashboard.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class CMSDashboardScreen extends StatefulWidget {
   const CMSDashboardScreen({super.key});
@@ -42,22 +43,16 @@ class _CMSDashboardScreenState extends State<CMSDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async{
-        Get.offAll(() => MainWrapper());
-        return true;
-      },
+      onWillPop: () async => true,
       child: Scaffold(
-        appBar: CustomAppBar(title: "Loading...", custom_RouteName: "/"),
+        appBar: CustomAppBar(title: "Loading..."),
         backgroundColor: Colors.white,
         body: SafeArea(
           child: Obx(() {
 
             if (ticketController.isLoading.value) {
               return Center(
-                child: SpinKitWave(
-                  color: AppColors.primaryColor,
-                  size: 24.0,
-                ),
+                child: AppLoader(size: 40),
               );
             }
 
@@ -87,7 +82,7 @@ class _CMSDashboardScreenState extends State<CMSDashboardScreen> {
   /// 🔴 Invalid User UI
   Widget _buildInvalidUserUI() {
     return Scaffold(
-      appBar: AppBar(
+      appBar: AppHeaderBar(
         title: const Text('Invalid User'),
       ),
       body: SafeArea(

@@ -14,12 +14,18 @@ class VerifyOtpForSignUpScreen extends StatefulWidget {
   final String phoneNumber;
   final String userId;
   final bool isPasswordReset;
+  final String password;
+  final String otpVia;
+  final String email;
 
   const VerifyOtpForSignUpScreen({
     Key? key,
     required this.phoneNumber,
     required this.userId,
     this.isPasswordReset = false,
+    required this.password,
+    required this.otpVia,
+    required this.email,
   }) : super(key: key);
 
   @override
@@ -37,22 +43,45 @@ class _VerifyOtpForSignUpScreenState extends State<VerifyOtpForSignUpScreen> {
   String userPassword = "";
   String userName = "";
 
+  // Simple resend countdown so the "Resend" action feels intentional
+  // rather than something that can be spammed.
+  int _resendSeconds = 30;
+  bool _canResend = false;
+
   @override
   void initState() {
     super.initState();
     _loadStoredData();
+    _startResendTimer();
   }
+
+  void _startResendTimer() {
+    _resendSeconds = 30;
+    _canResend = false;
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
+      setState(() {
+        _resendSeconds--;
+      });
+      if (_resendSeconds <= 0) {
+        setState(() => _canResend = true);
+        return false;
+      }
+      return true;
+    });
+  }
+
   Future<void> _loadStoredData() async {
     try {
       emailNo1 = await _storage.read(key: "email_no1") ?? "";
       mobileNo1 = await _storage.read(key: "mobile_no1") ?? "";
-      userPassword = await _storage.read(key: "user_password") ?? "";
       userName = await _storage.read(key: "user_name") ?? "";
       if (mounted) {
         setState(() {});
       }
     } catch (e) {
-      print("Error loading stored data: $e");
+      debugPrint("Error loading stored data: $e");
     }
   }
 
@@ -71,7 +100,7 @@ class _VerifyOtpForSignUpScreenState extends State<VerifyOtpForSignUpScreen> {
         address: "lahore",
         userName: "string",
         otp: otpController.text,
-        otpVia: "sms",
+        otpVia: widget.otpVia,
         deviceId: "string",
         deviceModel: "string",
         platform: "string",
@@ -91,15 +120,17 @@ class _VerifyOtpForSignUpScreenState extends State<VerifyOtpForSignUpScreen> {
   }
 
   void _resendOtp() {
+    if (!_canResend) return;
+
     final signUpData = SignUpRequestModel(
       cnic: widget.userId,
-      password: userPassword.isNotEmpty ? userPassword : "string",
-      mobileNo: mobileNo1.isNotEmpty ? mobileNo1 : widget.phoneNumber,
-      emailAddress: emailNo1.isNotEmpty ? emailNo1 : "string",
+      password: widget.password,
+      mobileNo: widget.phoneNumber,
+      emailAddress: widget.email,
       address: "lahore",
       userName: userName.isNotEmpty ? userName : "string",
       otp: "string",
-      otpVia: "sms",
+      otpVia: widget.otpVia,
       deviceId: "string",
       deviceModel: "string",
       platform: "string",
@@ -110,7 +141,8 @@ class _VerifyOtpForSignUpScreenState extends State<VerifyOtpForSignUpScreen> {
       operatingSystem: "string",
       webViewVersion: "string",
     );
-    _resendOtpController.resendOtp(context,signUpData);
+    _resendOtpController.resendOtp(context, signUpData);
+    _startResendTimer();
   }
 
   @override
@@ -127,10 +159,10 @@ class _VerifyOtpForSignUpScreenState extends State<VerifyOtpForSignUpScreen> {
           children: [
             CustomAppBar(showBackButton: true),
             Expanded(
-              child: SingleChildScrollView( // Add this
+              child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: screenWidth * 0.06,
-                  vertical: screenHeight * 0.02, // Reduced vertical padding
+                  vertical: screenHeight * 0.02,
                 ),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
@@ -139,10 +171,10 @@ class _VerifyOtpForSignUpScreenState extends State<VerifyOtpForSignUpScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(height: screenHeight * 0.05), // Reduced spacing
+                      SizedBox(height: screenHeight * 0.05),
                       Icon(
                         Icons.lock_outline,
-                        size: screenHeight * 0.08, // Reduced icon size
+                        size: screenHeight * 0.08,
                         color: AppColors.appColor,
                       ),
                       SizedBox(height: screenHeight * 0.02),
@@ -163,7 +195,7 @@ class _VerifyOtpForSignUpScreenState extends State<VerifyOtpForSignUpScreen> {
                             : "Enter the 4-digit code sent to\n${widget.phoneNumber}",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: screenWidth * 0.038, // Slightly reduced
+                          fontSize: screenWidth * 0.038,
                           color: Colors.grey.shade600,
                         ),
                       ),
@@ -178,8 +210,8 @@ class _VerifyOtpForSignUpScreenState extends State<VerifyOtpForSignUpScreen> {
                         pinTheme: PinTheme(
                           shape: PinCodeFieldShape.box,
                           borderRadius: BorderRadius.circular(screenWidth * 0.03),
-                          fieldHeight: screenHeight * 0.06, // Reduced height
-                          fieldWidth: screenWidth * 0.15, // Adjusted width
+                          fieldHeight: screenHeight * 0.06,
+                          fieldWidth: screenWidth * 0.15,
                           activeFillColor: Colors.white,
                           inactiveFillColor: Colors.grey.shade100,
                           selectedFillColor: Colors.white,
@@ -216,19 +248,21 @@ class _VerifyOtpForSignUpScreenState extends State<VerifyOtpForSignUpScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: _resendOtp,
+                            onPressed: _canResend ? _resendOtp : null,
                             child: Text(
-                              "Resend",
+                              _canResend ? "Resend" : "Resend in ${_resendSeconds}s",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.appColor,
+                                color: _canResend
+                                    ? AppColors.appColor
+                                    : Colors.grey.shade400,
                                 fontSize: screenWidth * 0.035,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: screenHeight * 0.05), // Add bottom padding
+                      SizedBox(height: screenHeight * 0.05),
                     ],
                   ),
                 ),

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pakland/features/auth/data/repositories/forgot_password_repo.dart';
+import 'package:pakland/features/auth/domain/usecases/forgot_password_usecase.dart';
 
 class ForgotPasswordController extends GetxController {
-  final _repo = ForgotPasswordRepository();
+  final ForgotPasswordUseCase _forgotPasswordUseCase =
+      ForgotPasswordUseCase(ForgotPasswordRepository());
   final _storage = const FlutterSecureStorage();
   var isLoading = false.obs;
 
@@ -14,6 +16,7 @@ class ForgotPasswordController extends GetxController {
     required String mobileNo,
     required String emailAddress,
     required String userName,
+    String otpVia = 'sms',
   }) async {
     try {
       isLoading.value = true;
@@ -26,7 +29,7 @@ class ForgotPasswordController extends GetxController {
         "address": "string",
         "user_name": userName,
         "OTP": "",
-        "otp_via": "sms",
+        "otp_via": otpVia,
         "deviceId": "string",
         "deviceModel": "string",
         "platform": "string",
@@ -38,7 +41,7 @@ class ForgotPasswordController extends GetxController {
         "webViewVersion": "string"
       };
 
-      final response = await _repo.updatePassword(body);
+      final response = await _forgotPasswordUseCase(body);
       return response;
     } catch (e) {
       rethrow;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/theme/colors.dart';
-import 'package:pakland/core/constants/image_constant.dart';
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
 import 'package:pakland/features/feedback/presentation/controllers/add_feedback_controller.dart';
 import 'package:pakland/core/widgets/app_bar.dart';
@@ -10,6 +9,7 @@ import 'package:pakland/core/widgets/custom_fields.dart';
 import 'package:pakland/core/widgets/message_field.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
 import 'package:pakland/features/profile/presentation/screens/profile_screen.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({Key? key}) : super(key: key);
@@ -87,7 +87,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppHeaderBar(
           title: Text("Feedback",style: TextStyle(color: AppColors.whiteBg),),
           centerTitle: true,
           backgroundColor: AppColors.appColor,
@@ -120,7 +120,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             hintText: "Enter Name",
                             controller: _nameController,
                             isSignUpStyle: true,
-                            imagePath: ImageConstant.user,
+                            imagePath: 'assets/images/user.png',
                           ),
                            SizedBox(height: 16),
 
@@ -130,7 +130,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             hintText: "xxxxxxxxxx",
                             controller: _phoneController,
                             keyboardType: TextInputType.phone,
-                            imagePath: ImageConstant.cell,
+                            imagePath: 'assets/images/cell.png',
                             isSignUpStyle: true,
                           ),
                           SizedBox(height: 16),
@@ -142,7 +142,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             isSignUpStyle: true,
-                            imagePath: ImageConstant.mail,
+                            imagePath: 'assets/images/mail.png',
                           ),
                           const SizedBox(height: 16),
 

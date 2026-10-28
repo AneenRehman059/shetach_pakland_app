@@ -1,3 +1,4 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -6,7 +7,6 @@ import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -188,7 +188,7 @@ class _CommentsViewState extends State<CommentsView> {
           context: context,
           barrierDismissible: false,
           builder: (context) => const Center(
-            child: CircularProgressIndicator(),
+            child: AppLoader(),
           ),
         );
 
@@ -268,12 +268,7 @@ class _CommentsViewState extends State<CommentsView> {
                     height: 150,
                     color: Colors.grey[300],
                     child: Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
+                      child: AppLoader(),
                     ),
                   );
                 },
@@ -312,10 +307,7 @@ class _CommentsViewState extends State<CommentsView> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.grey[400],
-                      ),
+                      child: AppLoader(),
                     );
                   }
 
@@ -876,10 +868,7 @@ class _CommentsViewState extends State<CommentsView> {
               child: Obx(() {
                 if (widget.controller.commentsLoading.value) {
                   return Center(
-                    child: SpinKitWave(
-                      color: AppColors.primaryColor,
-                      size: 24.0,
-                    ),
+                    child: AppLoader(size: 24),
                   );
                 }
 
@@ -911,8 +900,8 @@ class _CommentsViewState extends State<CommentsView> {
               }),
             ),
             VoiceMessageInput(
-              onSend: _handleVoiceMessage, // Now this matches
-              onAttach: _handleAttachment, // Now this matches
+              onSend: _handleVoiceMessage,
+              onAttach: _handleAttachment,
               onTextSend: (text) async {
                 if (text.trim().isNotEmpty) {
                   final success = await widget.controller.addComment(
@@ -1042,12 +1031,8 @@ class _VoicePlayerBubbleState extends State<_VoicePlayerBubble> {
 
   Future<void> _init() async {
     try {
-      // Playback-only session: avoids the iOS mic-permission prompt that
-      // AudioSessionConfiguration.speech() (playAndRecord category) triggers.
-      // Microphone permission is requested once at app launch instead
-      // (see app_permissions/microphone_permission_handler.dart in main.dart).
       final session = await AudioSession.instance;
-      await session.configure(const AudioSessionConfiguration.music());
+      await session.configure(const AudioSessionConfiguration.speech());
 
       final dir = await getTemporaryDirectory();
       final ext = _guessExtFromUrl(widget.url);

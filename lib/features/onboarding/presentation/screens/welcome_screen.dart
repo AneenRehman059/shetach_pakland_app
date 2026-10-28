@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:video_player/video_player.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/help_support/presentation/screens/help_support_screen.dart';
 import 'package:pakland/features/auth/presentation/screens/login_screen.dart';
+import 'package:pakland/core/services/video_background_service.dart';
 import 'package:pakland/features/auth/presentation/screens/signup_screen.dart';
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
 import 'package:pakland/core/constants/image_constant.dart';
@@ -17,20 +19,40 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with VideoSoundMixin<WelcomeScreen> {
   String appVersion = '1.0.0';
+
+  final _videoService = VideoBackgroundService.instance;
+  bool _videoReady = false;
 
   @override
   void initState() {
     super.initState();
     _getAppVersion();
+    _initBackgroundVideo();
+  }
+
+  void _initBackgroundVideo() {
+    _videoService.initialize();
+    _videoReady = _videoService.isReady;
+    _videoService.controller.addListener(_onVideoUpdate);
+  }
+
+  void _onVideoUpdate() {
+    final ready = _videoService.isReady;
+    if (ready != _videoReady && mounted) {
+      setState(() => _videoReady = ready);
+    }
   }
 
   Future<void> _getAppVersion() async {
     final PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    setState(() {
-      appVersion = 'v${packageInfo.version}';
-    });
+    if (mounted) {
+      setState(() {
+        appVersion = 'v${packageInfo.version}';
+      });
+    }
   }
 
   void _onHelpTap() {
@@ -52,14 +74,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   @override
+  void dispose() {
+    _videoService.controller.removeListener(_onVideoUpdate);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Get screen dimensions
     final Size screenSize = MediaQuery.of(context).size;
     final double screenWidth = screenSize.width;
     final double screenHeight = screenSize.height;
     final double paddingHorizontal = screenWidth * 0.05;
 
-    // Calculate button widths based on screen size
     final double largeButtonWidth = screenWidth > 600
         ? 200
         : screenWidth * 0.35;
@@ -68,12 +94,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ? 120
         : screenWidth * 0.28;
 
-    // Responsive font sizes
     final double titleFontSize = screenWidth > 600 ? 24 : 18;
     final double buttonFontSize = screenWidth > 600 ? 16 : 14;
     final double versionFontSize = screenWidth > 600 ? 16 : 14;
 
-    // Responsive logo size
     final double logoSize = screenWidth > 600 ? 200 : 170;
 
     return SafeArea(
@@ -82,7 +106,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         body: Stack(
           children: [
             Positioned.fill(
-              child: Image.asset(
+              child: _videoReady
+                  ? FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _videoService.controller.value.size.width,
+                  height: _videoService.controller.value.size.height,
+                  child: VideoPlayer(_videoService.controller),
+                ),
+              )
+                  : Image.asset(
                 ImageConstant.welcome,
                 fit: BoxFit.cover,
               ),
@@ -124,7 +157,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
                 Spacer(),
-                // Guest Button
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
                   child: Row(
@@ -169,7 +201,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.04),
-                // Sign In / Sign Up Buttons
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
                   child: Row(
@@ -250,7 +281,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.04),
-                // Help, FAQS, Offices Buttons
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
                   child: Row(
@@ -364,7 +394,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.04),
-                // Version Text
                 Center(
                   child: Text(
                     appVersion,

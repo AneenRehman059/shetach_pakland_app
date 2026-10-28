@@ -1,4 +1,3 @@
-// utils/pakistan_date_helper.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -10,16 +9,13 @@ class PakistanDateHelper {
   static const String _timeCheckHistoryKey = 'time_check_history';
   static const String _appInstallTimeKey = 'app_install_time';
 
-  // Add this to track initialization
   static bool _isInitialized = false;
 
   static DateTime get nowInPakistan {
     final utcNow = DateTime.now().toUtc();
-    // Pakistan Standard Time is UTC+5
     return utcNow.add(const Duration(hours: 5));
   }
 
-  // Initialize when app starts - call this in main.dart
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -29,12 +25,10 @@ class PakistanDateHelper {
       debugPrint('PakistanDateHelper initialized successfully');
     } catch (e) {
       debugPrint('Failed to initialize PakistanDateHelper: $e');
-      // Don't throw, just mark as initialized to prevent retries
       _isInitialized = true;
     }
   }
 
-  // Record app installation time if not already recorded
   static Future<void> _ensureInstallTimeRecorded() async {
     try {
       final installTime = await _storage.read(key: _appInstallTimeKey);
@@ -51,44 +45,36 @@ class PakistanDateHelper {
     }
   }
 
-  // Main validation function with time manipulation detection
   static Future<bool> isDueDateValid(DateTime dueDate) async {
     try {
-      // First check if device time has been manipulated
       final isTimeManipulated = await _isTimeLikelyManipulated();
 
       if (isTimeManipulated) {
-        return false; // Don't proceed if time was manipulated
+        return false;
       }
 
-      // Then check due date
       return _isDueDateValidBasedOnLocal(dueDate);
     } catch (e) {
       debugPrint('Error in isDueDateValid: $e');
-      // Fallback to simple due date check
       return _isDueDateValidBasedOnLocal(dueDate);
     }
   }
 
-  // Check due date based on current time
   static bool _isDueDateValidBasedOnLocal(DateTime dueDate) {
     try {
       final pakistanNow = nowInPakistan;
 
-      // Reset both dates to midnight for fair comparison
       final dueDateAtMidnight = DateTime(dueDate.year, dueDate.month, dueDate.day);
       final todayAtMidnight = DateTime(pakistanNow.year, pakistanNow.month, pakistanNow.day);
 
-      // Check if current date is on or before due date
       return todayAtMidnight.isBefore(dueDateAtMidnight) ||
           todayAtMidnight.isAtSameMomentAs(dueDateAtMidnight);
     } catch (e) {
       debugPrint('Error in _isDueDateValidBasedOnLocal: $e');
-      return false; // Safer to return false on error
+      return false;
     }
   }
 
-  // Detect time manipulation by checking against stored timestamps
   static Future<bool> _isTimeLikelyManipulated() async {
     try {
       final currentTime = nowInPakistan;
@@ -97,38 +83,31 @@ class PakistanDateHelper {
       if (lastValidTimeStr != null) {
         final lastValidTime = DateTime.parse(lastValidTimeStr);
 
-        // Time should never go backwards (unless DST changes, but Pakistan doesn't observe DST)
         if (currentTime.isBefore(lastValidTime)) {
-          // Time went backwards - definitely manipulated!
           await _logTimeManipulation('Time went backwards', lastValidTime, currentTime);
           return true;
         }
 
-        // Check if time jumped too far forward (more than 1 day)
         final timeDifference = currentTime.difference(lastValidTime);
         if (timeDifference.inDays > 1) {
-          // Large time jump forward - likely manipulated
           await _logTimeManipulation('Large time jump forward', lastValidTime, currentTime);
           return true;
         }
       }
 
-      // Store current time as valid for next check
       await _storage.write(
         key: _lastValidTimeKey,
         value: currentTime.toIso8601String(),
       );
 
-      // Check against app install time
       return await _checkAgainstInstallTime(currentTime);
 
     } catch (e) {
       debugPrint('Error checking time manipulation: $e');
-      return false; // On error, allow proceeding (fail-safe)
+      return false;
     }
   }
 
-  // Check if current time is before app install time (impossible!)
   static Future<bool> _checkAgainstInstallTime(DateTime currentTime) async {
     try {
       final installTimeStr = await _storage.read(key: _appInstallTimeKey);
@@ -136,15 +115,12 @@ class PakistanDateHelper {
         final installTime = DateTime.parse(installTimeStr);
 
         if (currentTime.isBefore(installTime)) {
-          // Current time is before app was installed - impossible!
           await _logTimeManipulation('Time before app install', installTime, currentTime);
           return true;
         }
 
-        // Check if time is suspiciously old (app installed more than 2 years ago)
         final yearsSinceInstall = currentTime.difference(installTime).inDays / 365;
         if (yearsSinceInstall > 2) {
-          // App unlikely to be installed that long ago without updates
           await _logTimeManipulation('Suspiciously old time', installTime, currentTime);
           return true;
         }
@@ -157,7 +133,6 @@ class PakistanDateHelper {
     }
   }
 
-  // Log time manipulation attempts
   static Future<void> _logTimeManipulation(
       String reason,
       DateTime expectedTime,
@@ -175,7 +150,6 @@ class PakistanDateHelper {
           }
         } catch (e) {
           debugPrint('Error decoding history: $e');
-          // Start fresh if history is corrupted
           history = [];
         }
       }
@@ -188,7 +162,6 @@ class PakistanDateHelper {
         'difference_hours': actualTime.difference(expectedTime).inHours,
       });
 
-      // Keep only last 50 entries
       if (history.length > 50) {
         history = history.sublist(history.length - 50);
       }
@@ -202,7 +175,6 @@ class PakistanDateHelper {
     }
   }
 
-  // Enhanced due date check with detailed feedback
   static Future<DueDateValidationResult> validateDueDateWithDetails(DateTime dueDate) async {
     try {
       final currentTime = nowInPakistan;
@@ -227,7 +199,6 @@ class PakistanDateHelper {
       );
     } catch (e) {
       debugPrint('Error in validateDueDateWithDetails: $e');
-      // Fallback to basic validation
       final currentTime = nowInPakistan;
       final isDueDateValid = _isDueDateValidBasedOnLocal(dueDate);
 
@@ -268,7 +239,6 @@ class PakistanDateHelper {
     }
   }
 
-  // Clear stored times (for testing or if user reinstalls app)
   static Future<void> clearTimeRecords() async {
     try {
       await _storage.delete(key: _lastValidTimeKey);
@@ -280,11 +250,9 @@ class PakistanDateHelper {
     }
   }
 
-  // Check if helper is initialized (for debugging)
   static bool get isInitialized => _isInitialized;
 }
 
-// Result class for detailed validation
 class DueDateValidationResult {
   final bool isValid;
   final String reason;

@@ -9,7 +9,7 @@ import 'package:pakland/features/billing/data/repositories/view_bill_repo.dart';
 
 import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/billing/data/models/account_statement_model.dart';
-import 'package:pakland/features/billing/data/repositories/account_statment_repo.dart';
+import 'package:pakland/features/billing/data/repositories/account_statement_repo.dart';
 
 class ViewBillController extends GetxController {
   final ViewBillRepository _repository = ViewBillRepository();
@@ -46,13 +46,6 @@ class ViewBillController extends GetxController {
       }
     } catch (e) {
       error.value = e.toString();
-      // Get.snackbar(
-      //   'Error',
-      //   e.toString(),
-      //   snackPosition: SnackPosition.BOTTOM,
-      //   backgroundColor: Colors.red,
-      //   colorText: Colors.white,
-      // );
     } finally {
       isLoading.value = false;
     }
@@ -87,13 +80,6 @@ class ViewBillController extends GetxController {
       }
     } catch (e) {
       error.value = e.toString();
-      // Get.snackbar(
-      //   'Error',
-      //   e.toString(),
-      //   snackPosition: SnackPosition.BOTTOM,
-      //   backgroundColor: Colors.red,
-      //   colorText: Colors.white,
-      // );
     } finally {
       isLoading.value = false;
     }

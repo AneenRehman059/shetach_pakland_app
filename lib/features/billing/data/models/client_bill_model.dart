@@ -1,4 +1,3 @@
-// models/client_bill_model.dart
 class ClientBillModel {
   final String statusCode;
   final String message;
@@ -68,7 +67,6 @@ class Bill {
   });
 
   factory Bill.fromJson(Map<String, dynamic> json) {
-    // Helper functions for safe parsing
     int safeParseInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
@@ -102,7 +100,6 @@ class Bill {
       return value.toString();
     }
 
-    // Parse date safely
     DateTime parseDate(dynamic dateValue) {
       try {
         if (dateValue == null) return DateTime.now();
@@ -158,7 +155,6 @@ class Bill {
     };
   }
 
-  // Computed properties
   double get totalAmountDue => rentDueAmt + rentArrears + surchargeAmt;
 
   double get remainingAmount => rentOsAmt - rentReceivedAmt;
@@ -169,7 +165,6 @@ class Bill {
 
   double get payableBeforeDueDate => beforeDueDateAmt;
 
-  // Format month-year for display
   String get monthYearDisplay {
     final monthNames = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -178,12 +173,10 @@ class Bill {
     return '${monthNames[billForMonth - 1]} $billForYear';
   }
 
-  // Format due date for display
   String get formattedDueDate {
     return '${billDueDate.day}/${billDueDate.month}/${billDueDate.year}';
   }
 
-  // Property address display
   String get propertyAddress => 'Plot $plotNo, Block $blockNo';
 
   @override
@@ -193,7 +186,6 @@ class Bill {
         'rentOs: $rentOsAmt, received: $rentReceivedAmt, plot: $plotNo, block: $blockNo}';
   }
 
-  // Copy with method for immutability
   Bill copyWith({
     int? billNo,
     int? billForMonth,
@@ -234,7 +226,6 @@ class Bill {
     );
   }
 
-  // Equatable implementation (optional - for value comparison)
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

@@ -41,7 +41,6 @@ class TicketModel {
 
   factory TicketModel.fromJson(Map<String, dynamic> json) {
     return TicketModel(
-      // brn_code: json['brn_code'],
       brn_code: (json['brn_code'] == null || json['brn_code'] == '')
           ? '00000'
           : json['brn_code'],
@@ -82,7 +81,7 @@ class CreateTicketRequest {
   final String description;
   final String ticketPriority;
   final DateTime? dueDate;
-  final String? attachmentPath; // MUST be string
+  final String? attachmentPath;
   final String userId;
   final double? latitude;
   final double? longitude;
@@ -348,7 +347,6 @@ class AuditLogGETDTO {
   );
 }
 
-// ===== TICKET ASSIGNMENT MODELS =====
 
 class AssignTicketRequest {
   final String brn_code;

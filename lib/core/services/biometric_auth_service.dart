@@ -7,12 +7,10 @@ class BiometricAuthService {
   final LocalAuthentication _auth = LocalAuthentication();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  // Storage keys
   static const String _biometricEnabledKey = "biometric_enabled";
   static const String _bioUsernameKey = "bio_username";
   static const String _bioPasswordKey = "bio_password";
 
-  // Check if biometric is available on device
   Future<bool> isBiometricAvailable() async {
     try {
       final bool canCheck = await _auth.canCheckBiometrics;
@@ -26,7 +24,6 @@ class BiometricAuthService {
     }
   }
 
-  // Get available biometric types
   Future<List<BiometricType>> getAvailableBiometrics() async {
     try {
       return await _auth.getAvailableBiometrics();
@@ -36,7 +33,6 @@ class BiometricAuthService {
     }
   }
 
-  // Load biometric state from storage
   Future<Map<String, dynamic>> loadBiometricState() async {
     try {
       final String? enabled = await _storage.read(key: _biometricEnabledKey);
@@ -55,7 +51,6 @@ class BiometricAuthService {
     }
   }
 
-  // Save biometric credentials after successful login
   Future<void> saveBiometricCredentials(String username, String password) async {
     try {
       await _storage.write(key: _bioUsernameKey, value: username);
@@ -65,7 +60,6 @@ class BiometricAuthService {
     }
   }
 
-  // Enable biometric login
   Future<bool> enableBiometricLogin(String username, String password) async {
     try {
       await _storage.write(key: _biometricEnabledKey, value: "true");
@@ -77,7 +71,6 @@ class BiometricAuthService {
     }
   }
 
-  // Disable biometric login
   Future<void> disableBiometricLogin() async {
     try {
       await _storage.delete(key: _biometricEnabledKey);
@@ -88,7 +81,6 @@ class BiometricAuthService {
     }
   }
 
-  // Clear all biometric data
   Future<void> clearAllBiometricData() async {
     try {
       await _storage.delete(key: _biometricEnabledKey);
@@ -99,8 +91,10 @@ class BiometricAuthService {
     }
   }
 
-  // Authenticate with biometric
+  String? lastError;
+
   Future<bool> authenticateWithBiometrics({String reason = 'Login to your account'}) async {
+    lastError = null;
     try {
       final bool didAuthenticate = await _auth.authenticate(
         localizedReason: reason,
@@ -112,17 +106,16 @@ class BiometricAuthService {
       return didAuthenticate;
     } catch (e) {
       debugPrint("Biometric authentication error: $e");
+      lastError = e.toString();
       return false;
     }
   }
 
-  // Check if current user matches biometric user
   bool isCurrentUserBiometricUser(String currentUsername, String? biometricUsername) {
     if (biometricUsername == null) return false;
     return currentUsername.trim() == biometricUsername;
   }
 
-  // Load saved credentials for biometric login
   Future<Map<String, String?>> loadSavedCredentials() async {
     try {
       final String? username = await _storage.read(key: _bioUsernameKey);

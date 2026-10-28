@@ -5,7 +5,7 @@ class ViewBillReceiptRequest {
   final int reportId;
   final String userName;
   final String billNo;
-  final String receiptNo; // ✅ added
+  final String receiptNo;
   final bool isStatement;
 
   ViewBillReceiptRequest({
@@ -15,7 +15,7 @@ class ViewBillReceiptRequest {
     this.reportId = 512162,
     required this.userName,
     required this.billNo,
-    required this.receiptNo, // ✅ added
+    required this.receiptNo,
     this.isStatement = false,
   });
 
@@ -26,7 +26,7 @@ class ViewBillReceiptRequest {
     "ReportId": reportId,
     "UserName": userName,
     "bill_no": billNo,
-    "receipt_no": receiptNo, // ✅ added
+    "receipt_no": receiptNo,
     "isstatement": isStatement,
   };
 }

@@ -7,10 +7,8 @@ class UpperCaseTextFormatter extends TextInputFormatter {
       TextEditingValue oldValue,
       TextEditingValue newValue,
       ) {
-    // Convert to uppercase
     final uppercaseText = newValue.text.toUpperCase();
 
-    // Only allow alphanumeric characters
     final filteredText = uppercaseText.replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
     return TextEditingValue(

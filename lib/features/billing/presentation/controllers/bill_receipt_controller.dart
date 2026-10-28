@@ -32,8 +32,6 @@ class BillReceiptController extends GetxController {
       print('Registration No: $registrationNo');
       print('BRN Code: $brnCode');
 
-      // FIXED: Using correct parameter order from the curl example
-      // brn_code first, then registration_no
       final url = Uri.parse(
         "${ApiConstants.getStatementUrl}?brn_code=$brnCode&regitration_no=$registrationNo",
       );
@@ -57,14 +55,11 @@ class BillReceiptController extends GetxController {
         print('StatusCode: ${data['StatusCode']}');
         print('Message: ${data['Message']}');
 
-        // Check if response is successful
         if (data['StatusCode'] == '200' || data['StatusCode'] == 200) {
-          // Check the structure of 'obj'
           if (data['obj'] != null) {
             print('obj type: ${data['obj'].runtimeType}');
             print('obj value: ${data['obj']}');
 
-            // Try to parse the response
             try {
               final receiptResponse = BillReceiptResponse.fromJson(data);
 
@@ -72,7 +67,6 @@ class BillReceiptController extends GetxController {
                 receiptList.assignAll(receiptResponse.receipts);
                 print('Found ${receiptList.length} receipts');
 
-                // Debug: Print first receipt details
                 if (receiptList.isNotEmpty) {
                   final first = receiptList.first;
                   print('First receipt: No=${first.receiptNo}, Amount=${first.receivedAmt}, Mode=${first.paymentMode}');

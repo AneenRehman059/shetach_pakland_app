@@ -1,6 +1,6 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
 import 'package:pakland/features/social/presentation/controllers/social_controller.dart';
@@ -8,6 +8,7 @@ import 'package:pakland/core/constants/image_constant.dart';
 import 'package:pakland/core/controllers/theme_controller.dart';
 import 'package:pakland/features/billing/presentation/screens/payment_plan_detail_screen.dart';
 import 'package:pakland/core/widgets/status_bar_wrapper.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class OnlinePaymentsScreen extends StatefulWidget {
   @override
@@ -39,23 +40,21 @@ class _OnlinePaymentsScreenState extends State<OnlinePaymentsScreen> {
         child: Scaffold(
           body: Stack(
             children: [
-              // Background Image covering entire screen
               Container(
                 width: double.infinity,
                 height: double.infinity,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage(ImageConstant.pay_online_bg),
+                    image: AssetImage('assets/images/pay_online_bg_img.jpg'),
                     fit: BoxFit.cover,
                   ),
                 ),
                 child: Container(color: Colors.black.withOpacity(0.1)),
               ),
 
-              // Content Column
               Column(
                 children: [
-                  AppBar(
+                  AppHeaderBar(
                     title: Text(
                       'Pay Online',
                       style: TextStyle(color: AppColors.whiteBg),
@@ -69,7 +68,6 @@ class _OnlinePaymentsScreenState extends State<OnlinePaymentsScreen> {
                     ),
                   ),
 
-                  // Main Content
                   Expanded(
                     child: Obx(() {
                       if (controller.isLoading.value) {
@@ -77,10 +75,7 @@ class _OnlinePaymentsScreenState extends State<OnlinePaymentsScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SpinKitWave(
-                                color: AppColors.appColor,
-                                size: 50.0,
-                              ),
+                              AppLoader(size: 100),
                               SizedBox(height: 16),
                               Text(
                                 'Loading',

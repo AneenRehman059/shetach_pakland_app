@@ -11,7 +11,7 @@ import 'package:pakland/features/sos/data/repositories/sos_repo.dart';
 import 'package:pakland/features/tickets/data/repositories/ticket_repo.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
 import 'package:pakland/features/sos/data/models/sos_models.dart';
-import 'package:pakland/core/network/httpMassageMapper.dart';
+import 'package:pakland/core/network/http_message_mapper.dart';
 
 class SOSController extends GetxController {
   final SOSRepository _sosRepository = SOSRepository();
@@ -20,7 +20,6 @@ class SOSController extends GetxController {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final Location _location = Location();
 
-  // SOS State Variables
   var isSOSActive = false.obs;
   var isHolding = false.obs;
   var holdProgress = 0.0.obs;
@@ -30,12 +29,10 @@ class SOSController extends GetxController {
   var lastSOSTicketId = ''.obs;
   var brnCode = ''.obs;
 
-  // Timers
   Timer? _holdTimer;
   Timer? _countdownTimer;
   Timer? _alarmTimer;
 
-  // Constants
   static const int HOLD_DURATION_SECONDS = 3;
   static const int COUNTDOWN_DURATION_SECONDS = 5;
   static const int ALARM_DURATION_MINUTES = 10;
@@ -44,10 +41,13 @@ class SOSController extends GetxController {
   void onInit() {
     super.onInit();
     _initializeAlarm();
-    _initializeLocation();
+    // NOTE: location permission is NOT requested here anymore.
+    // Requesting it in onInit (which runs in main() before runApp) collided
+    // with the notification / microphone / location permission prompts and
+    // made the app die after the first dialog. Permissions are now asked
+    // one-by-one by the permission handlers; this is only used lazily.
   }
 
-  // ✅ Helper method to show success message
   void _showSuccessMessage(String operation) {
     final message = HttpMessageMapper.getSuccessMessage(operation);
     Get.snackbar(
@@ -61,33 +61,12 @@ class SOSController extends GetxController {
     showTopSnackBar(Get.context!, message,Colors.green.withOpacity(0.7), icon: Icons.check_circle);
   }
 
-  // ✅ Helper method to show error message
   void _showErrorMessage(dynamic response, dynamic error, {String customMessage = ''}) {
     final statusCode = _getStatusCode(response, error);
     final message = customMessage.isNotEmpty ? customMessage : HttpMessageMapper.getMessage(statusCode);
-    // Get.snackbar(
-    //   'Error',
-    //   message,
-    //   backgroundColor: Colors.red,
-    //   colorText: Colors.white,
-    //   snackPosition: SnackPosition.TOP,
-    //   duration: Duration(seconds: 4),
-    // );
   }
 
-  // ✅ Helper method to show info message
-  // void _showInfoMessage(String message) {
-  //   Get.snackbar(
-  //     'Info',
-  //     message,
-  //     backgroundColor: Colors.blue,
-  //     colorText: Colors.white,
-  //     snackPosition: SnackPosition.TOP,
-  //     duration: Duration(seconds: 3),
-  //   );
-  // }
 
-  // ✅ Helper method to extract status code
   int _getStatusCode(dynamic response, dynamic error) {
     try {
       if (response is Map<String, dynamic>) {
@@ -102,7 +81,6 @@ class SOSController extends GetxController {
     }
   }
 
-  // Initialize alarm settings
   void _initializeAlarm() async {
     try {
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
@@ -112,8 +90,7 @@ class SOSController extends GetxController {
     }
   }
 
-  // Initialize location service
-  void _initializeLocation() async {
+  Future<void> _initializeLocation() async {
     try {
       bool serviceEnabled = await _location.serviceEnabled();
       if (!serviceEnabled) {
@@ -129,9 +106,7 @@ class SOSController extends GetxController {
     }
   }
 
-  // ========== MAIN SOS FLOW ========== //
 
-  // Start holding SOS button
   void startHolding() {
     if (isSOSActive.value || isAlarmPlaying.value) return;
 
@@ -147,14 +122,12 @@ class SOSController extends GetxController {
     });
   }
 
-  // Stop holding SOS button
   void stopHolding() {
     _holdTimer?.cancel();
     isHolding.value = false;
     holdProgress.value = 0.0;
   }
 
-  // Activate emergency SOS with countdown
   void _activateEmergencySOS() {
     isSOSActive.value = true;
     isHolding.value = false;
@@ -168,7 +141,6 @@ class SOSController extends GetxController {
       }
     });
 
-    // _showInfoMessage('Emergency alert will be sent in $COUNTDOWN_DURATION_SECONDS seconds');
   }
 
   void _executeSOSEmergency() async {
@@ -184,7 +156,6 @@ class SOSController extends GetxController {
         lastSOSTicketId.value = ticketId;
 
         await _notifyAdmins(userInfo, location, ticketId);
-        // _showSuccessAndNavigate(ticketId, Get.context!);
         Get.toNamed('/emergencyScreen', arguments: {'ticket_id': ticketId});
         _showSuccessMessage('sos_emergency');
       } else {
@@ -198,9 +169,7 @@ class SOSController extends GetxController {
     }
   }
 
-  // ========== CORE SOS METHODS ========== //
 
-  // Get user information
   Future<Map<String, String>> _getUserInfo() async {
     try {
       return {
@@ -220,9 +189,9 @@ class SOSController extends GetxController {
     }
   }
 
-  // Get current location
   Future<Map<String, double>?> _getCurrentLocation() async {
     try {
+      await _initializeLocation();
       LocationData locationData = await _location.getLocation();
       return {
         'latitude': locationData.latitude ?? 0.0,
@@ -234,7 +203,6 @@ class SOSController extends GetxController {
     }
   }
 
-  // Create SOS ticket
   Future<Map<String, dynamic>> _createSOSTicket(
       Map<String, String> userInfo,
       Map<String, double>? location) async {
@@ -276,7 +244,6 @@ class SOSController extends GetxController {
     }
   }
 
-  // Build SOS description
   String _buildSOSDescription(Map<String, String> userInfo, Map<String, double>? location) {
     return '''
 EMERGENCY REQUEST!
@@ -290,9 +257,7 @@ PLEASE RESPOND IMMEDIATELY!
 ''';
   }
 
-  // ========== ALARM SYSTEM ========== //
 
-  // Start alarm system
   Future<void> startAlarmSystem() async {
     if (isAlarmPlaying.value) return;
 
@@ -301,7 +266,6 @@ PLEASE RESPOND IMMEDIATELY!
 
       await _audioPlayer.play(
         AssetSource('sounds/sos_alarm.mp3'),
-        // volume: 1.0,
       );
 
       if (await Vibration.hasVibrator() == true) {
@@ -314,7 +278,6 @@ PLEASE RESPOND IMMEDIATELY!
       _alarmTimer = Timer(const Duration(minutes: ALARM_DURATION_MINUTES), () {
         if (isAlarmPlaying.value) {
           stopAlarm();
-          // _showInfoMessage('Alarm stopped after $ALARM_DURATION_MINUTES minutes');
         }
       });
 
@@ -324,7 +287,6 @@ PLEASE RESPOND IMMEDIATELY!
     }
   }
 
-  // Stop alarm system (for user)
   Future<void> stopAlarm() async {
     if (!isAlarmPlaying.value) return;
 
@@ -332,7 +294,7 @@ PLEASE RESPOND IMMEDIATELY!
       isAlarmPlaying.value = false;
 
       await _audioPlayer.stop();
-      await _audioPlayer.release(); // important
+      await _audioPlayer.release();
 
       Vibration.cancel();
 
@@ -359,13 +321,12 @@ PLEASE RESPOND IMMEDIATELY!
     }
   }
 
-  // Stop alarm for Admin/Team (no status update)
   Future<void> stopAdminAlarm() async {
     try {
       isAlarmPlaying.value = false;
 
       await _audioPlayer.stop();
-      await _audioPlayer.release(); // important
+      await _audioPlayer.release();
 
       Vibration.cancel();
 
@@ -378,7 +339,6 @@ PLEASE RESPOND IMMEDIATELY!
     }
   }
 
-  // Respond to SOS (Go & Respond)
   Future<bool> respondToSOS({
     required String ticketId,
     required String responderUserId,
@@ -406,9 +366,7 @@ PLEASE RESPOND IMMEDIATELY!
     }
   }
 
-  // ========== NOTIFICATION SYSTEM ========== //
 
-  // Notify admins about SOS
   Future<void> _notifyAdmins(
       Map<String, String> userInfo,
       Map<String, double>? location,
@@ -442,9 +400,7 @@ PLEASE RESPOND IMMEDIATELY!
     }
   }
 
-  // ========== UI METHODS ========== //
 
-  // Show success and navigate
   void _showSuccessAndNavigate(String ticketId, BuildContext context) {
     Get.dialog(
       AlertDialog(
@@ -484,14 +440,11 @@ PLEASE RESPOND IMMEDIATELY!
     );
   }
 
-  // Cancel emergency SOS
   void cancelEmergencySOS() {
     _countdownTimer?.cancel();
     resetSOSState();
-    // _showInfoMessage('Emergency alert has been cancelled');
   }
 
-  // Reset SOS state
   void resetSOSState() {
     isSOSActive.value = false;
     isHolding.value = false;
@@ -501,9 +454,7 @@ PLEASE RESPOND IMMEDIATELY!
     _countdownTimer?.cancel();
   }
 
-  // ========== PUBLIC METHODS ========== //
 
-  // Get current SOS status
   String get sosStatus {
     if (isAlarmPlaying.value) return 'Alarm Active';
     if (isSOSActive.value) return 'SOS Activated';
@@ -511,7 +462,6 @@ PLEASE RESPOND IMMEDIATELY!
     return 'Ready';
   }
 
-  // Check if SOS is in progress
   bool get isSOSInProgress {
     return isSOSActive.value || isAlarmPlaying.value || isHolding.value;
   }

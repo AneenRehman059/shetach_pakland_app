@@ -1,18 +1,13 @@
+import 'package:pakland/core/widgets/responsive_body.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:pakland/core/theme/colors.dart';
-import 'package:pakland/core/constants/image_constant.dart';
-import 'package:pakland/core/widgets/custom_fields.dart';
-import 'package:pakland/core/widgets/app_bar.dart';
 import 'package:pakland/features/auth/presentation/controllers/update_password_controller.dart';
 import 'package:pakland/features/auth/presentation/controllers/login_controller.dart';
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
-import 'package:pakland/core/widgets/custom_buttons.dart';
-import 'package:pakland/core/widgets/toast_message.dart';
-import 'package:pakland/features/profile/presentation/screens/profile_screen.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
+import 'package:pakland/core/widgets/auth_hero_layout.dart';
+import 'package:pakland/core/constants/image_constant.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -24,18 +19,14 @@ class ChangePasswordScreen extends StatefulWidget {
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final TextEditingController oldPasswordController = TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-  TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
 
-  final UpdatePasswordController _controller =
-  Get.put(UpdatePasswordController());
+  final UpdatePasswordController _controller = Get.put(UpdatePasswordController());
   final LoginController _loginController = Get.find<LoginController>();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   String _newPasswordStrength = '';
   Color _newPasswordStrengthColor = Colors.grey;
-  String _confirmPasswordStrength = '';
-  Color _confirmPasswordStrengthColor = Colors.grey;
   final FocusNode _oldPassFocusNode = FocusNode();
   final FocusNode _newPassFocusNode = FocusNode();
   final FocusNode _conPassFocusNode = FocusNode();
@@ -45,6 +36,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     'newPassword': '',
     'confirmPassword': '',
   };
+
+  bool _obscureOldPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
+
 
   void _checkNewPasswordStrength(String password) {
     if (password.isEmpty) {
@@ -61,34 +57,28 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     bool hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password);
     int length = password.length;
 
-    // Count how many character types are included
     int characterTypesCount = 0;
     if (hasUppercase) characterTypesCount++;
     if (hasLowercase) characterTypesCount++;
     if (hasNumber) characterTypesCount++;
     if (hasSpecialChar) characterTypesCount++;
 
-    // Determine strength level
     if (length > 8 && characterTypesCount == 4) {
-      // Strong: More than 8 characters and includes all character types
       setState(() {
         _newPasswordStrength = 'Strong';
         _newPasswordStrengthColor = Colors.green;
       });
     } else if (length == 8) {
-      // Average: Exactly 8 characters (always show as Average regardless of character types)
       setState(() {
         _newPasswordStrength = 'Average';
         _newPasswordStrengthColor = Colors.orange;
       });
     } else if (length > 8 && characterTypesCount >= 2) {
-      // Average: More than 8 characters with at least 2 character types
       setState(() {
         _newPasswordStrength = 'Average';
         _newPasswordStrengthColor = Colors.orange;
       });
     } else if (length > 0) {
-      // Weak: Less than 8 characters or doesn't meet above criteria
       setState(() {
         _newPasswordStrength = 'Weak';
         _newPasswordStrengthColor = Colors.red;
@@ -101,74 +91,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     }
   }
 
-  void _checkConfirmPasswordStrength(String password) {
-    if (password.isEmpty) {
-      setState(() {
-        _confirmPasswordStrength = '';
-        _confirmPasswordStrengthColor = Colors.grey;
-      });
-      return;
-    }
-
-    bool hasUppercase = RegExp(r'[A-Z]').hasMatch(password);
-    bool hasLowercase = RegExp(r'[a-z]').hasMatch(password);
-    bool hasNumber = RegExp(r'[0-9]').hasMatch(password);
-    bool hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password);
-    int length = password.length;
-
-    // Count how many character types are included
-    int characterTypesCount = 0;
-    if (hasUppercase) characterTypesCount++;
-    if (hasLowercase) characterTypesCount++;
-    if (hasNumber) characterTypesCount++;
-    if (hasSpecialChar) characterTypesCount++;
-
-    // Determine strength level
-    if (length > 8 && characterTypesCount == 4) {
-      // Strong: More than 8 characters and includes all character types
-      setState(() {
-        _confirmPasswordStrength = 'Strong';
-        _confirmPasswordStrengthColor = Colors.green;
-      });
-    } else if (length == 8) {
-      // Average: Exactly 8 characters (always show as Average regardless of character types)
-      setState(() {
-        _confirmPasswordStrength = 'Average';
-        _confirmPasswordStrengthColor = Colors.orange;
-      });
-    } else if (length > 8 && characterTypesCount >= 2) {
-      // Average: More than 8 characters with at least 2 character types
-      setState(() {
-        _confirmPasswordStrength = 'Average';
-        _confirmPasswordStrengthColor = Colors.orange;
-      });
-    } else if (length > 0) {
-      // Weak: Less than 8 characters or doesn't meet above criteria
-      setState(() {
-        _confirmPasswordStrength = 'Weak';
-        _confirmPasswordStrengthColor = Colors.red;
-      });
-    } else {
-      setState(() {
-        _confirmPasswordStrength = '';
-        _confirmPasswordStrengthColor = Colors.grey;
-      });
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     newPasswordController.addListener(() {
       _checkNewPasswordStrength(newPasswordController.text);
-      // Also update confirm password strength when new password changes
-      if (confirmPasswordController.text.isNotEmpty) {
-        _checkConfirmPasswordStrength(confirmPasswordController.text);
-      }
     });
 
     confirmPasswordController.addListener(() {
-      _checkConfirmPasswordStrength(confirmPasswordController.text);
+      if (mounted) setState(() {});
     });
   }
 
@@ -177,7 +108,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     oldPasswordController.dispose();
     newPasswordController.dispose();
     confirmPasswordController.dispose();
-
     _oldPassFocusNode.dispose();
     _newPassFocusNode.dispose();
     _conPassFocusNode.dispose();
@@ -196,8 +126,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       };
       _newPasswordStrength = '';
       _newPasswordStrengthColor = Colors.grey;
-      _confirmPasswordStrength = '';
-      _confirmPasswordStrengthColor = Colors.grey;
     });
   }
 
@@ -209,13 +137,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       'confirmPassword': '',
     };
 
-    // Old password validation
     if (oldPasswordController.text.isEmpty) {
       _fieldErrors['oldPassword'] = 'Please enter your old password';
       isValid = false;
     }
 
-    // New password validation
     final newPassword = newPasswordController.text.trim();
     if (newPassword.isEmpty) {
       _fieldErrors['newPassword'] = 'Please enter a new password';
@@ -233,7 +159,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       }
     }
 
-    // Confirm password validation
     if (confirmPasswordController.text.isEmpty) {
       _fieldErrors['confirmPassword'] = 'Please confirm your password';
       isValid = false;
@@ -255,7 +180,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       setState(() {
         _fieldErrors['oldPassword'] = 'Old password does not match!';
       });
-
       return;
     }
 
@@ -267,259 +191,131 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     if (success) {
       await Future.delayed(const Duration(milliseconds: 1600));
-      // Logout and navigate to login screen
       await _loginController.logout();
     } else {
       _clearFields();
     }
   }
 
+  void _clearError(String key) {
+    if ((_fieldErrors[key] ?? '').isNotEmpty) {
+      setState(() => _fieldErrors[key] = '');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     return WillPopScope(
       onWillPop: () async {
         Get.off(() => MainWrapper(initialIndex: 1));
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("Change Password",style: TextStyle(color: AppColors.whiteBg),),
-          centerTitle: true,
-          backgroundColor: AppColors.appColor,
-          actions: [
-            IconButton(
-              icon: Icon(Icons.home, color: Colors.white),
-              onPressed: () {
-                Get.offAll(() => MainWrapper(initialIndex: 0));
-              },
-            ),
-          ],
-          iconTheme: IconThemeData(color: Colors.white),
-        ),
+        backgroundColor: const Color(0xFFF4F6FB),
         resizeToAvoidBottomInset: true,
-        body: Column(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: size.width * 0.06,
-                ),
-                child: ListView(
-                  children: [
-                    SizedBox(height:size.height * 0.06,),
-                    Center(
-                      child: Image.asset(
-                        ImageConstant.logo,
-                        height: size.height * 0.12,
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CustomTextField(
-                          label: "Old Password",
-                          hintText: "Enter old password",
-                          imagePath: ImageConstant.pass,
-                          controller: oldPasswordController,
-                          obscureText: true,
-                          showVisibilityIcon: true,
-                          borderRadius: 30,
-                          height: MediaQuery.of(context).size.height * 0.05,
-                        ),
-                        if (_fieldErrors['oldPassword']?.isNotEmpty ?? false)
-                          Padding(
-                            padding: EdgeInsets.only(left: 8, top: 4),
-                            child: Text(
-                              _fieldErrors['oldPassword']!,
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    SizedBox(height: size.height * 0.012),
-
-                    // New Password Field with Error Message
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CustomTextField(
-                          label: "New Password",
-                          hintText: "Enter new password",
-                          imagePath: ImageConstant.pass,
-                          controller: newPasswordController,
-                          obscureText: true,
-                          showVisibilityIcon: true,   borderRadius: 30,
-                          height: MediaQuery.of(context).size.height * 0.05,
-
-                        ),
-
-                        // New Password Strength Indicator
-                        if (_newPasswordStrength.isNotEmpty)
-                          Padding(
-                            padding: EdgeInsets.only(left: 8, top: 4),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'Strength: ',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                Text(
-                                  _newPasswordStrength,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _newPasswordStrengthColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        if (_fieldErrors['newPassword']?.isNotEmpty ?? false)
-                          Padding(
-                            padding: EdgeInsets.only(left: 8, top: 4),
-                            child: Text(
-                              _fieldErrors['newPassword']!,
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    SizedBox(height: size.height * 0.012),
-
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CustomTextField(
-                          label: "Confirm Password",
-                          hintText: "Re-enter new password",
-                          imagePath: ImageConstant.pass,
-                          controller: confirmPasswordController,
-                          obscureText: true,
-                          showVisibilityIcon: true,   borderRadius: 30,
-                          height: MediaQuery.of(context).size.height * 0.05,
-
-                        ),
-
-                        if (_confirmPasswordStrength.isNotEmpty)
-                          Padding(
-                            padding: EdgeInsets.only(left: 8, top: 4),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'Strength: ',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                Text(
-                                  _confirmPasswordStrength,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _confirmPasswordStrengthColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        // Password match indicator
-                        if (confirmPasswordController.text.isNotEmpty)
-                          Padding(
-                            padding: EdgeInsets.only(left: 8, top: 4),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  newPasswordController.text == confirmPasswordController.text
-                                      ? Icons.check_circle
-                                      : Icons.error,
-                                  color: newPasswordController.text == confirmPasswordController.text
-                                      ? Colors.green
-                                      : Colors.red,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  newPasswordController.text == confirmPasswordController.text
-                                      ? 'Passwords match'
-                                      : 'Passwords do not match',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: newPasswordController.text == confirmPasswordController.text
-                                        ? Colors.green
-                                        : Colors.red,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        if (_fieldErrors['confirmPassword']?.isNotEmpty ?? false)
-                          Padding(
-                            padding: EdgeInsets.only(left: 8, top: 4),
-                            child: Text(
-                              _fieldErrors['confirmPassword']!,
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    SizedBox(height: size.height * 0.04),
-
-                    Padding(
-                      padding:  EdgeInsets.symmetric(horizontal: size.width * 0.26,),
-                      child: SizedBox(
-                        height: size.height * 0.05,
-                        child: Obx(() => ElevatedButton(
-                          onPressed: _controller.isLoading.value
-                              ? null
-                              : _handleUpdate,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            backgroundColor: _controller.isLoading.value
-                                ? AppColors.appColor.withOpacity(0.7)
-                                : AppColors.appColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: _controller.isLoading.value
-                              ? const SpinKitWave(
-                            color: Colors.white,
-                            size: 24.0,
-                          )
-                              : Text(
-                            "UPDATE",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: size.width * 0.045,
-                            ),
-                          ),
-                        )),
-                      ),
-                    ),
-                    SizedBox(height: size.height * 0.02),
-                  ],
-                ),
-              ),
+        body: ResponsiveBody(
+          child: AuthHeroLayout(
+            title: 'Change Password',
+            subtitle: 'Keep your account safe with a strong password.',
+            heroIcon: Icons.lock_reset_rounded,
+            onBack: () => Get.back(),
+            trailing: AppHeaderAction(
+              assetIcon: ImageConstant.icHouse,
+              tooltip: 'Home',
+              onPressed: () => Get.offAll(() => MainWrapper(initialIndex: 0)),
             ),
-          ],
+            cardBuilder: (context, info) {
+              final double gap = info.gap;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AuthPasswordField(
+                    label: 'Current Password',
+                    hint: 'Enter current password',
+                    controller: oldPasswordController,
+                    focusNode: _oldPassFocusNode,
+                    errorText: _fieldErrors['oldPassword'] ?? '',
+                    obscure: _obscureOldPassword,
+                    icon: Icons.lock_outline_rounded,
+                    onToggle: () {
+                      setState(() => _obscureOldPassword = !_obscureOldPassword);
+                    },
+                    onChanged: (_) => _clearError('oldPassword'),
+                    onSubmitted: (_) => _newPassFocusNode.requestFocus(),
+                  ),
+                  SizedBox(height: gap),
+                  AuthPasswordField(
+                    label: 'New Password',
+                    hint: 'Enter new password',
+                    controller: newPasswordController,
+                    focusNode: _newPassFocusNode,
+                    errorText: _fieldErrors['newPassword'] ?? '',
+                    obscure: _obscureNewPassword,
+                    icon: Icons.vpn_key_outlined,
+                    onToggle: () {
+                      setState(() => _obscureNewPassword = !_obscureNewPassword);
+                    },
+                    onChanged: (_) => _clearError('newPassword'),
+                    onSubmitted: (_) => _conPassFocusNode.requestFocus(),
+                    extras: [
+                      if (newPasswordController.text.isNotEmpty &&
+                          _newPasswordStrength.isNotEmpty)
+                        PasswordStrengthMeter(
+                          strength: _newPasswordStrength,
+                          color: _newPasswordStrengthColor,
+                        ),
+                      if (newPasswordController.text.isNotEmpty)
+                        PasswordRequirementChips(
+                          password: newPasswordController.text,
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: gap),
+                  AuthPasswordField(
+                    label: 'Confirm Password',
+                    hint: 'Re-enter new password',
+                    controller: confirmPasswordController,
+                    focusNode: _conPassFocusNode,
+                    errorText: _fieldErrors['confirmPassword'] ?? '',
+                    obscure: _obscureConfirmPassword,
+                    icon: Icons.verified_user_outlined,
+                    action: TextInputAction.done,
+                    onToggle: () {
+                      setState(() =>
+                          _obscureConfirmPassword = !_obscureConfirmPassword);
+                    },
+                    onChanged: (_) => _clearError('confirmPassword'),
+                    onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                    extras: [
+                      if (newPasswordController.text.isNotEmpty &&
+                          confirmPasswordController.text.isNotEmpty)
+                        PasswordMatchIndicator(
+                          match: confirmPasswordController.text ==
+                              newPasswordController.text,
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: gap + 6),
+                  Obx(
+                    () => AuthGradientButton(
+                      label: 'Update Password',
+                      icon: Icons.verified_user_rounded,
+                      loading: _controller.isLoading.value,
+                      onTap: _handleUpdate,
+                    ),
+                  ),
+                  if (!info.compact) ...[
+                    const SizedBox(height: 10),
+                    const AuthInfoCaption(
+                      text:
+                          'For your security you will be signed out after the password is changed.',
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pakland/core/constants/api_constant.dart';
+import 'package:pakland/features/auth/domain/repositories/forgot_password_repository.dart';
 
-class ForgotPasswordRepository {
+class ForgotPasswordRepository implements IForgotPasswordRepository {
   Future<Map<String, dynamic>> updatePassword(Map<String, dynamic> body) async {
     final response = await http.post(
       Uri.parse(ApiConstants.forgotPasswordUrl),

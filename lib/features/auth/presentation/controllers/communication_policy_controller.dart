@@ -1,16 +1,33 @@
 import 'package:get/get.dart';
 
 import 'package:pakland/features/auth/data/repositories/communication_policy_repo.dart';
+import 'package:pakland/features/auth/domain/usecases/communication_policy_usecase.dart';
 
-/// The 3 OTP methods the SignUp screen can show a radio button for.
+/// The 3 OTP methods the SignUp / Forgot Password screens can show.
 enum OtpMethodOption { sms, email, whatsapp }
 
+/// Value sent to the API (`otp_via`) and label shown on screen.
+extension OtpMethodOptionX on OtpMethodOption {
+  String get value {
+    if (this == OtpMethodOption.whatsapp) return 'whatsapp';
+    if (this == OtpMethodOption.email) return 'email';
+    return 'sms';
+  }
+
+  String get label {
+    if (this == OtpMethodOption.whatsapp) return 'WHATSAPP';
+    if (this == OtpMethodOption.email) return 'EMAIL';
+    return 'SMS';
+  }
+}
+
 class CommunicationPolicyController extends GetxController {
-  final _repo = CommunicationPolicyRepository();
+  final CommunicationPolicyUseCase _communicationPolicyUseCase =
+      CommunicationPolicyUseCase(CommunicationPolicyRepository());
 
   var isLoading = false.obs;
 
-  /// Which single OTP method should be shown/selected on the SignUp screen.
+  /// Which single OTP method should be shown/selected on the screen.
   /// Defaults to `sms` until the API responds (or if it fails).
   var otpMethod = OtpMethodOption.sms.obs;
 
@@ -23,7 +40,7 @@ class CommunicationPolicyController extends GetxController {
   Future<void> fetchCommunicationPolicy() async {
     try {
       isLoading.value = true;
-      final policy = await _repo.getCommunicationPolicy();
+      final policy = await _communicationPolicyUseCase();
 
       final keyCode = policy.keyCode.trim().toLowerCase();
 

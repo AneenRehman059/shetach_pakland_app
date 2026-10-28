@@ -1,4 +1,3 @@
-// models/receipt_model.dart
 class BillReceiptResponse {
   final String statusCode;
   final String message;
@@ -82,7 +81,6 @@ class BillReceipt {
   });
 
   factory BillReceipt.fromJson(Map<String, dynamic> json) {
-    // Helper functions for parsing
     int parseInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
@@ -130,29 +128,24 @@ class BillReceipt {
     );
   }
 
-  // Getter for formatted date (use received_date if available, otherwise posting_date)
   String get formattedDate {
     String? dateString = receivedDate ?? postingDate;
 
     if (dateString == null || dateString.isEmpty) return 'N/A';
 
     try {
-      // Parse ISO format (e.g., "2026-01-07T10:18:45.93")
       final dateTime = DateTime.tryParse(dateString);
       if (dateTime != null) {
         return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year}';
       }
 
-      // Try other formats if needed
-      return dateString.split('T')[0]; // Get just the date part
+      return dateString.split('T')[0];
     } catch (e) {
       return dateString;
     }
   }
 
-  // Getter for amount - use receivedAmt
   double get paidAmt => receivedAmt;
 
-  // Getter for date display in table
   String get displayDate => formattedDate;
 }

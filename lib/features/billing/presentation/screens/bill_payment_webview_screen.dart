@@ -1,9 +1,11 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/theme/colors.dart';
 
 import 'package:pakland/features/billing/presentation/screens/bill_reg_no_screen.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class BillPaymentWebViewScreen extends StatefulWidget {
   final String paymentUrl;
@@ -45,19 +47,16 @@ class _BillPaymentWebViewScreenState extends State<BillPaymentWebViewScreen> {
 
   Future<bool> _onWillPop() async {
     if (_canGoBack) {
-      // If webview can go back, go back in webview history
       await webController?.goBack();
       await _checkCanGoBack();
-      return false; // Don't pop the route
+      return false;
     } else {
-      // If webview cannot go back, navigate to ClientListScreen with refresh
       _navigateBackWithRefresh();
-      return false; // We handle navigation ourselves
+      return false;
     }
   }
 
   void _navigateBackWithRefresh() {
-    // Clear selections and refresh ClientListScreen
     Get.offAll(
           () => ClientListScreen(),
       transition: Transition.rightToLeft,
@@ -66,7 +65,6 @@ class _BillPaymentWebViewScreenState extends State<BillPaymentWebViewScreen> {
   }
 
   void _handleAppBarBack() {
-    // This will trigger the same logic as hardware back button
     _onWillPop();
   }
 
@@ -75,7 +73,7 @@ class _BillPaymentWebViewScreenState extends State<BillPaymentWebViewScreen> {
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppHeaderBar(
           title: Text(
             "Payment Portal",
             style: TextStyle(color: Colors.white),
@@ -158,7 +156,7 @@ class _BillPaymentWebViewScreenState extends State<BillPaymentWebViewScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(color: Colors.white),
+                      AppLoader(),
                       SizedBox(height: 10),
                       Text(
                         "Returning to bills...",

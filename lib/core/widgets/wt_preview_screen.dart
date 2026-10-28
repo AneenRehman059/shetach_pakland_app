@@ -1,3 +1,4 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -27,7 +28,7 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
   late List<bool> _videoInitialized;
   late List<bool> _pdfInitialized;
   int _currentIndex = 0;
-  bool _isSending = false; // Add flag to prevent double tap
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -42,7 +43,6 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
     _videoInitialized = List.generate(widget.files.length, (_) => false);
     _pdfInitialized = List.generate(widget.files.length, (_) => false);
 
-    // Initialize first file immediately
     if (widget.files.isNotEmpty) {
       _initializeFilePreview(0);
     }
@@ -90,12 +90,10 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
   void _onPageChanged(int index) {
     setState(() => _currentIndex = index);
 
-    // Initialize preview for current and adjacent pages
     _initializeFilePreview(index);
     if (index > 0) _initializeFilePreview(index - 1);
     if (index < widget.files.length - 1) _initializeFilePreview(index + 1);
 
-    // Pause videos when not on their page
     for (int i = 0; i < _videoControllers.length; i++) {
       if (i != index && _videoInitialized[i] && _videoControllers[i]!.value.isPlaying) {
         _videoControllers[i]!.pause();
@@ -432,7 +430,6 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
     return '$minutes:$seconds';
   }
 
-  // Custom Page Indicator Widget
   Widget _buildCustomPageIndicator() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -450,22 +447,17 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
     );
   }
 
-  // Handle send button press
   void _handleSend() {
-    if (_isSending) return; // Prevent double tap
+    if (_isSending) return;
 
     setState(() {
       _isSending = true;
     });
 
-    // Call the onSend callback
     widget.onSend();
 
-    // Note: The parent widget should handle closing the preview
-    // by checking the boolean return value
   }
 
-  // Handle cancel button press
   void _handleCancel() {
     if (!_isSending) {
       widget.onCancel();
@@ -479,7 +471,6 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
       body: SafeArea(
         child: Stack(
           children: [
-            // PageView for multiple files
             PageView.builder(
               controller: _pageController,
               itemCount: widget.files.length,
@@ -489,7 +480,6 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
               },
             ),
 
-            // WhatsApp-style header with file counter
             Positioned(
               top: 0,
               left: 0,
@@ -533,10 +523,7 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
                           ? Container(
                         width: 30,
                         height: 30,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
+                        child: AppLoader(),
                       )
                           : Container(
                         width: 30,
@@ -558,7 +545,6 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
               ),
             ),
 
-            // Custom page indicator (dots) at the bottom for multiple files
             if (widget.files.length > 1)
               Positioned(
                 bottom: 20,
@@ -576,7 +562,6 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
                 ),
               ),
 
-            // Navigation arrows for large screens
             if (widget.files.length > 1 && !_isSending)
               Positioned(
                 left: 10,

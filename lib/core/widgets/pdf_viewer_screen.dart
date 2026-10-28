@@ -1,15 +1,16 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/theme/colors.dart';
-import 'package:pakland/core/constants/download_contant.dart';
+import 'package:pakland/core/constants/download_constant.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
-import 'package:pakland/core/widgets/custom_messages.dart'; // ← your messages file
+import 'package:pakland/core/widgets/custom_messages.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 import 'package:pakland/core/services/permission_service.dart';
 
@@ -32,6 +33,8 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
   bool isLoading = true;
   bool _isDownloading = false;
   String errorMessage = '';
+  int _currentPage = 0;
+  int _totalPages = 0;
 
   @override
   void initState() {
@@ -43,6 +46,8 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
     setState(() {
       isLoading = true;
       errorMessage = '';
+      _currentPage = 0;
+      _totalPages = 0;
     });
 
     try {
@@ -76,10 +81,8 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
   Future<void> _downloadPdf() async {
     if (_isDownloading) return;
 
-    // ── 1. Permission check ──────────────────────────────────────────
     final hasPermission = await DownloadUtils.requestPermission();
     if (!hasPermission) {
-      // Check if permanently denied → guide to settings
       final isPermanentlyDenied =
           await Permission.storage.isPermanentlyDenied ||
               await Permission.photos.isPermanentlyDenied;
@@ -100,7 +103,6 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
       return;
     }
 
-    // ── 2. Storage space check ───────────────────────────────────────
     try {
       final hasSpace = await _hasEnoughStorage();
       if (!hasSpace) {
@@ -131,7 +133,6 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
     setState(() => _isDownloading = true);
 
     try {
-      // ── 3. Duplicate file check ────────────────────────────────────
       final directory   = await DownloadUtils.getDownloadsDirectory();
       final fileExists  = await DownloadUtils.checkFileExists(widget.title);
       final timestamp   = DateTime.now().millisecondsSinceEpoch;
@@ -140,7 +141,6 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
           ? '${widget.title}_$timestamp'
           : widget.title;
 
-      // ── 4. Download ────────────────────────────────────────────────
       final result = await DownloadUtils.downloadFile(
         widget.pdfUrl,
         downloadedFileName,
@@ -188,7 +188,6 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
     }
   }
 
-  // ── Settings dialog (permanently denied) ──────────────────────────
   void _showSettingsDialog() {
     showDialog(
       context: context,
@@ -239,7 +238,6 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
     );
   }
 
-  // ── Storage check ──────────────────────────────────────────────────
   Future<bool> _hasEnoughStorage({int minRequiredMB = 50}) async {
     try {
       final tempDir = await getTemporaryDirectory();
@@ -274,79 +272,225 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title, style: TextStyle(color: AppColors.whiteBg)),
+      backgroundColor: const Color(0xFFE9EEF3),
+      appBar: AppHeaderBar(
+        title: Text(widget.title),
+        subtitle: _totalPages > 0
+            ? 'Page ${_currentPage + 1} of $_totalPages'
+            : 'PDF Document',
         centerTitle: true,
-        iconTheme: IconThemeData(color: AppColors.whiteBg),
-        backgroundColor: AppColors.appColor,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.download, color: AppColors.whiteBg),
-            onPressed: _isDownloading ? null : _downloadPdf,
-            tooltip: DownloadMessages.downloadTooltip,
-          ),
-        ],
+        actions: [_buildDownloadAction()],
       ),
-      body: isLoading
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SpinKitWave(color: AppColors.appColor, size: 50.0),
-            const SizedBox(height: 12),
-            Text(
-              DownloadMessages.loadingLabel,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.appColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildDownloadAction() {
+    if (_isDownloading) {
+      return Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.14),
+          shape: BoxShape.circle,
         ),
-      )
-          : localFilePath != null
-          ? PDFView(
-        filePath: localFilePath!,
-        enableSwipe: true,
-        swipeHorizontal: false,
-        autoSpacing: true,
-        pageFling: true,
-        onError: (error) {},
-      )
-          : Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.picture_as_pdf,
-                color: Colors.red, size: 64),
-            const SizedBox(height: 16),
-            Text(
-              DownloadMessages.pdfLoadFailedMessage,
-              style: const TextStyle(fontSize: 16),
-            ),
-            if (errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  '${DownloadMessages.errorLabel} $errorMessage',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.red),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: AppLoader(),
+          ),
+        ),
+      );
+    }
+
+    return AppHeaderAction(
+      icon: Icons.download_rounded,
+      tooltip: DownloadMessages.downloadTooltip,
+      onPressed: _downloadPdf,
+    );
+  }
+
+  Widget _buildBody() {
+    if (isLoading) {
+      return Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 26),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppLoader(size: 88),
+              const SizedBox(height: 12),
+              Text(
+                DownloadMessages.loadingLabel,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.appColor,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.appColor,
-              ),
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              label: Text(
-                DownloadMessages.retryLabel,
-                style: const TextStyle(color: Colors.white),
-              ),
-              onPressed: loadPdf,
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (localFilePath != null) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: PDFView(
+              filePath: localFilePath!,
+              enableSwipe: true,
+              swipeHorizontal: false,
+              autoSpacing: true,
+              pageFling: true,
+              onRender: (pages) {
+                if (mounted) setState(() => _totalPages = pages ?? 0);
+              },
+              onPageChanged: (page, total) {
+                if (mounted) {
+                  setState(() {
+                    _currentPage = page ?? 0;
+                    _totalPages = total ?? _totalPages;
+                  });
+                }
+              },
+              onError: (error) {},
             ),
-          ],
+          ),
+          if (_totalPages > 0)
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.65),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${_currentPage + 1} / $_totalPages',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 420),
+          padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD64545).withOpacity(0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.picture_as_pdf_rounded,
+                    color: Color(0xFFD64545), size: 36),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                DownloadMessages.pdfLoadFailedMessage,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF2B3A42),
+                ),
+              ),
+              if (errorMessage.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF1F1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${DownloadMessages.errorLabel} $errorMessage',
+                    textAlign: TextAlign.center,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: Color(0xFFB03A3A),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.appColor,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: const Icon(Icons.refresh_rounded,
+                      color: Colors.white, size: 20),
+                  label: Text(
+                    DownloadMessages.retryLabel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                  onPressed: loadPdf,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

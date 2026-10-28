@@ -12,10 +12,8 @@ class FaqController extends GetxController {
   var faqs = <FaqModel>[].obs;
   var isLoading = false.obs;
 
-  // 🔍 Search Query
   var searchQuery = "".obs;
 
-  // 🔍 Filtered FAQs based on Question
   List<FaqModel> get filteredFaqs {
     if (searchQuery.value.isEmpty) {
       return faqs;
@@ -33,7 +31,6 @@ class FaqController extends GetxController {
     fetchFaqsFromServer();
   }
 
-  // 📌 Load stored FAQs from local storage (GetStorage)
   void loadLocalFaqs() {
     final data = storage.read("faqs");
 
@@ -43,7 +40,6 @@ class FaqController extends GetxController {
     }
   }
 
-  // 📌 Fetch new FAQs from API
   Future<void> fetchFaqsFromServer() async {
     try {
       if (faqs.isEmpty) {
@@ -53,7 +49,6 @@ class FaqController extends GetxController {
       final List<FaqModel> data = await _repo.fetchFaqs();
       faqs.value = data;
 
-      // Save to local storage
       storage.write(
         "faqs",
         data.map((e) => e.toJson()).toList(),

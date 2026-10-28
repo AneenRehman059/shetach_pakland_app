@@ -1,12 +1,14 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
+import 'package:pakland/core/utils/screen_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pakland/core/theme/colors.dart';
 
 import 'package:pakland/features/billing/presentation/controllers/bill_receipt_controller.dart';
 import 'package:pakland/features/billing/data/models/bill_receipt_model.dart';
 import 'package:pakland/features/billing/presentation/screens/view_bill_receipt_screen.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class GetBillReceiptsScreen extends StatefulWidget {
   final String registrationNo;
@@ -49,12 +51,11 @@ class _GetBillReceiptsScreenState extends State<GetBillReceiptsScreen> {
     super.dispose();
   }
 
-  // Check if device is tablet based on screen size
   bool get isTablet {
     final context = Get.context;
     if (context == null) return false;
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    return shortestSide > 600;
+
+    return ScreenHelper.isTablet(context);
   }
 
   void _navigateToViewBillReceiptScreen(BillReceipt receipt) {
@@ -79,7 +80,7 @@ class _GetBillReceiptsScreenState extends State<GetBillReceiptsScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: AppHeaderBar(
         backgroundColor: AppColors.appColor,
         title: const Text(
           "Receipts",
@@ -94,10 +95,7 @@ class _GetBillReceiptsScreenState extends State<GetBillReceiptsScreen> {
       body: Obx(() {
         if (controller.isLoading.value) {
           return Center(
-            child: SpinKitWave(
-              color: AppColors.appColor,
-              size: 50.0,
-            ),
+            child: AppLoader(size: 100),
           );
         }
 

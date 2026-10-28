@@ -7,8 +7,8 @@ import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/core/controllers/media_uploads_controller.dart';
 import 'package:pakland/features/feedback/data/models/comments_model.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
-import 'package:pakland/features/cms/data/models/timeLine_model.dart';
-import 'package:pakland/core/network/httpMassageMapper.dart';
+import 'package:pakland/features/cms/data/models/timeline_model.dart';
+import 'package:pakland/core/network/http_message_mapper.dart';
 
 class TicketRepository {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -126,7 +126,6 @@ class TicketRepository {
 
         if (decoded["StatusCode"] == "200") {
           final List Branches =  decoded["obj"]["Clientdetaillist"];
-          //final List Branches =  decoded["obj"];
           return List<Map<String, dynamic>>.from(Branches);
         } else {
           throw Exception(decoded["Message"] ?? HttpMessageMapper.getMessage(response.statusCode));
@@ -163,7 +162,6 @@ class TicketRepository {
         if (decoded["StatusCode"] == "200") {
           final List rawList = decoded["obj"]["Clientdetaillist"] ?? [];
 
-          // ✅ Deduplicate by brn_code, skip entries with null/empty brn_code
           final Map<String, Map<String, dynamic>> uniqueBranches = {};
           for (final item in rawList) {
             final map = Map<String, dynamic>.from(item);
@@ -200,7 +198,6 @@ class TicketRepository {
         final Map<String, dynamic> decoded = jsonDecode(response.body);
 
         if (decoded["StatusCode"] == "200") {
-          //final List Branches =  decoded["obj"]["Branchlist"];
           final List Branches =  decoded["obj"];
           return List<Map<String, dynamic>>.from(Branches);
         } else {
@@ -221,7 +218,6 @@ class TicketRepository {
 
       print('Constructed URL: $url');
       final response = await http.get(
-        //Uri.parse(url),
         Uri.parse(url).replace(
           queryParameters: {
             "alowAll": "Yes",
@@ -629,74 +625,6 @@ class TicketRepository {
       rethrow;
     }
   }
-  // core
-  // Future<bool> addCommentFile({
-  //   required String ticketId,
-  //   required File file,
-  //   required String commentType,
-  //   required int commentId,
-  //   required String purposeName,
-  //   void Function(int sent, int total)? onProgress,
-  // }) async {
-  //   try {
-  //     final userId = await _getUserId();
-  //     if (userId == null) return false;
-  //
-  //     if (!_mediaController.validateFileSize(file)) {
-  //       print('❌ File size exceeds limit (10MB)');
-  //       return false;
-  //     }
-  //
-  //     if (!_mediaController.isAllowedExtension(file.path)) {
-  //       print('❌ File type not allowed');
-  //       return false;
-  //     }
-  //
-  //     final uploadResult = await _mediaController.uploadSingleFile(
-  //       file,
-  //       userId,
-  //       ticketId.toString(),
-  //       module: 'tickets',
-  //       moduleItemId: ticketId,
-  //       commentId: commentId,
-  //       purposeName: purposeName,
-  //       fileType: _mediaController.getFileExtension(file.path).replaceFirst('.', ''),
-  //       onProgress: onProgress,
-  //     );
-  //
-  //     if (uploadResult == null || uploadResult['id'] == null) {
-  //       print('❌ File upload failed');
-  //       return false;
-  //     }
-  //
-  //     final res = await http.post(
-  //       Uri.parse(ApiConstants.addCommentUrl),
-  //       headers: {"Content-Type": "application/json",
-  //         "X-API-KEY":"${ApiConstants.apiKey}"
-  //       },
-  //       body: jsonEncode({
-  //         'TicketId': ticketId,
-  //         'UserId': userId,
-  //         'Text': 'File attachment',
-  //         'MediaId': uploadResult['id'],
-  //         'CommentType': commentType,
-  //         'FilePath': uploadResult['path'],
-  //       }),
-  //     );
-  //
-  //     final responseBody = jsonDecode(res.body);
-  //
-  //     if (res.statusCode != 200) {
-  //       throw Exception(HttpMessageMapper.getMessage(res.statusCode));
-  //     }
-  //
-  //     return res.statusCode == 200 && responseBody['StatusCode'] == '200';
-  //   } catch (e) {
-  //     print('Add comment file error: $e');
-  //     rethrow;
-  //   }
-  // }
-  //mvc
   Future<bool> addCommentFile({
     required String ticketId,
     required File file,
@@ -710,11 +638,9 @@ class TicketRepository {
 
     if (userId == null) return false;
 
-    // ------------------ File Validation ------------------
     if (!_mediaController.validateFileSize(file)) return false;
     if (!_mediaController.isAllowedExtension(file.path)) return false;
 
-    // ------------------ Upload File ----------------------
     final uploadResult = await _mediaController.uploadSingleFile(
       file,
       userId,
@@ -729,10 +655,8 @@ class TicketRepository {
 
     print("Upload result: $uploadResult");
 
-    // 🟢 FIX: Extract correct Media ID
     final mediaObj = uploadResult?["id"];
     var mediaId = mediaObj?["<DTO>k__BackingField"];
-    //mediaId=mediaObj;
     if (mediaId == null) {
       mediaId=mediaObj;
 
@@ -742,14 +666,13 @@ class TicketRepository {
 
     final mediaPath = uploadResult?["path"];
 
-    // ------------------ Build Comment Request ------------
     final commentRequest = {
       "Id": 0,
       "TicketId": ticketId,
       "UserId": userId,
       "Text": "File attachment",
-      "MediaId": mediaId,            // FIXED
-      "MediaPath": mediaPath,        // FIXED
+      "MediaId": mediaId,
+      "MediaPath": mediaPath,
       "CommentType": commentType,
       "CreatedAt": DateTime.now().toIso8601String(),
       "Username": username,
@@ -757,7 +680,6 @@ class TicketRepository {
 
     print("📤 COMMENT REQUEST SENT → $commentRequest");
 
-    // ------------------ API Call --------------------------
     final res = await http.post(
       Uri.parse(ApiConstants.addCommentUrl),
       headers: {

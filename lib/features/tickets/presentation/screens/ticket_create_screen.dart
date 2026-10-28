@@ -12,6 +12,7 @@ import 'package:pakland/core/widgets/app_dropdown.dart';
 import 'package:pakland/core/widgets/app_text_field.dart';
 import 'package:pakland/core/widgets/attachment_picker.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class TicketCreateView extends StatefulWidget {
   const TicketCreateView({super.key});
@@ -25,7 +26,6 @@ class _TicketCreateViewState extends State<TicketCreateView> {
   final descriptionController = TextEditingController();
   final _storage = const FlutterSecureStorage();
 
-  // Use RxnString for nullable strings
   final selectedBranchName = RxnString();
   final selectedDepartmentName = RxnString();
   final selectedOperationName = RxnString();
@@ -265,7 +265,6 @@ class _TicketCreateViewState extends State<TicketCreateView> {
   @override
   void initState() {
     super.initState();
-    // Initialize controller data if needed
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.fetchBranchesAll();
     });
@@ -279,24 +278,6 @@ class _TicketCreateViewState extends State<TicketCreateView> {
         custom_RouteName: '/clintDashboard',
         title: 'Create Ticket',
       ),
-      // AppBar(
-      //   automaticallyImplyLeading: false,
-      //   leading: IconButton(
-      //       onPressed: () => Get.toNamed('/dashboard'),
-      //       icon: const Icon(Icons.arrow_back_outlined)),
-      //   title: Padding(
-      //     padding: EdgeInsets.only(
-      //         left: MediaQuery.of(context).size.width * 0.12),
-      //     child: const Row(
-      //       children: [
-      //         Text('Create Ticket'),
-      //       ],
-      //     ),
-      //   ),
-      //   backgroundColor: AppColors.primaryColor,
-      //   foregroundColor: Colors.white,
-      //   elevation: 0,
-      // ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -361,18 +342,6 @@ class _TicketCreateViewState extends State<TicketCreateView> {
                 maxLength: 1000,
                 showCounter: true,
               ),
-              // const SizedBox(height: 10),
-              // Row(
-              //   children: [
-              //     Text('Attachments',
-              //         style: TextStyle(
-              //             fontSize: 16,
-              //             fontWeight: FontWeight.bold,
-              //             color: AppColors.textSecondaryColor)),
-              //     Text('*',
-              //         style: TextStyle(fontSize: 16, color: Colors.red)),
-              //   ],
-              // ),
               const SizedBox(height: 8),
               WhatsAppAttachmentPicker(
                 onChanged: (files) {
@@ -392,11 +361,10 @@ class _TicketCreateViewState extends State<TicketCreateView> {
     return Obx(() {
       final items = controller.branchesAll;
 
-      // Deduplicate by brn_code (the dropdown value)
       final seen = <String>{};
       final uniqueItems = items.where((m) {
         final code = (m['brn_code'] ?? m['brn_name'] ?? '').toString();
-        return seen.add(code); // returns false if already exists
+        return seen.add(code);
       }).toList();
 
       return AppDropdown<String>(
@@ -450,13 +418,11 @@ class _TicketCreateViewState extends State<TicketCreateView> {
 
       final depts = controller.departments;
 
-      // Filter out Emergency department (case-insensitive)
       final filteredDepts = depts.where((m) {
         final deptName = (m['DeptName'] ?? '').toString().toLowerCase();
         final deptId = (m['DeptID'] ?? '').toString().toLowerCase();
         final operationName = (m['OperationName'] ?? '').toString().toLowerCase();
 
-        // Check if any of the fields contain "emergency"
         return deptName != 'emergency' &&
             deptId != 'emergency' &&
             operationName != 'emergency';
@@ -469,7 +435,6 @@ class _TicketCreateViewState extends State<TicketCreateView> {
         items: filteredDepts.map((m) {
           final deptName = (m['DeptName'] ?? '').toString();
           final deptId = (m['DeptID'] ?? '').toString();
-          // Ensure deptId is unique
           return DropdownMenuItem<String>(
               value: deptId,
               child: Text(deptName)
@@ -520,7 +485,6 @@ class _TicketCreateViewState extends State<TicketCreateView> {
         items: ops.map((m) {
           final opName = (m['OperationName'] ?? '').toString();
           final opId = (m['OperationID'] ?? '').toString();
-          // Ensure opId is unique
           return DropdownMenuItem<String>(
               value: opId,
               child: Text(opName)

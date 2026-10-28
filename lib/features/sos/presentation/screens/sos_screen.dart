@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/sos/presentation/controllers/sos_controller.dart';
 import 'package:pakland/core/widgets/app_bar2.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class SOSView extends StatefulWidget {
   const SOSView({super.key});
@@ -50,28 +51,26 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
 
     return Scaffold(
       backgroundColor: Colors.white,
-    appBar: AppBar(title: Text("SOS/Emergency",style: TextStyle(color: AppColors.whiteBg,fontSize: 18),),
+    appBar: AppHeaderBar(title: Text("SOS/Emergency",style: TextStyle(color: AppColors.whiteBg,fontSize: 18),),
     backgroundColor: AppColors.appColor,
     centerTitle: true,
     iconTheme: IconThemeData(color: AppColors.whiteBg),),
       body: Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.064), // 24px equivalent
+          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.064),
           child: Column(
             children: [
               SizedBox(height: screenHeight * 0.074),
 
-              // Countdown Display (when active)
               Obx(() => _sosController.countdown.value > 0
                   ? _buildCountdownDisplay()
                   : const SizedBox()),
 
-              // Main Title
               Text(
                 'Are you in emergency?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: screenWidth * 0.074, // 28px equivalent
+                  fontSize: screenWidth * 0.074,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textSecondaryColor,
                 ),
@@ -93,7 +92,6 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
               _buildSOSButton(),
 
               SizedBox(height: screenHeight * 0.050),
-              // Instruction
               Obx(() => _sosController.isSOSActive.value
                   ? _buildCancelButton()
                   : Text(
@@ -119,21 +117,21 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.053, vertical: screenHeight * 0.012), // 20px, 10px equivalent
+          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.053, vertical: screenHeight * 0.012),
           decoration: BoxDecoration(
             color: Colors.red.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(screenWidth * 0.053), // 20px equivalent
+            borderRadius: BorderRadius.circular(screenWidth * 0.053),
             border: Border.all(color: Colors.red, width: 2),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.timer, color: Colors.red, size: screenWidth * 0.053), // 20px equivalent
-              SizedBox(width: screenWidth * 0.021), // 8px equivalent
+              Icon(Icons.timer, color: Colors.red, size: screenWidth * 0.053),
+              SizedBox(width: screenWidth * 0.021),
               Text(
                 'SOS in ${_sosController.countdown.value}s',
                 style: TextStyle(
-                  fontSize: screenWidth * 0.048, // 18px equivalent
+                  fontSize: screenWidth * 0.048,
                   fontWeight: FontWeight.bold,
                   color: Colors.red,
                 ),
@@ -141,7 +139,7 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
             ],
           ),
         ),
-        SizedBox(height: screenHeight * 0.025), // 20px equivalent
+        SizedBox(height: screenHeight * 0.025),
       ],
     );
   }
@@ -152,15 +150,6 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
 
     return Column(
       children: [
-        // Text(
-        //   'SOS Activated!',
-        //   textAlign: TextAlign.center,
-        //   style: TextStyle(
-        //     fontSize: screenWidth * 0.042, // 16px equivalent
-        //     color: Colors.red,
-        //     fontWeight: FontWeight.bold,
-        //   ),
-        // ),
         ElevatedButton(
           onPressed: _sosController.cancelEmergencySOS,
           style: ElevatedButton.styleFrom(
@@ -193,7 +182,6 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Outer concentric circles (pulsing glow)
             Obx(() {
               if (!_sosController.isSOSActive.value &&
                   !_sosController.isHolding.value) {
@@ -222,7 +210,7 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
                         return Transform.scale(
                           scale: _pulseAnimation.value * 0.9,
                           child: Container(
-                            width: screenWidth * 0.587, // 220px equivalent
+                            width: screenWidth * 0.587,
                             height: screenWidth * 0.587,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
@@ -238,7 +226,7 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
                         return Transform.scale(
                           scale: _pulseAnimation.value * 0.8,
                           child: Container(
-                            width: screenWidth * 0.48, // 180px equivalent
+                            width: screenWidth * 0.48,
                             height: screenWidth * 0.48,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
@@ -254,9 +242,8 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
               return const SizedBox();
             }),
 
-            // Main red button
             Obx(() => Container(
-              width: screenWidth * 0.427, // 160px equivalent
+              width: screenWidth * 0.427,
               height: screenWidth * 0.427,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -269,22 +256,21 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
                         ? Colors.red
                         : Colors.red)
                         .withOpacity(0.4),
-                    blurRadius: screenWidth * 0.067, // 25px equivalent
-                    spreadRadius: screenWidth * 0.021, // 8px equivalent
+                    blurRadius: screenWidth * 0.067,
+                    spreadRadius: screenWidth * 0.021,
                   ),
                 ],
               ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Progress Ring
                   Obx(() => _sosController.isHolding.value
                       ? SizedBox(
-                    width: screenWidth * 0.374, // 140px equivalent
+                    width: screenWidth * 0.374,
                     height: screenWidth * 0.374,
                     child: CircularProgressIndicator(
                       value: _sosController.holdProgress.value,
-                      strokeWidth: screenWidth * 0.016, // 6px equivalent
+                      strokeWidth: screenWidth * 0.016,
                       backgroundColor: Colors.white24,
                       valueColor:
                       AlwaysStoppedAnimation<Color>(Colors.white),
@@ -292,25 +278,10 @@ class _SOSViewState extends State<SOSView> with TickerProviderStateMixin {
                   )
                       : const SizedBox()),
 
-                  // Button Icon + Text
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text("HELP ME !",style: TextStyle(color: AppColors.whiteBg,fontSize: 18,fontWeight: FontWeight.bold),),
-                      // Obx(() => _sosController.isSOSActive.value
-                      //     ? Padding(
-                      //   padding: EdgeInsets.only(top: screenHeight * 0.0074), // 6px equivalent
-                      //   child: Text(
-                      //     'SOS\nACTIVE',
-                      //     textAlign: TextAlign.center,
-                      //     style: TextStyle(
-                      //       color: Colors.white,
-                      //       fontSize: screenWidth * 0.032, // 12px equivalent
-                      //       fontWeight: FontWeight.bold,
-                      //     ),
-                      //   ),
-                      // )
-                      //     : const SizedBox()),
                     ],
                   ),
                 ],

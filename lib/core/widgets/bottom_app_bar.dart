@@ -1,6 +1,6 @@
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/dashboard/presentation/screens/about_us_screen.dart';
@@ -16,13 +16,13 @@ import 'package:pakland/core/services/fcm_notification_service.dart';
 
 
 class BottomNavItem {
-  final String label;
+  final String? label;
   final String iconPath;
   final String routeName;
   final bool requiresLogin;
 
   const BottomNavItem({
-    required this.label,
+    this.label,
     required this.iconPath,
     required this.routeName,
     this.requiresLogin = false,
@@ -42,9 +42,6 @@ class MainWrapper extends StatefulWidget {
 class _MainWrapperState extends State<MainWrapper> {
   late int _currentIndex;
 
-  final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey =
-  GlobalKey<CurvedNavigationBarState>();
-
   static final List<BottomNavItem> _navItems = [
     BottomNavItem(
       label: 'Home',
@@ -59,13 +56,13 @@ class _MainWrapperState extends State<MainWrapper> {
       requiresLogin: true,
     ),
     BottomNavItem(
-      label: 'Sales Centers',
+      label: 'Sales',
       iconPath: ImageConstant.sales,
       routeName: '/sales-centers',
       requiresLogin: false,
     ),
     BottomNavItem(
-      label: 'About Us',
+      label: 'About',
       iconPath: ImageConstant.about,
       routeName: '/about-us',
       requiresLogin: false,
@@ -84,7 +81,6 @@ class _MainWrapperState extends State<MainWrapper> {
   }
 
   Future<void> _handleKillStateNotification() async {
-    // ✅ Case 1: FCM data-only message (getInitialMessage worked)
     final message = initialNotificationMessage;
     if (message != null) {
       initialNotificationMessage = null;
@@ -104,7 +100,6 @@ class _MainWrapperState extends State<MainWrapper> {
       return;
     }
 
-    // ✅ Case 2: Local notification tap (your actual case!)
     final ticketId = pendingKillStateTicketId;
     if (ticketId != null && ticketId.isNotEmpty) {
       pendingKillStateTicketId = null;
@@ -133,14 +128,13 @@ class _MainWrapperState extends State<MainWrapper> {
 
         if (_currentIndex != 0) {
           setState(() => _currentIndex = 0);
-          _bottomNavigationKey.currentState?.setPage(0);
           return false;
         }
         return true;
       },
       child: Scaffold(
         body: _getCurrentScreen(),
-        bottomNavigationBar: _buildCurvedNavBar(),
+        bottomNavigationBar: _buildModernNavBar(),
       ),
     );
   }
@@ -165,29 +159,151 @@ class _MainWrapperState extends State<MainWrapper> {
     }
   }
 
-  Widget _buildCurvedNavBar() {
+  Widget _buildModernNavBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final barColor = isDark ? AppColors.darkSurfaceColor : Colors.white;
+    final count = _navItems.length;
+
     return SafeArea(
       top: false,
-      child: CurvedNavigationBar(
-        key: _bottomNavigationKey,
-        index: _currentIndex,
-        height: 60,
-        backgroundColor: AppColors.lightAppColor,
-        color: Colors.white,
-        buttonBackgroundColor: Colors.white,
-        animationDuration: const Duration(milliseconds: 300),
-        items: List.generate(_navItems.length, (index) {
-          final selected = _currentIndex == index;
-          return ImageIcon(
-            AssetImage(_navItems[index].iconPath),
-            size: 26,
-            color: selected ? AppColors.appColor : AppColors.lightAppColor,
-          );
-        }),
-        onTap: (index) async {
-          final oldIndex = _currentIndex;
-          await _handleNavTap(index, oldIndex: oldIndex);
-        },
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+        child: Container(
+          height: 68,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: barColor,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.06)
+                  : Colors.black.withOpacity(0.04),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.appColor.withOpacity(isDark ? 0.30 : 0.18),
+                blurRadius: 28,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final total = constraints.maxWidth;
+              final cap = total * 0.42;
+              final selectedW = count == 1 ? total : (cap > 132 ? 132.0 : cap);
+              final otherW = count == 1 ? 0.0 : (total - selectedW) / (count - 1);
+
+              return Row(
+                children: List.generate(
+                  count,
+                      (i) => _buildNavItem(
+                    i,
+                    isDark,
+                    i == _currentIndex ? selectedW : otherW,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, bool isDark, double width) {
+    final item = _navItems[index];
+    final selected = _currentIndex == index;
+    final inactiveColor =
+    isDark ? AppColors.darkTextSecondaryColor : AppColors.appColor;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: item.label,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+        width: width,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: selected
+              ? LinearGradient(
+            colors: [AppColors.appColor, AppColors.lightAppColor],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+              : null,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: selected
+              ? [
+            BoxShadow(
+              color: AppColors.appColor.withOpacity(0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ]
+              : const [],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(22),
+            splashColor: AppColors.appColor.withOpacity(0.10),
+            highlightColor: Colors.transparent,
+            onTap: () async {
+              HapticFeedback.selectionClick();
+              final oldIndex = _currentIndex;
+              await _handleNavTap(index, oldIndex: oldIndex);
+            },
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedScale(
+                      scale: selected ? 1.1 : 1.0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutBack,
+                      child: ImageIcon(
+                        AssetImage(item.iconPath),
+                        size: 24,
+                        color: selected ? Colors.white : inactiveColor,
+                      ),
+                    ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment.centerLeft,
+                      child: selected
+                          ? Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          item.label ?? '',
+                          maxLines: 1,
+                          softWrap: false,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            letterSpacing: 0.2,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -198,8 +314,6 @@ class _MainWrapperState extends State<MainWrapper> {
     if (navItem.requiresLogin) {
       final isLoggedIn = await LoginCheckUtil.isUserLoggedIn();
       if (!isLoggedIn) {
-        _bottomNavigationKey.currentState?.setPage(oldIndex);
-
         LoginCheckUtil.showLoginRequiredDialog(
           context,
           onYesPressed: () => Get.toNamed('/login'),

@@ -1,14 +1,15 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
-import 'package:pakland/core/constants/download_contant.dart';
-import 'package:pakland/features/billing/data/services/pdf_statment_service.dart';
+import 'package:pakland/core/constants/download_constant.dart';
+import 'package:pakland/features/billing/data/services/pdf_statement_service.dart';
 import 'package:pakland/features/billing/presentation/controllers/view_bill_controller.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class ViewBillScreen extends StatefulWidget {
   final String registrationNo;
@@ -37,7 +38,7 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
   InAppWebViewController? webController;
   bool _isLoading = true;
   bool _isDownloading = false;
-  bool _isDisposing = false;  // Add this flag
+  bool _isDisposing = false;
 
   @override
   void initState() {
@@ -56,7 +57,6 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
 
   @override
   void dispose() {
-    // Clean up WebView resources
     _cleanupWebView();
     Get.delete<ViewBillController>();
     super.dispose();
@@ -66,7 +66,6 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
     setState(() => _isDisposing = true);
     if (webController != null) {
       await webController?.stopLoading();
-      // Small delay to ensure stopLoading completes
       await Future.delayed(const Duration(milliseconds: 150));
     }
     webController = null;
@@ -90,9 +89,7 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
     setState(() => _isDownloading = true);
 
     try {
-      // Check if we need to use JavaScript to print
       if (webController != null && !_isDisposing) {
-        // Try to trigger browser's print dialog
         await webController?.evaluateJavascript(
           source: "window.print();",
         );
@@ -127,13 +124,13 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(  // Add WillPopScope
+    return WillPopScope(
       onWillPop: () async {
         await _cleanupWebView();
         return true;
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppHeaderBar(
           backgroundColor: AppColors.appColor,
           title: const Text(
             "Bill",
@@ -154,10 +151,7 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
               child: SizedBox(
                 width: 24,
                 height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
+                child: AppLoader(),
               ),
             )
                 : IconButton(
@@ -173,7 +167,7 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SpinKitWave(color: AppColors.appColor, size: 50.0),
+                  AppLoader(size: 100),
                   const SizedBox(height: 16),
                   Text(
                     'Loading Bill...',
@@ -254,7 +248,6 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
               Expanded(
                 child: Stack(
                   children: [
-                    // Only show WebView if not disposing
                     if (!_isDisposing)
                       InAppWebView(
                         initialUrlRequest: URLRequest(
@@ -309,7 +302,6 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
                         },
                       ),
 
-                    // Loading indicator
                     if (_isLoading || progress < 1.0)
                       Positioned(
                         top: 0,
@@ -322,7 +314,6 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
                         ),
                       ),
 
-                    // Full screen loading for initial load
                     if (_isLoading && progress == 0)
                       Container(
                         color: Colors.white,
@@ -330,7 +321,7 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SpinKitWave(color: AppColors.appColor, size: 40.0),
+                              AppLoader(size: 80),
                               const SizedBox(height: 16),
                               Text(
                                 'Loading Bill...',

@@ -1,4 +1,3 @@
-// tickets_controller.dart
 import 'dart:io';
 import 'dart:async';
 import 'package:get/get.dart';
@@ -10,8 +9,8 @@ import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/tickets/data/repositories/ticket_repo.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
 import 'package:pakland/features/feedback/data/models/comments_model.dart';
-import 'package:pakland/features/cms/data/models/timeLine_model.dart';
-import 'package:pakland/core/network/httpMassageMapper.dart';
+import 'package:pakland/features/cms/data/models/timeline_model.dart';
+import 'package:pakland/core/network/http_message_mapper.dart';
 
 class TicketController extends GetxController {
   final TicketRepository _service = TicketRepository();
@@ -20,16 +19,13 @@ class TicketController extends GetxController {
   final RxnString list_to_admin = RxnString();
 
 
-  // Reactive user info
   final RxString userType = ''.obs;
   final RxString userId = ''.obs;
   final RxString userName = ''.obs;
   final RxString email = ''.obs;
 
-  // SOS permission
   final RxBool canReceiveSOS = false.obs;
 
-  // Tickets and states
   final tickets = <TicketModel>[].obs;
   final filteredTickets = <TicketModel>[].obs;
 
@@ -37,7 +33,6 @@ class TicketController extends GetxController {
   final updating = false.obs;
   var creating = false.obs;
 
-  // Departments & operations
   var branches = <Map<String, dynamic>>[].obs;
   var branchesAll = <Map<String, dynamic>>[].obs;
   var departments = <Map<String, dynamic>>[].obs;
@@ -64,14 +59,12 @@ class TicketController extends GetxController {
   DateTime? _savedToDate;
 
 
-  // Timeline & comments
   final timeline = <TimeLineModel>[].obs;
   final timelineLoading = false.obs;
   final comments = <CommentsModel>[].obs;
   final commentsLoading = false.obs;
   final addingComment = false.obs;
 
-  // Ticket counts
   final openTicketsCount = 0.obs;
   final inProgressTicketsCount = 0.obs;
   final closedTicketsCount = 0.obs;
@@ -81,13 +74,11 @@ class TicketController extends GetxController {
   final activeSOSCount = 0.obs;
   final activeSOSTickets = <TicketModel>[].obs;
 
-  // Assignments
   final assignedTickets = <TicketAssignment>[].obs;
   final myAssignedTickets = <TicketAssignment>[].obs;
   final assignmentsLoading = false.obs;
   final assigningTicket = false.obs;
 
-  // Filters
   final RxnString filterStatus = RxnString();
   final RxnString filterPriority = RxnString();
   final Rxn<DateTimeRange> filterDateRange = Rxn<DateTimeRange>();
@@ -100,11 +91,9 @@ class TicketController extends GetxController {
   final RxnString filterStaff= RxnString();
   final RxnString selectionDepartment = RxnString();
 
-  // Sorting
   final Rx<TicketSortType> sortType = TicketSortType.newest.obs;
 
 
-  // Upload state
   final uploadProgress = 0.obs;
   final isUploading = false.obs;
 
@@ -113,7 +102,6 @@ class TicketController extends GetxController {
     super.onInit();
     _loadUserData();
 
-    // Automatically reapply filters when changed
     everAll([
       filterStatus,
       filterPriority,
@@ -128,7 +116,6 @@ class TicketController extends GetxController {
     ], (_) => updateFilteredTickets());
   }
 
-  // ✅ Helper method to extract status code from response or exception
   int _getStatusCode(dynamic response, dynamic error) {
     try {
       if (response is Map<String, dynamic>) {
@@ -139,20 +126,18 @@ class TicketController extends GetxController {
       }
 
       if (error is String && error.contains('HttpException')) {
-        // Extract status code from HttpException string if possible
         final match = RegExp(r'(\d{3})').firstMatch(error);
         if (match != null) {
           return int.tryParse(match.group(1)!) ?? 500;
         }
       }
 
-      return 500; // Default fallback
+      return 500;
     } catch (e) {
       return 500;
     }
   }
 
-  // ✅ Helper method to show success message
   void _showSuccessMessage(String operation) {
     final message = HttpMessageMapper.getSuccessMessage(operation);
     Get.snackbar(
@@ -165,7 +150,6 @@ class TicketController extends GetxController {
     );
   }
 
-  // ✅ Helper method to show error message
   void _showErrorMessage(dynamic response, dynamic error, {String customMessage = ''}) {
     final statusCode = _getStatusCode(response, error);
     final message = customMessage.isNotEmpty ? customMessage : HttpMessageMapper.getMessage(statusCode);
@@ -180,7 +164,6 @@ class TicketController extends GetxController {
     );
   }
 
-  // ✅ Helper method to show info message
   void _showInfoMessage(String message) {
     Get.snackbar(
       icon: Icon(Icons.info, color: Colors.white),
@@ -193,7 +176,6 @@ class TicketController extends GetxController {
     );
   }
 
-  // ✅ Helper method to show dynamic error message (legacy support)
   void _showDynamicError(dynamic response, dynamic error, {String customMessage = ''}) {
     _showErrorMessage(response, error, customMessage: customMessage);
   }
@@ -203,7 +185,6 @@ class TicketController extends GetxController {
     updateFilteredTickets();
   }
 
-  // Load user from secure storage
   Future<void> _loadUserData() async {
     try {
       userName.value = await _storage.read(key: "user_name") ?? '';
@@ -215,30 +196,18 @@ class TicketController extends GetxController {
     }
   }
 
-  // Dashboard data
   Future<void> fetchDashboardData() async {
     try {
       isLoading.value = true;
       await _loadUserData();
       if (userType.value == "Client") {
-        //await fetchBranches(userId.value);
         fetchBranchesAll();
         await fetchDepartment();
       }else{
         await fetchBranches(userId.value);
         await fetchStaff();
-        //fetchBranchesAll();
         await fetchDepartmentByUID(userId.value);
       }
-      //await fetchDepartmentByUID(userId.value);
-      // if (userType.value == "Admin") {
-      //  //await fetchDepartment();
-      //  await fetchDepartmentByUID(userId.value);
-      // } else if (userType.value == "Customer" && userId.value.isNotEmpty) {
-      //   await fetchDepartmentByUID(userId.value);
-      // } else {
-      //   await fetchDepartment();
-      // }
 
       await loadTickets();
     } catch (e) {
@@ -255,7 +224,6 @@ class TicketController extends GetxController {
       final data = await _service.getBranchesALL(userId.value,"000000");
       print('branchhhhhhhhhhhhhhhhhhhhhhh $data');
       branchesAll.assignAll(data);
-      //_computeSOSPermission();
     } catch (e) {
       _showErrorMessage(null, e);
     } finally {
@@ -283,29 +251,24 @@ class TicketController extends GetxController {
     }
   }
 
-  // Fetch all departments
   Future<void> fetchDepartment() async {
     try {
       isLoading.value = true;
       final data = await _service.getDepartment();
       print('ddddddddddddddddddddddddddddd $data');
       departments.assignAll(data);
-      //_computeSOSPermission();
     } catch (e) {
-      // _showErrorMessage(null, e);
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Fetch all Staff
   Future<void> fetchStaff() async {
     try {
       isLoading.value = true;
 
       final data = await _service.getStaffUsers();
 
-      // 🔹 Remove duplicates using User_id
       final Map<String, Map<String, dynamic>> uniqueStaffMap = {};
 
       for (final staff in data) {
@@ -313,7 +276,7 @@ class TicketController extends GetxController {
         final name = staff['user_name']?.toString();
 
         if (id != null && id.isNotEmpty && name != null && name.isNotEmpty) {
-          uniqueStaffMap[id] = staff; // overwrite duplicate entries
+          uniqueStaffMap[id] = staff;
         }
       }
 
@@ -327,14 +290,12 @@ class TicketController extends GetxController {
     }
   }
 
-  // Fetch departments by user ID for deshbord
   Future<void> fetchDepartmentByUID(String userId) async {
     try {
 
       isLoading.value = true;
       final List<Map<String, dynamic>> data =
       await _service.getDepartmentByUID(userId);
-      //final data = await _service.getDepartmentByUID(userId);
       final uniqueBranches = {
         for (var item in data) item['DeptID']: item
       }.values.toList();
@@ -342,7 +303,6 @@ class TicketController extends GetxController {
       print('✅ Loaded ${data.length} departments for $userId');
       _computeSOSPermission();
     } catch (e) {
-      // _showErrorMessage(null, e, customMessage: 'Failed to load departments');
     } finally {
       isLoading.value = false;
     }
@@ -361,23 +321,10 @@ class TicketController extends GetxController {
     }
   }
 
-  // select braches
   Future<void> selectBracnch(String brnCode) async {
     try {
       selectedBranch.value = brnCode;
       final normalized = brnCode.trim();
-      // Map<String, dynamic> branch = branches.firstWhere(
-      //       (b) {
-      //     final opName = (b["brn_name"] ?? "").toString().trim();
-      //     final deptName = (b["brn_name"] ?? "").toString().trim();
-      //     final altName = (b["brn_name"] ?? "").toString().trim();
-      //     return opName == normalized || deptName == normalized || altName == normalized;
-      //   },
-      //   orElse: () => <String, dynamic>{},
-      // );
-      //
-      // final code = (branch["brn_code"] ?? branch["brn_code"] ?? branch["brn_code"] ?? branch["brn_code"] ?? "").toString();
-      //
       selectedBranch.value = normalized;
 
       if (selectedBranch.value.isNotEmpty) {
@@ -390,7 +337,6 @@ class TicketController extends GetxController {
       _showErrorMessage(null, e, customMessage: 'Failed to select department');
     }
   }
-  // Select department
   Future<void> selectDepartment(String name) async {
     try {
 
@@ -419,7 +365,6 @@ class TicketController extends GetxController {
       _showErrorMessage(null, e, customMessage: 'Failed to select department');
     }
   }
-  // Fetch department operations
   Future<void> fetchdepartments(String brnCode,String userId) async {
     try {
       isLoading.value = true;
@@ -432,7 +377,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // Fetch department operations
   Future<void> fetchOpratons(String deptCode,String brnCode) async {
     try {
       isLoading.value = true;
@@ -445,24 +389,20 @@ class TicketController extends GetxController {
     }
   }
 
-  // Fetch users by department
   Future<void> fetchUsersDeptId(String deptCode) async {
     try {
       isLoading.value = true;
 
       final data = await _service.getUsersByDepartment(deptCode);
 
-      // ✅ Proper casting
       final List<Map<String, dynamic>> users =
       List<Map<String, dynamic>>.from(data);
 
-      // Step 1: Filter valid users
       final validUsers = users.where((u) =>
       (u['User_id'] != null && u['User_id'].toString().isNotEmpty) &&
           (u['user_name'] != null && u['user_name'].toString().isNotEmpty)
       );
 
-      // Step 2: Remove duplicates
       final uniqueUsersMap = <String, Map<String, dynamic>>{};
 
       for (var user in validUsers) {
@@ -483,7 +423,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // Fetch users by department
   Future<void> fetchStaffUsers() async {
     try {
       isLoading.value = true;
@@ -497,37 +436,27 @@ class TicketController extends GetxController {
 
   }
 
-  // Reset all filters at once
   void resetAllFilters() {
-    // Status filter
     filterStatus.value = null;
 
-    // Priority filter
     filterPriority.value = null;
 
-    // Department filter
     filterBranche.value = null;
     filterDepartment.value = null;
 
-    // Staff filter
     filterStaff.value = null;
 
-    // User filter
     filterUserId.value = null;
 
-    // Title search
     filterTitle.value = '';
 
-    // Date filters
     filterDateRange.value = null;
     filterFromDate.value = null;
     filterToDate.value = null;
 
-    // After clearing filters, update ticket list
     updateFilteredTickets();
   }
 
-// Save current filters to storage
   void holdStateFilters() {
     _savedStatus = filterStatus.value;
     _savedPriority = filterPriority.value;
@@ -541,7 +470,6 @@ class TicketController extends GetxController {
     print('📦 Filters saved - Status: $_savedStatus, Branch: $_savedBranch');
   }
 
-// Restore filters from storage
   void restoreHoldStateFilters() {
     filterStatus.value = _savedStatus;
     filterPriority.value = _savedPriority;
@@ -555,7 +483,6 @@ class TicketController extends GetxController {
     print('🔄 Filters restored - Status: ${filterStatus.value}, Branch: ${filterBranche.value}');
   }
 
-// Clear saved state (optional)
   void clearHoldState() {
     _savedStatus = null;
     _savedPriority = null;
@@ -569,7 +496,6 @@ class TicketController extends GetxController {
     print('🧹 Hold state cleared');
   }
 
-  // Load tickets based on user type
   Future<void> loadTickets() async {
     isLoading.value = true;
     try {
@@ -586,17 +512,12 @@ class TicketController extends GetxController {
         print('✅ Loaded ${allTickets.length} tickets for user $id');
       } else {
         allTickets = await _service.getTicketsByAdminId(userId.value);
-        //allTickets = await _service.getTickets();
       }
 
       tickets.assignAll(allTickets);
       _updateStatusCounts();
       updateFilteredTickets();
 
-      // Load active SOS emergencies if admin, SOS-allowed customer, or Team/Staff
-      // if (type == "Admin" || (type == "Customer" && canReceiveSOS.value)) {
-      //   await loadActiveSOSEmergencies();
-      // }
     } catch (e) {
       print('Error loading tickets: $e');
       _showErrorMessage(null, e);
@@ -605,21 +526,17 @@ class TicketController extends GetxController {
     }
   }
 
-  // Load active SOS emergencies
   Future<void> loadActiveSOSEmergencies() async {
     try {
       final sosTickets = await _service.getActiveSOSEmergencies();
       activeSOSTickets.assignAll(sosTickets);
 
-      // For Customer users, filter SOS tickets by their allowed departments
       if (userType.value == "Customer" && departments.isNotEmpty) {
-        // Get list of allowed department IDs
         final allowedDeptIds = departments.map((d) {
           final deptId = (d['DeptID'] ?? d['DeptId'] ?? '').toString().toUpperCase();
           return deptId;
         }).where((id) => id.isNotEmpty).toSet();
 
-        // Filter SOS tickets by allowed departments for count
         final filteredSOSTickets = sosTickets.where((ticket) {
           final ticketDept = ticket.title.split('-').first.toString().toUpperCase();
           return allowedDeptIds.contains(ticketDept);
@@ -627,7 +544,6 @@ class TicketController extends GetxController {
 
         activeSOSCount.value = filteredSOSTickets.length;
       } else {
-        // For Admin and Team users, show all SOS tickets
         activeSOSCount.value = sosTickets.length;
       }
     } catch (e) {
@@ -636,13 +552,11 @@ class TicketController extends GetxController {
     }
   }
 
-  // Filtering logic
   void updateFilteredTickets() {
     filteredTickets.value = applyFiltersLocally();
     _updateStatusCounts();
   }
 
-  // updates
   void _updateStatusCounts() {
     Iterable<TicketModel> baseTickets = tickets;
 
@@ -651,7 +565,6 @@ class TicketController extends GetxController {
     if (s != null && s.isNotEmpty && s.toLowerCase() != 'all') {
       baseTickets = baseTickets.where((t) => (t.status ?? '').toLowerCase() == s.toLowerCase());
     }
-    // Apply all filters EXCEPT status filter for status card counts
     final p = filterPriority.value;
     if (p != null && p.isNotEmpty && p.toLowerCase() != 'all') {
       baseTickets = baseTickets.where((t) => (t.ticketPriority ?? '').toLowerCase() == p.toLowerCase());
@@ -688,7 +601,6 @@ class TicketController extends GetxController {
 
     final filteredList = baseTickets.toList();
 
-    // Calculate status counts from filtered tickets
     openTicketsCount.value = filteredList.where((t) => t.status.toLowerCase() == 'open').length;
     inProgressTicketsCount.value = filteredList.where((t) => t.status.toLowerCase() == 'in progress').length;
     closedTicketsCount.value = filteredList.where((t) => t.status.toLowerCase() == 'closed').length;
@@ -697,60 +609,9 @@ class TicketController extends GetxController {
     totleTicketsCount.value = filteredList.length;
   }
 
-  // List<TicketModel> applyFiltersLocally() {
-  //   // For non-SOS status filters, apply normal filtering
-  //   Iterable<TicketModel> result = tickets;
-  //
-  //   // Status filter
-  //   final s = filterStatus.value;
-  //   if (s != null && s.isNotEmpty && s.toLowerCase() != 'all') {
-  //     result = result.where((t) => (t.status).toLowerCase().contains(s.toLowerCase()));
-  //     //result = result.where((t) => (t.status).toLowerCase() == s.toLowerCase());
-  //
-  //   }
-  //
-  //
-  //
-  //   // Priority filter
-  //   final p = filterPriority.value;
-  //   if (p != null && p.isNotEmpty && p.toLowerCase() != 'all') {
-  //     result = result.where((t) => (t.ticketPriority ?? '').toLowerCase() == p.toLowerCase());
-  //   }
-  //
-  //   // Branch filter
-  //   final branch = filterBranche.value?? '' ;
-  //   if (branch.isNotEmpty) {
-  //     result = result.where((t) => t.brn_code.toLowerCase().contains(branch.toLowerCase()));
-  //   }
-  //
-  //   // Department filter
-  //   final dept = filterDepartment.value;
-  //   if (dept != null && dept.isNotEmpty) {
-  //     result = result.where((t) => t.title.toLowerCase().contains(dept.toLowerCase()));
-  //   }
-  //
-  //   // Title search
-  //   final title = filterTitle.value.trim();
-  //   if (title.isNotEmpty) {
-  //     result = result.where((t) => t.id.toLowerCase().contains(title.toLowerCase()));
-  //   }
-  //
-  //   // Date range filter
-  //   final from = filterFromDate.value;
-  //   final to = filterToDate.value;
-  //   if (from != null) {
-  //     result = result.where((t) => !t.createdAt.isBefore(from));
-  //   }
-  //   if (to != null) {
-  //     result = result.where((t) => !t.createdAt.isAfter(to));
-  //   }
-  //
-  //   return result.toList(growable: false);
-  // }
   List<TicketModel> applyFiltersLocally() {
     Iterable<TicketModel> result = tickets;
 
-    // 🔹 Status Filter
     final s = filterStatus.value;
     if (s != null && s.isNotEmpty && s.toLowerCase() != 'all') {
       result = result.where(
@@ -758,7 +619,6 @@ class TicketController extends GetxController {
       );
     }
 
-    // 🔹 Priority Filter
     final p = filterPriority.value;
     if (p != null && p.isNotEmpty && p.toLowerCase() != 'all') {
       result = result.where(
@@ -766,7 +626,6 @@ class TicketController extends GetxController {
       );
     }
 
-    // 🔹 Branch Filter
     final branch = filterBranche.value ?? '';
     if (branch.isNotEmpty) {
       result = result.where(
@@ -774,7 +633,6 @@ class TicketController extends GetxController {
       );
     }
 
-    // 🔹 Staff Filter
     final staff = filterStaff.value ?? '';
     print('tickets for user $staff');
     if (staff.isNotEmpty) {
@@ -785,7 +643,6 @@ class TicketController extends GetxController {
       print('✅ Loaded ${result.length} tickets for user $staff');
     }
 
-    // 🔹 Department Filter
     final dept = filterDepartment.value;
     if (dept != null && dept.isNotEmpty) {
       result = result.where(
@@ -793,7 +650,6 @@ class TicketController extends GetxController {
       );
     }
 
-    // 🔹 Search Filter (ID + Description + UserName + BRN Code) ← FIXED
     final title = filterTitle.value.trim().toLowerCase();
     if (title.isNotEmpty) {
       result = result.where((t) {
@@ -804,7 +660,6 @@ class TicketController extends GetxController {
       });
     }
 
-    // 🔹 Date Range Filter
     final from = filterFromDate.value;
     final to = filterToDate.value;
     if (from != null) {
@@ -814,7 +669,6 @@ class TicketController extends GetxController {
       result = result.where((t) => !t.createdAt.isAfter(to));
     }
 
-    // 🔹 Sorting
     final List<TicketModel> sorted = result.toList();
 
     switch (sortType.value) {
@@ -830,7 +684,6 @@ class TicketController extends GetxController {
   }
 
 
-  // Show error dialog
   void showErrorDialog(String message) {
     Get.defaultDialog(
       title: 'Error',
@@ -844,7 +697,6 @@ class TicketController extends GetxController {
     );
   }
 
-  // Refresh status counts from API
   Future<void> refreshStatusCounts({String? userType}) async {
     try {
       final currentUserType = userType ?? await _storage.read(key: "user_type");
@@ -855,18 +707,12 @@ class TicketController extends GetxController {
       if (currentUserType == "Client" && userId != null) {
         allTickets = await _service.getTicketsByUserId(userId);
       }
-      // else {
-      //   allTickets =await _service.getTickets();
-      //   //allTickets = await _service.getTicketsByAdminId(userId!);
-      // }
       else if
       (currentUserType == "Customer" || currentUserType == "Admin") {
-        //allTickets = await _service.getTicketsByAdminId(userId!);
         allTickets = await _service.getTicketsByAdminId(userId!);
       }
 
       if (currentUserType == "Admin" || currentUserType == "Customer") {
-        //allTickets = await _service.getTicketsByAdminId(userId!);
         final selectedBranche = filterBranche.value;
         if (selectedBranche != null && selectedBranche.isNotEmpty) {
           final d = selectedBranche.toLowerCase();
@@ -897,7 +743,6 @@ class TicketController extends GetxController {
       closedTicketsCount.value = closedTickets.length;
       doneTicketsCount.value = doneTickets.length;
       totleTicketsCount.value = allTickets.length;
-      //sosTicketsCount.value = sosTickets.length;
 
     } catch (e) {
       print('Error refreshing status counts: $e');
@@ -905,18 +750,15 @@ class TicketController extends GetxController {
     }
   }
 
-  // Refresh tickets list and counts
   Future<void> refreshAll({String? userType}) async {
     await loadTickets();
     await refreshStatusCounts(userType: userType);
   }
 
-  // Check backend connectivity
   Future<bool> checkBackendHealth() async {
     return await _service.checkBackendHealth();
   }
 
-  // Change ticket status and priority
   Future<bool> changeStatusAndPriority(
       String ticketId,
       String status,
@@ -980,21 +822,14 @@ class TicketController extends GetxController {
       updating.value = false;
     }
   }
-  // tickets_controller.dart mein ye functions add karein
 
-  // MARK: - Comprehensive Initialization Function
-  /// Initialize all required data for the controller
-  /// This ensures user data, tickets, departments, and branches are loaded
-  /// Call this before navigating to any screen that uses this controller
   Future<void> initializeController({String? overrideUserType}) async {
     try {
       print('🔄 Initializing TicketController...');
       isLoading.value = true;
 
-      // Load user data first
       await _loadUserData();
 
-      // Use provided user type or fallback to stored value
       final effectiveUserType = overrideUserType ?? userType.value;
 
       if (effectiveUserType.isEmpty) {
@@ -1004,7 +839,6 @@ class TicketController extends GetxController {
 
       print('👤 User Type: $effectiveUserType, User ID: ${userId.value}');
 
-      // Load data based on user type
       if (effectiveUserType == "Client") {
         print('📦 Loading data for Client user...');
         await fetchBranchesAll();
@@ -1016,11 +850,9 @@ class TicketController extends GetxController {
         await fetchDepartmentByUID(userId.value);
       }
 
-      // Load tickets
       print('🎫 Loading tickets...');
       await loadTickets();
 
-      // Update status counts
       print('📊 Updating status counts...');
       await refreshStatusCounts();
 
@@ -1033,12 +865,10 @@ class TicketController extends GetxController {
     }
   }
 
-  /// Quick initialization for screens that need minimal data
   Future<void> quickInitialize() async {
     try {
       print('⚡ Quick initializing TicketController...');
 
-      // Only load essential data
       if (userType.value.isEmpty) {
         await _loadUserData();
       }
@@ -1053,14 +883,12 @@ class TicketController extends GetxController {
     }
   }
 
-  /// Check if controller is properly initialized
   bool get isInitialized {
     return userType.value.isNotEmpty &&
         userId.value.isNotEmpty &&
         tickets.isNotEmpty;
   }
 
-  /// Reset and reinitialize controller
   Future<void> reinitialize() async {
     print('🔄 Reinitializing controller...');
     resetAllFilters();
@@ -1089,32 +917,25 @@ class TicketController extends GetxController {
     }
   }
 
-// MARK: - Refresh Functions
   Future<void> refreshDashboardData() async {
     try {
       isLoading.value = true;
 
-      // Save current filters if hold state is enabled
       if (isHoldfilterState.value) {
-        holdStateFilters();  // This SAVES filters
+        holdStateFilters();
         print('📦 Filters saved before refresh');
       }
 
-      // Refresh data
       await loadDashboardDataForUserType(userType.value);
 
-      // Handle filters based on checkbox state
       if (isHoldfilterState.value) {
-        // If hold state is enabled, RESTORE saved filters
-        restoreHoldStateFilters();  // This RESTORES filters
+        restoreHoldStateFilters();
         print('🔄 Filters restored after refresh');
       } else {
-        // If hold state is disabled, reset all filters
         resetAllFilters();
         print('🧹 All filters reset after refresh');
       }
 
-      // Re-apply filters to ensure UI updates correctly
       updateFilteredTickets();
 
       print('✅ Dashboard refreshed successfully');
@@ -1126,7 +947,6 @@ class TicketController extends GetxController {
     }
   }
 
-// MARK: - Filter Management
   void applyFilter(String filterType, dynamic value) {
     switch (filterType) {
       case 'status':
@@ -1174,7 +994,6 @@ class TicketController extends GetxController {
     updateFilteredTickets();
   }
 
-// MARK: - Dashboard Navigation
   void navigateToTicketList(String status) {
     Get.toNamed('/tickets', arguments: {'status': status});
   }
@@ -1187,7 +1006,6 @@ class TicketController extends GetxController {
     Get.toNamed('/tickets/create');
   }
 
-// MARK: - User Type Based Logic
   bool get canCreateTicket {
     final type = userType.value;
     return type != "Admin" && type != "Customer";
@@ -1218,14 +1036,12 @@ class TicketController extends GetxController {
     try {
       RefreshController _refreshController=RefreshController(initialRefresh: false);
 
-      // Save current search term before refresh
       final currentSearchTerm = filterTitle.value;
 
       await fetchDashboardData();
       resetAllFilters();
       clearAllFilters();
 
-      // Restore search term after refresh if it was set
       if (currentSearchTerm.isNotEmpty) {
         filterTitle.value = currentSearchTerm;
         applyFiltersLocally();
@@ -1238,7 +1054,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // Create ticket
   Future<dynamic> createTicket(CreateTicketRequest request) async {
     creating.value = true;
     dynamic apiResponse;
@@ -1255,7 +1070,6 @@ class TicketController extends GetxController {
             try {
               final ticketData = apiResponse['obj'];
               if (ticketData is Map<String, dynamic>) {
-                // Handle ticket data if needed
               }
             } catch (e) {
               print('⚠️ Could not parse ticket from response: $e');
@@ -1263,7 +1077,6 @@ class TicketController extends GetxController {
           }
           _updateStatusCounts();
           await refreshStatusCounts();
-          // _showSuccessMessage('create_ticket');
           return apiResponse;
         } else {
           _showErrorMessage(apiResponse, null);
@@ -1291,7 +1104,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // Create ticket with attachments
   Future<dynamic> createTicketWithAttachments(
       CreateTicketRequest request,
       List<File> attachments, {
@@ -1322,7 +1134,6 @@ class TicketController extends GetxController {
             try {
               final ticketData = apiResponse['obj'];
               if (ticketData is Map<String, dynamic>) {
-                // Handle ticket data if needed
               }
             } catch (e) {
               print('⚠️ Could not parse ticket from response: $e');
@@ -1330,7 +1141,6 @@ class TicketController extends GetxController {
           }
           _updateStatusCounts();
           await refreshStatusCounts();
-          // _showSuccessMessage('create_ticket');
           return apiResponse;
         } else {
           _showErrorMessage(apiResponse, null);
@@ -1360,7 +1170,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // Add attachments to existing ticket
   Future<bool> addAttachmentsToTicket({
     required String ticketId,
     required List<File> attachments,
@@ -1411,7 +1220,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // Delete ticket
   Future<bool> deleteTicket(String ticketId) async {
     try {
       final userId = await _storage.read(key: 'user_id');
@@ -1438,7 +1246,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // Timeline methods
   Future<void> loadTicketTimeline(String ticketId) async {
     timelineLoading.value = true;
     try {
@@ -1483,7 +1290,6 @@ class TicketController extends GetxController {
     timeline.clear();
   }
 
-  // Comment methods
   Future<void> loadComments(String ticketId) async {
     commentsLoading.value = true;
     try {
@@ -1512,7 +1318,6 @@ class TicketController extends GetxController {
 
       if (success) {
         await loadComments(ticketId);
-        // _showSuccessMessage('add_comment');
         return true;
       } else {
         _showErrorMessage(null, null, customMessage: 'Failed to add comment');
@@ -1554,7 +1359,6 @@ class TicketController extends GetxController {
 
       if (success) {
         await loadComments(ticketId);
-        // _showSuccessMessage('add_comment');
         return true;
       } else {
         _showErrorMessage(null, null, customMessage: 'Failed to add comment with file');
@@ -1575,7 +1379,6 @@ class TicketController extends GetxController {
     comments.clear();
   }
 
-  // Submit feedback and close ticket
   Future<bool> submitFeedbackAndCloseTicket({
     required String ticketId,
     required int rating,
@@ -1624,7 +1427,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // Load department users
   Future<void> loadDepartmentUsers(String departmentId) async {
     loadingDepartmentUsers.value = true;
     try {
@@ -1640,7 +1442,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // Assign ticket
   Future<bool> assignTicket({
     required String brn_code,
     required String ticketId,
@@ -1699,7 +1500,6 @@ class TicketController extends GetxController {
         _updateStatusCounts();
         await refreshStatusCounts();
 
-        //_showSuccessMessage('assign_ticket');
         return true;
       } else {
         _showErrorMessage(apiResponse, null);
@@ -1714,12 +1514,10 @@ class TicketController extends GetxController {
     }
   }
 
-  // Clear department users
   void clearDepartmentUsers() {
     departmentUsers.clear();
   }
 
-  // Get user display name for UI
   String getUserDisplayName(String userId) {
     try {
       final user = departmentUsers.firstWhereOrNull((user) =>
@@ -1731,7 +1529,6 @@ class TicketController extends GetxController {
     }
   }
 
-  // location open
   Future<void> openGoogleMapsLocation({
     required double latitude,
     required double longitude,
@@ -1743,7 +1540,7 @@ class TicketController extends GetxController {
     try {
       final bool launched = await launchUrl(
         mapUri,
-        mode: LaunchMode.platformDefault, // Works for both web and mobile
+        mode: LaunchMode.platformDefault,
       );
 
       if (!launched) {

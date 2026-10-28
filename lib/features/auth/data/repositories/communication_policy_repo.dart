@@ -3,8 +3,10 @@ import 'package:http/http.dart' as http;
 
 import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/auth/data/models/communication_policy_model.dart';
+import 'package:pakland/features/auth/domain/repositories/communication_policy_repository.dart';
 
-class CommunicationPolicyRepository {
+class CommunicationPolicyRepository implements ICommunicationPolicyRepository {
+  @override
   Future<CommunicationPolicyModel> getCommunicationPolicy() async {
     final uri = Uri.parse(ApiConstants.getCommunicationPolicyUrl);
 

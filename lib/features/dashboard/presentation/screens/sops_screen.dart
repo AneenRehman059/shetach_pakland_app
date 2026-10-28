@@ -4,18 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
 import 'package:pakland/core/theme/colors.dart';
-import 'package:pakland/core/widgets/app_bar.dart';
 import 'package:pakland/core/widgets/pdf_viewer_screen.dart';
 import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/company/presentation/controllers/get_company_controller.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:pakland/core/constants/download_contant.dart';
+import 'package:pakland/core/constants/download_constant.dart';
 import 'package:pakland/core/controllers/theme_controller.dart';
 import 'package:pakland/core/widgets/custom_messages.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
 import 'package:pakland/core/widgets/status_bar_wrapper.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
+import 'package:pakland/core/widgets/document_list_widgets.dart';
 
 class SOPsScreen extends StatefulWidget {
   const SOPsScreen({super.key});
@@ -24,39 +24,22 @@ class SOPsScreen extends StatefulWidget {
   State<SOPsScreen> createState() => _SOPsScreenState();
 }
 
-class _SOPsScreenState extends State<SOPsScreen> with TickerProviderStateMixin {
+class _SOPsScreenState extends State<SOPsScreen> {
   final CompanyController _companyController = Get.find<CompanyController>();
   final ThemeController   _themeController   = Get.find<ThemeController>();
 
   final Map<int, bool> _isDownloading = {};
   final Map<int, bool> _isDownloaded  = {};
 
-  late AnimationController _colorController;
-  late Animation<Color?>   _colorAnimation;
-
   @override
   void initState() {
     super.initState();
     _themeController.updateStatusBar();
-    _colorController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-    _colorAnimation =
-        ColorTween(begin: Colors.red, end: Colors.green).animate(_colorController);
   }
 
-  @override
-  void dispose() {
-    _colorController.dispose();
-    super.dispose();
-  }
-
-  // ── Main download handler ──────────────────────────────────────────
   Future<void> _downloadSOP(
       BuildContext context, String url, String fileName, int index) async {
 
-    // ── 1. Permission check ────────────────────────────────────────
     PermissionStatus status;
 
     if (await Permission.photos.isGranted) {
@@ -90,7 +73,6 @@ class _SOPsScreenState extends State<SOPsScreen> with TickerProviderStateMixin {
       return;
     }
 
-    // ── 2. Storage space check ─────────────────────────────────────
     try {
       final hasSpace = await _hasEnoughStorage();
       if (!hasSpace) {
@@ -124,13 +106,11 @@ class _SOPsScreenState extends State<SOPsScreen> with TickerProviderStateMixin {
     });
 
     try {
-      // ── 3. Duplicate file check ──────────────────────────────────
       final directory          = await DownloadUtils.getDownloadsDirectory();
       final fileExists         = await DownloadUtils.checkFileExists(fileName);
       final timestamp          = DateTime.now().millisecondsSinceEpoch;
       final downloadedFileName = fileExists ? '${fileName}_$timestamp' : fileName;
 
-      // ── 4. Download ──────────────────────────────────────────────
       final result = await DownloadUtils.downloadFile(url, downloadedFileName);
 
       setState(() {
@@ -179,7 +159,6 @@ class _SOPsScreenState extends State<SOPsScreen> with TickerProviderStateMixin {
     }
   }
 
-  // ── Settings dialog (permanently denied) ──────────────────────────
   void _showSettingsDialog() {
     showDialog(
       context: context,
@@ -230,7 +209,6 @@ class _SOPsScreenState extends State<SOPsScreen> with TickerProviderStateMixin {
     );
   }
 
-  // ── Storage check ──────────────────────────────────────────────────
   Future<bool> _hasEnoughStorage({int minRequiredMB = 50}) async {
     try {
       final tempDir = await getTemporaryDirectory();
@@ -265,105 +243,68 @@ class _SOPsScreenState extends State<SOPsScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return StatusBarWrapper(
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("SOPs", style: TextStyle(color: AppColors.whiteBg)),
+        backgroundColor: kDocPageBg,
+        appBar: AppHeaderBar(
+          title: const Text("SOPs"),
           centerTitle: true,
-          backgroundColor: AppColors.appColor,
-          iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Obx(() {
-                  if (_companyController.isLoading.value) {
-                    return Center(
-                      child: SpinKitWave(color: AppColors.appColor, size: 50.0),
-                    );
-                  }
+          child: Obx(() {
+            if (_companyController.isLoading.value) {
+              return DocLoadingState(label: DownloadMessages.loadingLabel);
+            }
 
-                  if (_companyController.mobileSOPs.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'No SOPs available',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    );
-                  }
+            final sops = _companyController.mobileSOPs;
 
-                  return ListView.builder(
-                    itemCount: _companyController.mobileSOPs.length,
+            if (sops.isEmpty) {
+              return const DocEmptyState(
+                icon: Icons.assignment_outlined,
+                title: 'No SOPs available',
+                message: 'Standard operating procedures will appear here once published.',
+              );
+            }
+
+            return Column(
+              children: [
+                DocListHeader(
+                  count: sops.length,
+                  singular: 'SOP',
+                  plural: 'SOPs',
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                    itemCount: sops.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      final sop      = _companyController.mobileSOPs[index];
-                      final path     = sop['image_path']?.toString() ?? '';
-                      final fullUrl  = '${ApiConstants.baseUrl}$path';
-                      final sopName  = sop['SOPs_name']?.toString() ?? 'Unnamed SOP';
-                      final fileType = fullUrl.toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOC';
+                      final sop     = sops[index];
+                      final path    = sop['image_path']?.toString() ?? '';
+                      final fullUrl = '${ApiConstants.baseUrl}$path';
+                      final sopName = sop['SOPs_name']?.toString() ?? 'Unnamed SOP';
 
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: _buildSOPItem(context, sopName, fileType, fullUrl, index),
-                      );
+                      return _buildSOPItem(context, sopName, fullUrl, index);
                     },
-                  );
-                }),
-              ),
-            ],
-          ),
+                  ),
+                ),
+              ],
+            );
+          }),
         ),
       ),
     );
   }
 
   Widget _buildSOPItem(
-      BuildContext context, String title, String type, String url, int index) {
-    final isDownloading = _isDownloading[index] ?? false;
-    final isDownloaded  = _isDownloaded[index]  ?? false;
-
-    return Column(
-      children: [
-        ListTile(
-          onTap: () => Get.to(() => PDFViewerScreen(title: title, pdfUrl: url)),
-          leading: Container(
-            width: 45,
-            height: 45,
-            decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.description,
-              color: type == "PDF" ? Colors.blue : Colors.green,
-              size: 24,
-            ),
-          ),
-          title: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-          ),
-          trailing: AnimatedBuilder(
-            animation: _colorAnimation,
-            builder: (context, child) {
-              return IconButton(
-                tooltip: DownloadMessages.downloadTooltip,
-                icon: Icon(
-                  isDownloaded ? Icons.check_circle : Icons.download,
-                  color: isDownloading
-                      ? _colorAnimation.value
-                      : (isDownloaded ? Colors.green : Colors.blue),
-                  size: 26,
-                ),
-                onPressed: isDownloading
-                    ? null
-                    : () => _downloadSOP(context, url, title, index),
-              );
-            },
-          ),
-        ),
-        const Divider(thickness: 0.6, color: Colors.black45),
-      ],
+      BuildContext context, String title, String url, int index) {
+    return DocumentListTile(
+      title: title,
+      type: DocFileType.fromUrl(url),
+      isDownloading: _isDownloading[index] ?? false,
+      isDownloaded: _isDownloaded[index] ?? false,
+      downloadTooltip: DownloadMessages.downloadTooltip,
+      onOpen: () => Get.to(() => PDFViewerScreen(title: title, pdfUrl: url)),
+      onDownload: () => _downloadSOP(context, url, title, index),
     );
   }
 }

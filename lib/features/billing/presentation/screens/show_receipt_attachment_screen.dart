@@ -1,3 +1,4 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:pakland/core/widgets/custom_messages.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class ReceiptImageScreen extends StatefulWidget {
   final String imageUrl;
@@ -54,7 +56,6 @@ class _ReceiptImageScreenState extends State<ReceiptImageScreen> {
       return;
     }
 
-    // ── Check available storage before downloading ──────────────────
     try {
       final bool hasSpace = await _hasEnoughStorage();
       if (!hasSpace) {
@@ -139,13 +140,11 @@ class _ReceiptImageScreenState extends State<ReceiptImageScreen> {
     }
   }
 
-  /// Returns true if device has at least [minRequiredMB] MB free.
   Future<bool> _hasEnoughStorage({int minRequiredMB = 50}) async {
     try {
       final tempDir = await getTemporaryDirectory();
       final stat = await FileStat.stat(tempDir.path);
 
-      // FileStat doesn't give free space — use df via dart:io
       final result = await Process.run('df', [tempDir.path]);
       if (result.exitCode == 0) {
         final lines = result.stdout.toString().trim().split('\n');
@@ -159,7 +158,6 @@ class _ReceiptImageScreenState extends State<ReceiptImageScreen> {
         }
       }
 
-      // Fallback: try writing a small probe file
       return await _probeStorageWrite(tempDir.path);
     } catch (_) {
       return await _probeStorageWrite(
@@ -167,11 +165,10 @@ class _ReceiptImageScreenState extends State<ReceiptImageScreen> {
     }
   }
 
-  /// Fallback — tries writing a tiny file to confirm write access.
   Future<bool> _probeStorageWrite(String dirPath) async {
     final probeFile = File('$dirPath/storage_probe_${DateTime.now().millisecondsSinceEpoch}.tmp');
     try {
-      await probeFile.writeAsBytes(List.filled(1024, 0)); // 1 KB probe
+      await probeFile.writeAsBytes(List.filled(1024, 0));
       await probeFile.delete();
       return true;
     } catch (_) {
@@ -183,7 +180,7 @@ class _ReceiptImageScreenState extends State<ReceiptImageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
+      appBar: AppHeaderBar(
         backgroundColor: AppColors.appColor,
         title: const Text(
           'Receipt Attachment',
@@ -207,7 +204,6 @@ class _ReceiptImageScreenState extends State<ReceiptImageScreen> {
       ),
       body: Stack(
         children: [
-          // ── Receipt image ────────────────────────────────────────────
           InteractiveViewer(
             panEnabled: true,
             minScale: 0.5,
@@ -219,13 +215,7 @@ class _ReceiptImageScreenState extends State<ReceiptImageScreen> {
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                          : null,
-                      color: AppColors.appColor,
-                    ),
+                    child: AppLoader(),
                   );
                 },
                 errorBuilder: (context, error, stackTrace) {
@@ -253,7 +243,6 @@ class _ReceiptImageScreenState extends State<ReceiptImageScreen> {
             ),
           ),
 
-          // ── Centered download progress overlay ───────────────────────
           if (_isDownloading)
             Container(
               color: Colors.black54,

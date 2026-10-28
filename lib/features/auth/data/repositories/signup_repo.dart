@@ -3,8 +3,9 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/auth/data/models/signup_model.dart';
+import 'package:pakland/features/auth/domain/repositories/signup_repository.dart';
 
-class SignUpRepository {
+class SignUpRepository implements ISignUpRepository {
   Future<Map<String, dynamic>> signUp(SignUpRequestModel model) async {
     final response = await http.post(
       Uri.parse(ApiConstants.signUpUrl),
@@ -16,8 +17,7 @@ class SignUpRepository {
 
     if (response.statusCode == 200) {
       return responseBody;
-    }
-    else if (response.statusCode == 201) {
+    } else if (response.statusCode == 201) {
 
       return {
         "StatusCode": "201",

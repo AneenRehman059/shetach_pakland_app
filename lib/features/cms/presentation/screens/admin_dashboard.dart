@@ -5,13 +5,13 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
-import 'package:pakland/core/widgets/charts/BarChartWidget.dart';
-import 'package:pakland/core/widgets/charts/PieChartWidget.dart';
+import 'package:pakland/core/widgets/charts/bar_chart_widget.dart';
+import 'package:pakland/core/widgets/charts/pie_chart_widget.dart';
 import 'package:pakland/core/widgets/app_bar2.dart';
 import 'package:pakland/core/widgets/app_dropdown.dart';
 import 'package:pakland/core/widgets/date_filter_button.dart';
-import 'package:pakland/core/widgets/sos_buttton.dart';
-import 'package:pakland/core/widgets/statusCard.dart';
+import 'package:pakland/core/widgets/sos_button.dart';
+import 'package:pakland/core/widgets/status_card.dart';
 
 
 class AdminDashboard extends StatefulWidget {
@@ -537,20 +537,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final screenWidth = MediaQuery.of(context).size.width * 0.02;
 
     return WillPopScope(
-      onWillPop: () async {
-        final route = _userType.toLowerCase() == 'admin'
-            ? '/mainDashboard'
-            : (_userType.toLowerCase() == 'customer'
-            ? '/main_screen'
-            : '/clintDashboard');
-        Get.offAllNamed(route);
-        return false;
-      },
+      onWillPop: () async => true,
       child: Scaffold(
         appBar: CustomAppBar(
-          custom_RouteName: widget.userType.toLowerCase() == 'admin'
-              ? '/dashboard'
-              : '/main_screen',
           title: '${widget.ticketController.dashboardTitle}',
           // rightWidget: Row(
           //   mainAxisSize: MainAxisSize.min,
@@ -877,4 +866,3 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 }
-

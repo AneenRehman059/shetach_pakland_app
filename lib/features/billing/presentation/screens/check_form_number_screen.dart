@@ -1,6 +1,6 @@
+import 'package:pakland/core/widgets/loader.dart';
+import 'package:pakland/core/widgets/responsive_body.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/core/constants/image_constant.dart';
@@ -8,21 +8,23 @@ import 'package:pakland/core/constants/image_constant.dart';
 import 'package:pakland/features/billing/presentation/controllers/verify_form_controller.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
 import 'package:pakland/core/utils/upper_case_keyboard.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class VerifyFormNumberScreen extends StatefulWidget {
   const VerifyFormNumberScreen({super.key});
 
   @override
-  State<VerifyFormNumberScreen> createState() =>
-      _VerifyFormNumberScreenState();
+  State<VerifyFormNumberScreen> createState() => _VerifyFormNumberScreenState();
 }
 
 class _VerifyFormNumberScreenState extends State<VerifyFormNumberScreen> {
-  final VerifyFormController formController =
-  Get.put(VerifyFormController());
+  final VerifyFormController formController = Get.put(VerifyFormController());
 
   final TextEditingController formNoCtrl = TextEditingController();
-  final Color appColor = const Color.fromRGBO(31, 75, 89, 1);
+
+  static const Color _pageBg = Color(0xFFF4F7FA);
+  static const Color _fieldBg = Color(0xFFF7F9FC);
+  static const Color _fieldBorder = Color(0xFFDCE3EC);
 
   @override
   void initState() {
@@ -31,284 +33,303 @@ class _VerifyFormNumberScreenState extends State<VerifyFormNumberScreen> {
   }
 
   @override
+  void dispose() {
+    formNoCtrl.dispose();
+    super.dispose();
+  }
+
+  void _verify() {
+    FocusScope.of(context).unfocus();
+    if (formNoCtrl.text.trim().isEmpty) {
+      showTopSnackBar(context, "Please enter Form Number", Colors.red);
+      return;
+    }
+    formController.verifyForm(
+      context: context,
+      formNo: formNoCtrl.text.trim(),
+    );
+  }
+
+
+  static const double _minHeightIdle = 350;
+  static const double _minHeightResult = 480;
+
+  @override
   Widget build(BuildContext context) {
     final screenW = MediaQuery.of(context).size.width;
-    final screenH = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: appColor,
-        title: const Text(
-          "Form Validation",
-          style: TextStyle(color: Colors.white),
-        ),
-        iconTheme: IconThemeData(color: Colors.white),
+      backgroundColor: _pageBg,
+      appBar: AppHeaderBar(
+        title: const Text("Form Validation"),
         centerTitle: true,
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Obx(() {
-              // Show only input section when no form is verified
-              if (!formController.isSuccess.value) {
-                return SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: screenW * 0.07,
-                    vertical: 20,
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: ResponsiveBody(
+            maxWidth: 600,
+            child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Obx(() {
+                    final success = formController.isSuccess.value;
+                    final needed = success ? _minHeightResult : _minHeightIdle;
 
-                      Text(
-                        "Verify Your Form",
-                        style: TextStyle(
-                          fontSize: screenW * 0.06,
-                          fontWeight: FontWeight.bold,
-                          color: appColor,
-                        ),
-                      ),
+                    final fits = constraints.maxHeight >= needed;
 
-                      const SizedBox(height: 30),
-
-                      /// INPUT
-                      Container(
-                        height: MediaQuery.of(context).size.height * 0.05,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 6,
-                            )
-                          ],
-                        ),
-                        child: TextField(
-                          controller: formNoCtrl,
-                          textCapitalization: TextCapitalization.characters,
-                          inputFormatters: [UpperCaseTextFormatter()],
-                          decoration: InputDecoration(
-                            hintText: "Enter Form Number",
-                            hintStyle: TextStyle(
-                              fontSize: MediaQuery.of(context).size.height * 0.018,
-
-                            ),
-                            isDense: true,
-
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: MediaQuery.of(context).size.height * 0.012,
-                              horizontal: 12,
-                            ),
-                            prefixIcon: Icon(Icons.insert_drive_file,size: MediaQuery.of(context).size.height * 0.025,), // your icon
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(color: Colors.grey),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(color: Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide:  BorderSide(color: AppColors.appColor, width: 2),
-                            ),
-
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      SizedBox(
-                       // width: screenW * 0.6,
-                        height: 40,
-                        child: Obx(() {
-                          return ElevatedButton(
-                            onPressed: formController.isLoading.value
-                                ? null
-                                : () {
-                              FocusScope.of(context).unfocus();
-                              if (formNoCtrl.text.isEmpty) {
-                                showTopSnackBar(
-                                  context,
-                                  "Please enter Form Number",
-                                  Colors.red,
-                                );
-                                return;
-                              }
-                              formController.verifyForm(
-                                context: context,
-                                formNo: formNoCtrl.text.trim(),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: appColor,
-                              disabledBackgroundColor: appColor.withOpacity(0.6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              elevation: 4,
-                            ),
-                            child: formController.isLoading.value
-                                ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: SpinKitWave(
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            )
-                                : const Text(
-                              "Verify",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              // Show both sections when form is verified
-              return Column(
-                children: [
-                  // Upper section with input and button
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: screenW * 0.07,
-                      vertical: 20,
-                    ),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 10),
-
-                        Text(
-                          "Verify Your Form",
-                          style: TextStyle(
-                            fontSize: screenW * 0.06,
-                            fontWeight: FontWeight.bold,
-                            color: appColor,
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        /// INPUT
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 6,
-                              )
-                            ],
-                          ),
-                          child: TextField(
-                            controller: formNoCtrl,
-                            textCapitalization: TextCapitalization.characters,
-                            inputFormatters: [UpperCaseTextFormatter()],
-                            decoration: const InputDecoration(
-                              hintText: "Enter Form Number",
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Icons.insert_drive_file),
-                              contentPadding:
-                              EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        SizedBox(
-                          width: screenW * 0.6,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: formController.isLoading.value
-                                ? null
-                                : () {
-                              FocusScope.of(context).unfocus();
-                              if (formNoCtrl.text.isEmpty) {
-                                showTopSnackBar(
-                                  context,
-                                  "Please enter Form Number",
-                                  Colors.red,
-                                );
-                                return;
-                              }
-                              formController.verifyForm(
-                                context: context,
-                                formNo: formNoCtrl.text.trim(),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: appColor,
-                              disabledBackgroundColor: appColor.withOpacity(0.6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              elevation: 4,
-                            ),
-                            child: formController.isLoading.value
-                                ? const SpinKitWave(
-                              color: Colors.white,
-                              size: 22,
-                            )
-                                : const Text(
-                              "Verify",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
+                    final children = <Widget>[
+                      _buildInputCard(compact: success),
+                      if (success) ...[
+                        const SizedBox(height: 14),
+                        _wrapResult(
+                          fits,
+                          statusCard(
+                            screenW: screenW,
+                            project: formController.branchName.value,
+                            formNo: formController.formNumber.value,
+                            formStatus: formController.formStatus.value,
+                            formCurrency: formController.formCurrency.value,
+                            fill: fits,
                           ),
                         ),
                       ],
-                    ),
-                  ),
+                    ];
 
-                  // Divider
-                  const Divider(
-                    thickness: 1,
-                    color: Colors.grey,
-                    height: 20,
-                  ),
+                    if (fits) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                        child: Column(
+                          mainAxisAlignment: success
+                              ? MainAxisAlignment.start
+                              : MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: children,
+                        ),
+                      );
+                    }
 
-                  // Status card section (expands to fill remaining space)
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: screenW * 0.04,
-                        vertical: 10,
+                    return SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: children,
                       ),
-                      child: statusCard(
-                        screenW: screenW,
-                        project: formController.branchName.value,
-                        formNo: formController.formNumber.value,
-                        formStatus: formController.formStatus.value,
-                        formCurrency: formController.formCurrency.value,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            });
-          },
+                    );
+                  });
+                },
+              ),
+          ),
         ),
       ),
     );
   }
 
-  // ================= STATUS CARD =================
+  Widget _wrapResult(bool fits, Widget card) =>
+      fits ? Expanded(child: card) : card;
+
+
+  Widget _buildInputCard({required bool compact}) {
+    OutlineInputBorder border(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
+    final loading = formController.isLoading.value;
+
+    final field = TextField(
+      controller: formNoCtrl,
+      textCapitalization: TextCapitalization.characters,
+      inputFormatters: [UpperCaseTextFormatter()],
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => loading ? null : _verify(),
+      cursorColor: AppColors.appColor,
+      style: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1,
+        color: Colors.black87,
+      ),
+      decoration: InputDecoration(
+        hintText: "e.g. ABC12345",
+        hintStyle: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0,
+          color: Colors.grey.shade500,
+        ),
+        prefixIcon: Icon(Icons.description_outlined,
+            size: 21, color: Colors.grey.shade500),
+        filled: true,
+        fillColor: _fieldBg,
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        border: border(_fieldBorder),
+        enabledBorder: border(_fieldBorder),
+        focusedBorder: border(AppColors.appColor, 1.6),
+      ),
+    );
+
+    const label = Padding(
+      padding: EdgeInsets.only(left: 2, bottom: 8),
+      child: Text(
+        "Form Number",
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF2B3A42),
+        ),
+      ),
+    );
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      alignment: Alignment.topCenter,
+      child: Container(
+        padding: EdgeInsets.all(compact ? 14 : 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: compact
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  label,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(child: field),
+                      const SizedBox(width: 10),
+                      _verifyButton(loading: loading, compact: true),
+                    ],
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [AppColors.appColor, AppColors.lightAppColor],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.appColor.withOpacity(0.3),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.fact_check_rounded,
+                          color: Colors.white, size: 28),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Verify Your Form",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.appColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Enter your form number below to check its current status.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 13, height: 1.4, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 16),
+                  label,
+                  field,
+                  const SizedBox(height: 14),
+                  _verifyButton(loading: loading, compact: false),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _verifyButton({required bool loading, required bool compact}) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      height: 52,
+      width: compact ? 56 : null,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: loading
+              ? [Colors.grey.shade400, Colors.grey.shade400]
+              : [AppColors.appColor, AppColors.lightAppColor],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: loading
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.appColor.withOpacity(0.35),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: loading ? null : _verify,
+          child: Center(
+            child: loading
+                ? const AppLoader(size: 22)
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.verified_rounded,
+                          color: Colors.white, size: 20),
+                      if (!compact) ...[
+                        const SizedBox(width: 8),
+                        const Text(
+                          "Verify",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   Widget statusCard({
     required double screenW,
@@ -316,211 +337,260 @@ class _VerifyFormNumberScreenState extends State<VerifyFormNumberScreen> {
     required String formNo,
     required String formStatus,
     required String formCurrency,
+    bool fill = false,
   }) {
-    /// Get status details based on status code
     final statusDetails = _getStatusDetails(formStatus);
 
-    /// HEADER TEXT
-    final String headerText = statusDetails['title'] ?? "Unknown Status";
+    final String headerText = statusDetails['title'] as String;
+    final Color statusColor = statusDetails['color'] as Color;
+    final String statusDetail = statusDetails['description'] as String;
+    final IconData statusIcon = statusDetails['icon'] as IconData;
 
-    /// HEADER COLOR
-    final Color headerColor = statusDetails['color'] ?? Colors.grey;
-
-    /// STATUS DETAIL TEXT
-    final String statusDetail = statusDetails['description'] ?? "Status not recognized";
-
-    /// STATUS DETAIL COLOR
-    final Color statusColor = statusDetails['color'] ?? Colors.grey;
-
-    /// Determine which image to show based on currency
     String getCurrencyImage() {
-      if (formCurrency == "50") {
-        return ImageConstant.rs50;
-      }
-      else if (formCurrency == "10") {
-        return ImageConstant.rs10;
-      }
-      else if (formCurrency == "20") {
-        return ImageConstant.rs20;
-      }
-      else if (formCurrency == "100") {
-        return ImageConstant.rs100;
-      } else if (formCurrency == "500") {
-        return ImageConstant.rs500;
-      } else if (formCurrency == "1000") {
-        return ImageConstant.rs1000;
-      } else if (formCurrency == "5000") {
-        return ImageConstant.rs5000;
-      } else {
-        // Default image if currency is not recognized
-        return ImageConstant.rs20;
+      switch (formCurrency) {
+        case "10":
+          return ImageConstant.rs10;
+        case "20":
+          return ImageConstant.rs20;
+        case "50":
+          return ImageConstant.rs50;
+        case "100":
+          return ImageConstant.rs100;
+        case "500":
+          return ImageConstant.rs500;
+        case "1000":
+          return ImageConstant.rs1000;
+        case "5000":
+          return ImageConstant.rs5000;
+        default:
+          return "assets/images/20.png";
       }
     }
+
+    Widget currencyNote() {
+      final textStyle = TextStyle(
+        fontSize: (screenW * 0.032).clamp(11.0, 16.0),
+        fontWeight: FontWeight.w700,
+        color: Colors.black87,
+        letterSpacing: 1,
+      );
+      return AspectRatio(
+        aspectRatio: 17 / 8,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.asset(getCurrencyImage(), fit: BoxFit.fill),
+                ),
+                Positioned(top: 6, right: 8, child: Text(formNo, style: textStyle)),
+                Positioned(bottom: 6, left: 10, child: Text(formNo, style: textStyle)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final body = Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _infoTile(Icons.apartment_rounded, "Project", project),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _infoTile(
+                    Icons.confirmation_number_outlined, "Form No.", formNo),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _infoTile(
+            Icons.info_outline_rounded,
+            "Status Detail",
+            statusDetail,
+            valueColor: statusColor,
+          ),
+          const SizedBox(height: 12),
+          if (fill)
+            Expanded(child: Center(child: currencyNote()))
+          else
+            currencyNote(),
+        ],
+      ),
+    );
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black26,
-            blurRadius: 12,
-            offset: Offset(0, 6),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
+        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          /// HEADER
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: headerColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(18),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [statusColor, statusColor.withOpacity(0.8)],
               ),
             ),
-            child: Text(
-              headerText,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
+            child: Row(
               children: [
-                _row("Project", project),
-
-                const Divider(),
-
-                _row(
-                  "Status Detail",
-                  statusDetail,
-                  valueColor: statusColor,
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.22),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(statusIcon, color: Colors.white, size: 24),
                 ),
-
-                const SizedBox(height: 18),
-
-                AspectRatio(
-                  aspectRatio: 17 / 8,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black12),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Use the currency-based image
-                        Image.asset(
-                          getCurrencyImage(),
-                          fit: BoxFit.fill,
-                          width: double.infinity,
-                          height: double.infinity,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "FORM STATUS",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
                         ),
-
-                        Positioned(
-                          top: 5,
-                          right: 5,
-                          child: Text(
-                            formNo,
-                            style: TextStyle(
-                              fontSize: screenW * 0.032,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87,
-                              letterSpacing: 1,
-                            ),
-                          ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        headerText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
                         ),
-
-                        Positioned(
-                          bottom: 5,
-                          left: 10,
-                          child: Text(
-                            formNo,
-                            style: TextStyle(
-                              fontSize: screenW * 0.032,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
+          if (fill) Expanded(child: body) else body,
         ],
       ),
     );
   }
 
-  // Helper function to get status details
   Map<String, dynamic> _getStatusDetails(String statusCode) {
     switch (statusCode.toUpperCase()) {
       case 'I':
         return {
           'title': "Normal / Ready",
           'description': "Normal - Ready for buying and selling",
-          'color': Colors.green, // bg-success-custom equivalent
+          'color': const Color(0xFF2E9E5B),
+          'icon': Icons.check_circle_rounded,
         };
       case 'R':
         return {
           'title': "Active / Not Ready",
           'description': "Normal - Not ready for buying and selling",
-          'color': Colors.orange, // bg-warning-custom equivalent
+          'color': const Color(0xFFE08A12),
+          'icon': Icons.schedule_rounded,
         };
       case 'C':
         return {
           'title': "Cancelled",
           'description': "Cancelled - This form has been cancelled",
-          'color': Colors.red, // bg-danger-custom equivalent
+          'color': const Color(0xFFD64545),
+          'icon': Icons.cancel_rounded,
         };
       case 'A':
         return {
           'title': "Adjusted",
           'description': "Adjusted - Not ready for buying and selling",
-          'color': Colors.blue, // bg-info-custom equivalent
+          'color': const Color(0xFF2F7DD1),
+          'icon': Icons.sync_alt_rounded,
         };
       default:
         return {
           'title': "Unknown Status",
           'description': "Status code not recognized",
-          'color': Colors.grey, // bg-secondary equivalent
+          'color': Colors.grey.shade600,
+          'icon': Icons.help_rounded,
         };
     }
   }
 
-  Widget _row(String label, String value, {Color? valueColor}) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 3,
-          child: Text(
-            label,
-            style: const TextStyle(color: Colors.grey),
+  Widget _infoTile(IconData icon, String label, String value,
+      {Color? valueColor}) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: _fieldBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _fieldBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 15, color: AppColors.appColor),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        Expanded(
-          flex: 5,
-          child: Text(
-            value,
+          const SizedBox(height: 4),
+          Text(
+            value.isEmpty ? "-" : value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: valueColor ?? Colors.black,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              height: 1.25,
+              color: valueColor ?? const Color(0xFF2B3A42),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -78,16 +78,32 @@ class FirebaseNotificationService {
       badge: true,
     );
 
-    final String? token = await messaging.getToken();
-    print('📲 FCM Token: $token');
+    _fetchFcmTokenSafely(messaging);
 
-    // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    messaging.onTokenRefresh.listen((newToken) {
+      print('📲 FCM Token refreshed: $newToken');
+    });
+
 
     _setupForegroundListener();
     _setupNotificationClickListener();
 
   }
 
+
+
+  Future<void> _fetchFcmTokenSafely(FirebaseMessaging messaging) async {
+    for (int attempt = 1; attempt <= 3; attempt++) {
+      try {
+        final String? token = await messaging.getToken();
+        print('📲 FCM Token: $token');
+        return;
+      } catch (e) {
+        print('⚠️ FCM getToken failed (attempt $attempt/3): $e');
+        await Future.delayed(Duration(seconds: 5 * attempt));
+      }
+    }
+  }
 
   Future<void> _initLocalNotifications() async {
     const androidInit = AndroidInitializationSettings('@mipmap/logo');
@@ -187,7 +203,6 @@ class FirebaseNotificationService {
         final String action = message.data['action'] ?? '';
 
         if (type == 'SOS_EMERGENCY' && action == 'SOS_NOTIFICATION') {
-          // ← NEW: fetch ticket first
           final ticket = await TicketRepository().getTicket(ticketId);
           if (ticket != null) {
             _handleSOSNavigation(ticket);
@@ -203,7 +218,6 @@ class FirebaseNotificationService {
     });
   }
 
-  // Public wrapper so external classes can trigger SOS navigation
   void triggerSOSNavigation(TicketModel ticket) {
     _handleSOSNavigation(ticket);
   }

@@ -76,8 +76,8 @@ class BookingController extends GetxController {
     selectedBranchCode.value = branch["brn_code"] ?? "";
 
     if (selectedBranchCode.value.isNotEmpty) {
-      await fetchPlotSizes(selectedBranchCode.value);
       await fetchBlocks(selectedBranchCode.value);
+      await fetchPlotSizes(selectedBranchCode.value);
     }
   }
 
@@ -108,11 +108,10 @@ class BookingController extends GetxController {
   Future<void> submitBooking({
     required String brnCode,
     required String selectedProject,
-    // required String idNo,
     required String contactName,
     required String contactNo,
     required String plotSizeCode,
-    required String plotNo,
+    String plotNo = "",
     required String blockNo,
     required String email,
     required String plotType,
@@ -124,7 +123,6 @@ class BookingController extends GetxController {
 
       final payload = {
         "brn_code": brnCode,
-        // "id_no": idNo,
         "contact_name": contactName,
         "contact_no": contactNo,
         "token_remarks": "",
@@ -147,7 +145,6 @@ class BookingController extends GetxController {
         "website_title": "SHE Technologies",
         "client_name": contactName,
         "client_number":contactNo,
-        //"project": selectedProject,
         "project": "CRM",
         "remarks": "",
         "interest_in_nature": plotNature,
@@ -157,22 +154,22 @@ class BookingController extends GetxController {
       };
 
       final success = await _repo.createBooking(payload);
-     final successCrm = await _repo.createBookingCRM(createBookingCRM);
+      final successCrm = await _repo.createBookingCRM(createBookingCRM);
 
-     if (success && successCrm) {
-      if (success ) {
-        Get.offAll(() => MainWrapper());
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (success && successCrm) {
+        if (success ) {
+          Get.offAll(() => MainWrapper());
+          WidgetsBinding.instance.addPostFrameCallback((_) {
 
-          showTopSnackBar(
-              context,
-              title: "Success",
-              "Your request submitted successfully.",
-              Colors.green.withOpacity(0.7),
-              icon: Icons.check_circle
-          );
-        });
-      }}
+            showTopSnackBar(
+                context,
+                title: "Success",
+                "Your request submitted successfully.",
+                Colors.green.withOpacity(0.7),
+                icon: Icons.check_circle
+            );
+          });
+        }}
     } catch (e) {
       showTopSnackBar(context, title: "Alert",e.toString(), Colors.red.withOpacity(0.7),icon: Icons.warning);
     } finally {

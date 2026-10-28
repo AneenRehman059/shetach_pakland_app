@@ -1,3 +1,4 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -9,6 +10,7 @@ import 'package:pakland/core/widgets/toast_message.dart';
 import 'package:pakland/core/widgets/app_bar2.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
 import 'package:pakland/features/tickets/data/repositories/ticket_repo.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class SOSAlarmScreen extends StatelessWidget {
   final TicketModel ticket;
@@ -27,7 +29,7 @@ class SOSAlarmScreen extends StatelessWidget {
       canPop: false,
       child: Scaffold(
         backgroundColor: Colors.red[50],
-        appBar: AppBar(title: Text("SOS",style: TextStyle(color: AppColors.whiteBg),),
+        appBar: AppHeaderBar(title: Text("SOS",style: TextStyle(color: AppColors.whiteBg),),
         centerTitle: true,
         backgroundColor: AppColors.appColor,
         iconTheme: IconThemeData(color: AppColors.whiteBg),
@@ -77,10 +79,8 @@ class SOSAlarmScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 50),
-            // Two buttons in a row
             Row(
               children: [
-                // CANCEL Button
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
@@ -102,7 +102,6 @@ class SOSAlarmScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // ACCEPT Button
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
@@ -125,22 +124,12 @@ class SOSAlarmScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 30),
-            // Text(
-            //   'Cancel: Just stop the alarm\nAccept: Stop alarm, update status, and notify user',
-            //   textAlign: TextAlign.center,
-            //   style: TextStyle(
-            //     fontSize: 14,
-            //     color: Colors.grey[600],
-            //     fontStyle: FontStyle.italic,
-            //   ),
-            // ),
           ],
         ),
       ),
     );
   }
 
-  // Option A: Cancel
   Future<void> _handleCancel(BuildContext context, SOSController sosController) async {
     try {
       await sosController.stopAdminAlarm();
@@ -166,38 +155,31 @@ class SOSAlarmScreen extends StatelessWidget {
     }
   }
 
-  // Option B: GO & RESPOND
   Future<void> _handleGoAndRespond(
       BuildContext context,
       SOSController sosController,
       FlutterSecureStorage storage,
       ) async {
-    // Prevent multiple taps
     if (Get.isDialogOpen ?? false) {
       return;
     }
 
     try {
-      // Show loading indicator while checking status
       Get.dialog(
-        const Center(child: CircularProgressIndicator()),
+        const Center(child: AppLoader()),
         barrierDismissible: false,
       );
 
       final ticketRepo = TicketRepository();
       final latestTicket = await ticketRepo.getTicket(ticket.id);
 
-      // Close loading dialog
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
 
-      // Check if ticket is already In Progress
       if (latestTicket != null && latestTicket.status == "In Progress") {
-        // Stop the alarm
         await sosController.stopAdminAlarm();
 
-        // Show warning message
         showTopSnackBar(
           context,
           'This ticket is already In Progress. Please refresh the list.',
@@ -207,7 +189,6 @@ class SOSAlarmScreen extends StatelessWidget {
           duration: const Duration(seconds: 3),
         );
 
-        // Navigate back to main screen after a delay
         await Future.delayed(const Duration(milliseconds: 3500));
         if (Get.context != null) {
           Get.offAllNamed('/main_screen');
@@ -215,34 +196,27 @@ class SOSAlarmScreen extends StatelessWidget {
         return;
       }
 
-      // If ticket is not In Progress, proceed with assignment
-      // Show loading indicator for assignment process
       Get.dialog(
-        const Center(child: CircularProgressIndicator()),
+        const Center(child: AppLoader()),
         barrierDismissible: false,
       );
 
-      // Get responder information
       final responderUserId = await storage.read(key: 'user_id') ?? '';
       final responderName = await storage.read(key: 'user_name') ?? 'Admin';
 
-      // Stop the alarm
       await sosController.stopAdminAlarm();
 
-      // Respond to SOS (updates status to "In Progress")
       final success = await sosController.respondToSOS(
         ticketId: ticket.id,
         responderUserId: responderUserId,
         responderName: responderName,
       );
 
-      // Close loading dialog
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
 
       if (success) {
-        // Assign ticket
         final ticketController = TicketController();
         await ticketController.assignTicket(
           brn_code: ticket.brn_code,
@@ -254,11 +228,9 @@ class SOSAlarmScreen extends StatelessWidget {
           remarks: "",
         );
 
-        // Fetch updated ticket details
         final updatedTicket = await ticketRepo.getTicket(ticket.id);
 
         if (updatedTicket != null) {
-          // Show success message
           showTopSnackBar(
             context,
             'Ticket status updated to In Progress. User has been notified.',
@@ -268,11 +240,9 @@ class SOSAlarmScreen extends StatelessWidget {
             duration: const Duration(seconds: 3),
           );
 
-          // Navigate to ticket detail view after a short delay
           await Future.delayed(const Duration(milliseconds: 500));
           Get.offNamed('/tickets/:id', arguments: {'ticket': updatedTicket});
         } else {
-          // Show warning if ticket details not found
           showTopSnackBar(
             context,
             'Ticket updated but could not load details. Please refresh.',
@@ -285,7 +255,6 @@ class SOSAlarmScreen extends StatelessWidget {
           Get.offAllNamed('/main_screen');
         }
       } else {
-        // Show error if respondToSOS failed
         showTopSnackBar(
           context,
           'Failed to respond to SOS. Please try again.',
@@ -296,12 +265,10 @@ class SOSAlarmScreen extends StatelessWidget {
         );
       }
     } catch (e) {
-      // Close loading dialog if still open
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
 
-      // Show error message
       showTopSnackBar(
         context,
         'Something went wrong: ${e.toString()}',

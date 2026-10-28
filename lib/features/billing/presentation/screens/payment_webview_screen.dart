@@ -3,6 +3,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/billing/presentation/screens/payment_plan_detail_screen.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class PaymentWebViewScreen extends StatefulWidget {
   final String paymentUrl;
@@ -43,7 +44,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(title: Text("Payment Portal",style: TextStyle(color: Colors.white),),
+        appBar: AppHeaderBar(title: Text("Payment Portal",style: TextStyle(color: Colors.white),),
         centerTitle: true,
           backgroundColor: AppColors.appColor,
           iconTheme: IconThemeData(color: Colors.white),

@@ -1,6 +1,6 @@
 
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,9 +10,9 @@ import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
 import 'package:pakland/core/widgets/app_dialogs.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 
-// update
 class TicketListView extends StatefulWidget {
   const TicketListView({super.key});
 
@@ -152,7 +152,7 @@ class _TicketListViewState extends State<TicketListView> {
         return true;
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppHeaderBar(
           backgroundColor: AppColors.primaryColor,
           foregroundColor: Colors.white,
           title: Text('$statusFilter Tickets', textAlign: TextAlign.center),
@@ -185,7 +185,6 @@ class _TicketListViewState extends State<TicketListView> {
                 onSelected: (_) {},
                 itemBuilder: (_) => [
 
-                  // ── Sort by Date ──
                   PopupMenuItem<String>(
                     enabled: false,
                     height: 28,
@@ -215,7 +214,6 @@ class _TicketListViewState extends State<TicketListView> {
 
                   const PopupMenuDivider(),
 
-                  // ── Filter by Priority ──
                   PopupMenuItem<String>(
                     enabled: false,
                     height: 28,
@@ -261,7 +259,6 @@ class _TicketListViewState extends State<TicketListView> {
                   }),
                 ],
 
-                // ── Icon with badge ──
                 child: Stack(
                   alignment: Alignment.topRight,
                   children: [
@@ -311,13 +308,12 @@ class _TicketListViewState extends State<TicketListView> {
         body: !_isInitialized
             ? Center(
           child:
-          SpinKitWave(color: AppColors.primaryColor, size: 24.0),
+          AppLoader(size: 24),
         )
             : Obx(() {
           if (controller.isLoading.value) {
             return Center(
-              child: SpinKitWave(
-                  color: AppColors.primaryColor, size: 24.0),
+              child: AppLoader(size: 24),
             );
           }
 
@@ -430,9 +426,6 @@ class _TicketListViewState extends State<TicketListView> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🔹 Admin Ticket List (With Swipe Actions)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class AdminTicketList extends StatelessWidget {
   final List<TicketModel> list;
@@ -740,9 +733,6 @@ class AdminTicketList extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🔹 Client Ticket List (Plain ListView)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class ClientTicketList extends StatelessWidget {
   final List<TicketModel> list;
@@ -772,9 +762,6 @@ class ClientTicketList extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🔹 Shared Ticket Tile — Improved Card UI
-// ─────────────────────────────────────────────────────────────────────────────
 
 class TicketTile extends StatelessWidget {
   final TicketModel t;
@@ -823,10 +810,8 @@ class TicketTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Row 1: Icon + ID + Status ──
                 Row(
                   children: [
-                    // Left accent bar / SOS icon
                     isSOSTicket
                         ? Container(
                       padding: const EdgeInsets.all(4),
@@ -858,7 +843,6 @@ class TicketTile extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    // Status badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 3),
@@ -882,7 +866,6 @@ class TicketTile extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // ── Row 2: Description ──
                 Text(
                   t.description,
                   maxLines: 2,
@@ -893,10 +876,8 @@ class TicketTile extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                // ── Row 3: Priority chip + Date ──
                 Row(
                   children: [
-                    // Priority chip (receipt icon for normal, emergency for SOS)
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 3),
@@ -934,7 +915,6 @@ class TicketTile extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    // Date
                     Row(
                       children: [
                         Icon(Icons.access_time_rounded,
@@ -949,23 +929,6 @@ class TicketTile extends StatelessWidget {
                     ),
                   ],
                 ),
-                //
-                // // ── Row 4: Username ──
-                // if (t.userName != null && t.userName!.isNotEmpty) ...[
-                //   const SizedBox(height: 8),
-                //   Row(
-                //     children: [
-                //       Icon(Icons.person_outline,
-                //           size: 13, color: Colors.grey.shade500),
-                //       const SizedBox(width: 4),
-                //       Text(
-                //         t.userName!,
-                //         style: TextStyle(
-                //             fontSize: 12, color: Colors.grey.shade600),
-                //       ),
-                //     ],
-                //   ),
-                // ],
               ],
             ),
           ),

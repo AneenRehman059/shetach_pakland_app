@@ -15,13 +15,15 @@ class PaymentPlanController extends GetxController {
   var selectedBranchCode = "".obs;
   var isLoading = true.obs;
   var areImagesLoaded = false.obs;
+  int _loadRequestId = 0;
 
   @override
   void onInit() {
     super.onInit();
     selectedBranchName("All");
     selectedBranchCode("");
-    loadBranches();
+    // loadBranches() is called by PaymentPlanScreen.initState; calling it here
+    // as well made the first open load the plans twice (duplicate plans).
   }
 
   Future<void> loadBranches() async {
@@ -33,8 +35,6 @@ class PaymentPlanController extends GetxController {
       if (branchListResponse.statusCode == "200") {
         branchList.assignAll(branchListResponse.branchList);
 
-        // ✅ Do NOT override "All"
-        // Always load all plans on first open
         await loadPaymentPlanImages("All");
       }
     } catch (e) {
@@ -46,8 +46,10 @@ class PaymentPlanController extends GetxController {
 
 
   Future<void> loadPaymentPlanImages(String brnCode) async {
-    isLoading(true); // only while fetching data
+    isLoading(true);
     areImagesLoaded(false);
+    final int requestId = ++_loadRequestId;
+    final List<Map<String, String>> loaded = [];
     plansWithNames.clear();
 
     try {
@@ -59,7 +61,6 @@ class PaymentPlanController extends GetxController {
             ? plans
             : plans.where((plan) => plan["brn_code"]?.toString() == brnCode).toList();
 
-        // build list without blocking on precache
         for (var plan in filteredPlans) {
           String path = plan["image_path"]?.toString() ?? "";
           if (path.isEmpty) continue;
@@ -68,13 +69,16 @@ class PaymentPlanController extends GetxController {
               .replaceAll(RegExp(r'/+'), '/')
               .replaceFirst(':/', '://');
 
-          plansWithNames.add({
+          loaded.add({
             "plan_name": plan["plan_name"]?.toString() ?? "",
             "image_url": url,
           });
         }
 
-        // precache images in background (don’t block UI)
+        // A newer request started meanwhile -> drop this stale result.
+        if (requestId != _loadRequestId) return;
+        plansWithNames.assignAll(loaded);
+
         Future.wait(plansWithNames.map((plan) async {
           try {
             await precacheImage(NetworkImage(plan["image_url"]!), Get.context!);
@@ -86,7 +90,7 @@ class PaymentPlanController extends GetxController {
     } catch (e) {
       debugPrint("Error loading payment plans: $e");
     } finally {
-      isLoading(false);
+      if (requestId == _loadRequestId) isLoading(false);
     }
   }
 

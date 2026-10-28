@@ -1,3 +1,4 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
@@ -7,13 +8,13 @@ import 'package:pakland/features/auth/presentation/controllers/signup_controller
 import 'package:pakland/features/auth/presentation/controllers/communication_policy_controller.dart';
 import 'package:pakland/features/auth/presentation/screens/login_screen.dart';
 import 'package:pakland/features/auth/data/models/signup_model.dart';
-import 'package:pakland/core/widgets/app_bar.dart';
-import 'package:pakland/core/widgets/custom_buttons.dart';
-import 'package:pakland/core/widgets/custom_fields.dart';
 import 'package:pakland/features/auth/presentation/screens/verify_otp_screen.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 
 import 'package:pakland/core/services/get_device_info.dart';
+import 'package:pakland/core/services/video_background_service.dart';
+import 'package:video_player/video_player.dart';
+
+import '../../auth_widget/auth_wdget.dart';
 
 class SignUpNScreen extends StatefulWidget {
   SignUpNScreen({super.key});
@@ -22,7 +23,8 @@ class SignUpNScreen extends StatefulWidget {
   State<SignUpNScreen> createState() => _SignUpNScreenState();
 }
 
-class _SignUpNScreenState extends State<SignUpNScreen> {
+class _SignUpNScreenState extends State<SignUpNScreen>
+    with VideoSoundMixin<SignUpNScreen> {
   final cnicController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
@@ -32,14 +34,19 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
   final lastNameController = TextEditingController();
   final dobController = TextEditingController();
 
-  String _fullPhoneNumber = '';
-  bool _isPhoneValid = false;
-
   final _signUpController = Get.put(SignUpController());
   final _communicationPolicyController = Get.put(CommunicationPolicyController());
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  String _otpMethod = 'sms'; // Default OTP method
+  final _videoService = VideoBackgroundService.instance;
+  bool _videoReady = false;
+
+  // Only one OTP method is ever shown - driven by
+  // /api/MobileAPi/GetCommunicationPolicy's key_code:
+  //   via_WABA / whatsapp -> WHATSAPP
+  //   itel / telenor      -> SMS
+  //   email               -> EMAIL
+  String get _otpMethod => _communicationPolicyController.otpMethod.value.value;
   String _passwordStrength = '';
   Color _passwordStrengthColor = Colors.grey;
   String _confirmPasswordStrength = '';
@@ -70,34 +77,28 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
     bool hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password);
     int length = password.length;
 
-    // Count how many character types are included
     int characterTypesCount = 0;
     if (hasUppercase) characterTypesCount++;
     if (hasLowercase) characterTypesCount++;
     if (hasNumber) characterTypesCount++;
     if (hasSpecialChar) characterTypesCount++;
 
-    // Determine strength level
     if (length > 8 && characterTypesCount == 4) {
-      // Strong: More than 8 characters and includes all character types
       setState(() {
         _passwordStrength = 'Strong';
         _passwordStrengthColor = Colors.green;
       });
     } else if (length == 8) {
-      // Average: Exactly 8 characters (always show as Average regardless of character types)
       setState(() {
         _passwordStrength = 'Average';
         _passwordStrengthColor = Colors.orange;
       });
     } else if (length > 8 && characterTypesCount >= 2) {
-      // Average: More than 8 characters with at least 2 character types
       setState(() {
         _passwordStrength = 'Average';
         _passwordStrengthColor = Colors.orange;
       });
     } else if (length > 0) {
-      // Weak: Less than 8 characters or doesn't meet above criteria
       setState(() {
         _passwordStrength = 'Weak';
         _passwordStrengthColor = Colors.red;
@@ -125,34 +126,28 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
     bool hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password);
     int length = password.length;
 
-    // Count how many character types are included
     int characterTypesCount = 0;
     if (hasUppercase) characterTypesCount++;
     if (hasLowercase) characterTypesCount++;
     if (hasNumber) characterTypesCount++;
     if (hasSpecialChar) characterTypesCount++;
 
-    // Determine strength level
     if (length > 8 && characterTypesCount == 4) {
-      // Strong: More than 8 characters and includes all character types
       setState(() {
         _confirmPasswordStrength = 'Strong';
         _confirmPasswordStrengthColor = Colors.green;
       });
     } else if (length == 8) {
-      // Average: Exactly 8 characters (always show as Average regardless of character types)
       setState(() {
         _confirmPasswordStrength = 'Average';
         _confirmPasswordStrengthColor = Colors.orange;
       });
     } else if (length > 8 && characterTypesCount >= 2) {
-      // Average: More than 8 characters with at least 2 character types
       setState(() {
         _confirmPasswordStrength = 'Average';
         _confirmPasswordStrengthColor = Colors.orange;
       });
     } else if (length > 0) {
-      // Weak: Less than 8 characters or doesn't meet above criteria
       setState(() {
         _confirmPasswordStrength = 'Weak';
         _confirmPasswordStrengthColor = Colors.red;
@@ -191,19 +186,11 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
       _fieldErrors['cnic'] = 'Please enter your User Id';
       isValid = false;
     }
-    // else if (!RegExp(r'^\d{5}-\d{7}-\d$').hasMatch(cnicController.text)) {
-    //   _fieldErrors['cnic'] = 'Please enter a valid CNIC (XXXXX-XXXXXXX-X)';
-    //   isValid = false;
-    // }
 
-    if (_fullPhoneNumber.isEmpty) {
+    if (mobileNoController.text.isEmpty) {
       _fieldErrors['phone'] = 'Please enter your phone number';
       isValid = false;
     }
-    // else if (!RegExp(r'^92\d{10}$').hasMatch(mobileNoController.text)) {
-    //   _fieldErrors['phone'] = 'Please enter a valid 12-digit number starting with 92';
-    //   isValid = false;
-    // }
 
     if (emailController.text.isEmpty) {
       _fieldErrors['email'] = 'Please enter your email';
@@ -241,22 +228,15 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
   Future<void> _submitForm() async {
     if (_validateFields()) {
       Map<String, String> deviceInfo = await DeviceInfoService.getDeviceInfo();
-
-      // Remove the leading "+" so the number is sent as e.g. "923014230204"
-      final String formattedMobileNo = _fullPhoneNumber.startsWith('+')
-          ? _fullPhoneNumber.substring(1)
-          : _fullPhoneNumber;
-
       final signUpData = SignUpRequestModel(
         cnic: cnicController.text,
         password: passwordController.text,
-        mobileNo: formattedMobileNo,
+        mobileNo: mobileNoController.text,
         emailAddress: emailController.text,
         address: "lahore",
         userName: userNameController.text,
         otp: "string",
         otpVia: _otpMethod,
-        // deviceId: deviceInfo['deviceId']!,
         deviceId: '',
         deviceModel: "string",
         platform: "string",
@@ -267,523 +247,371 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
         operatingSystem: "string",
         webViewVersion: "string",
       );
-      _signUpController.signUp(context, signUpData);
+      _signUpController.signUp(context,signUpData);
     }
+  }
+
+  void _initBackgroundVideo() {
+    _videoService.initialize();
+    _videoReady = _videoService.isReady;
+    _videoService.controller.addListener(_onVideoUpdate);
+  }
+
+  void _onVideoUpdate() {
+    final ready = _videoService.isReady;
+    if (ready != _videoReady && mounted) {
+      setState(() => _videoReady = ready);
+    }
+  }
+
+  void _onPasswordChanged() {
+    _checkPasswordStrength(passwordController.text);
+    if (confirmPasswordController.text.isNotEmpty) {
+      _checkConfirmPasswordStrength(confirmPasswordController.text);
+    }
+  }
+
+  void _onConfirmPasswordChanged() {
+    _checkConfirmPasswordStrength(confirmPasswordController.text);
   }
 
   @override
   void initState() {
     super.initState();
-    passwordController.addListener(() {
-      _checkPasswordStrength(passwordController.text);
-      // Also update confirm password strength when password changes
-      if (confirmPasswordController.text.isNotEmpty) {
-        _checkConfirmPasswordStrength(confirmPasswordController.text);
-      }
-    });
-
-    confirmPasswordController.addListener(() {
-      _checkConfirmPasswordStrength(confirmPasswordController.text);
-    });
+    _initBackgroundVideo();
+    passwordController.addListener(_onPasswordChanged);
+    confirmPasswordController.addListener(_onConfirmPasswordChanged);
   }
 
   @override
   void dispose() {
-    passwordController.removeListener(() {});
-    confirmPasswordController.removeListener(() {});
+    passwordController.removeListener(_onPasswordChanged);
+    confirmPasswordController.removeListener(_onConfirmPasswordChanged);
+    _videoService.controller.removeListener(_onVideoUpdate);
+    cnicController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    mobileNoController.dispose();
+    emailController.dispose();
+    userNameController.dispose();
+    lastNameController.dispose();
+    dobController.dispose();
     super.dispose();
+  }
+
+  void _clearError(String key) {
+    if ((_fieldErrors[key] ?? '').isNotEmpty) {
+      setState(() => _fieldErrors[key] = '');
+    }
+  }
+
+  void _goToLogin() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Get.off(() => LoginScreen());
+    }
+  }
+
+
+  Widget _buildStrengthBar(String strength, Color color) {
+    final int level = strength == 'Strong' ? 3 : (strength == 'Average' ? 2 : 1);
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, right: 4, top: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: List.generate(3, (i) {
+                return Expanded(
+                  child: Container(
+                    height: 4,
+                    margin: EdgeInsets.only(right: i == 2 ? 0 : 5),
+                    decoration: BoxDecoration(
+                      color: i < level ? color : Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            strength,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchRow() {
+    final match = passwordController.text == confirmPasswordController.text;
+    final color = match ? Colors.greenAccent.shade400 : AppColors.softCorelRedColor;
+    return Padding(
+      padding: const EdgeInsets.only(left: 6, top: 8),
+      child: Row(
+        children: [
+          Icon(match ? Icons.check_circle : Icons.error_outline, color: color, size: 15),
+          const SizedBox(width: 5),
+          Text(
+            match ? 'Passwords match' : 'Passwords do not match',
+            style: TextStyle(fontSize: 12, color: color),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    const double gap = 16;
+
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(ImageConstant.sc),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              SizedBox(height: 15,),
-              Image.asset(ImageConstant.logo,height: 120,width: 120,),
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width < 400 ? 16.0 : 24.0,
-                  vertical: 15,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Sign Up',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Create your account to explore your dream place to live across the whole world',
-                      style: TextStyle(fontSize: 14, color: Colors.white70),
-                    ),
-                  ],
-                ),
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: _videoReady
+                ? FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _videoService.controller.value.size.width,
+                height: _videoService.controller.value.size.height,
+                child: VideoPlayer(_videoService.controller),
               ),
-
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: constraints.maxWidth < 400 ? 16.0 : 24.0,
-                        vertical: 0,
+            )
+                : Image.asset(
+              ImageConstant.welcome,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.4)),
+          ),
+          SafeArea(
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                  child: Column(
+                    children: [
+                      AuthFadeSlide(
+                        child: AuthHeader(
+                          logoPath: ImageConstant.logo,
+                          logoSize: 72,
+                          title: 'Create Account',
+                          subtitle: 'Join us to explore your dream place to live',
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 10),
-
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CustomTextField(
-                                controller: userNameController,
-                                label: 'First Name*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
-                                hintText: 'First Name',
-                                imagePath: 'assets/images/user.png',
-                                borderRadius: 30,
-                                height: MediaQuery.of(context).size.height * 0.05,
-                              ),
-
-                              if (_fieldErrors['firstName']?.isNotEmpty ?? false)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8, top: 4),
-                                  child: Text(
-                                    _fieldErrors['firstName']!,
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CustomTextField(
-                                controller: lastNameController,
-                                label: 'Last Name*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
-                                hintText: 'Last Name',
-                                imagePath: 'assets/images/user.png',
-                                borderRadius: 30,
-                                height: MediaQuery.of(context).size.height * 0.05,
-                              ),
-                              if (_fieldErrors['lastName']?.isNotEmpty ?? false)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8, top: 4),
-                                  child: Text(
-                                    _fieldErrors['lastName']!,
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CustomTextField(
-                                controller: cnicController,
-                                keyboardType: TextInputType.text,
-                                label: 'User Id*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
-                                hintText: 'XXXXX-XXXXXXX-X',
-                                imagePath: 'assets/images/cnic.png',
-                                borderRadius: 30,
-                                height: MediaQuery.of(context).size.height * 0.05,
-                              ),
-
-                              if (_fieldErrors['cnic']?.isNotEmpty ?? false)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8, top: 4),
-                                  child: Text(
-                                    _fieldErrors['cnic']!,
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Mobile No*',
-                                style: TextStyle(color: AppColors.whiteBg, fontSize: 14),
-                              ),
-                              SizedBox(height: 6),
-                              Container(
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                padding: EdgeInsets.symmetric(horizontal: 12),
-                                child:
-                                IntlPhoneField(
-                                  controller: mobileNoController,
-                                  style: TextStyle(fontSize: 14, color: Colors.black),
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    counterText: '',
-                                    hintText: 'Phone number',
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.symmetric(vertical: 14),
-                                  ),
-                                  dropdownTextStyle: TextStyle(fontSize: 14, color: Colors.black),
-                                  flagsButtonPadding: EdgeInsets.symmetric(horizontal: 4),
-                                  dropdownIconPosition: IconPosition.trailing,
-                                  showDropdownIcon: true,
-                                  initialCountryCode: 'PK',
-                                  disableLengthCheck: false,
-                                  onChanged: (phone) {
-                                    setState(() {
-                                      _fullPhoneNumber = phone.completeNumber;
-                                      _isPhoneValid = true;
-                                    });
-                                  },
-                                  onCountryChanged: (country) {
-                                    setState(() {
-                                      _isPhoneValid = false;
-                                    });
-                                  },
-                                  invalidNumberMessage: 'Please enter a valid phone number',
-                                ),
-                              ),
-                              if (_fieldErrors['phone']?.isNotEmpty ?? false)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8),
-                                  child: Text(
-                                    _fieldErrors['phone']!,
-                                    style: TextStyle(color: Colors.red, fontSize: 12),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CustomTextField(
-                                controller: emailController,
-                                label: 'Email*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
-                                hintText: 'example@domain.com',
-                                imagePath: 'assets/images/mail.png',
-                                keyboardType: TextInputType.emailAddress,
-                                borderRadius: 30,
-                                height: MediaQuery.of(context).size.height * 0.05,
-                              ),
-                              if (_fieldErrors['email']?.isNotEmpty ?? false)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8, top: 4),
-                                  child: Text(
-                                    _fieldErrors['email']!,
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          CustomTextField(
-                            controller: dobController,
-                            label: 'Date of Birth',
-                            labelStyle: TextStyle(color: AppColors.whiteBg),
-                            hintText: 'DD-MM-YYYY',
-                            imagePath: 'assets/images/birthday.png',
-                            keyboardType: TextInputType.none,
-                            readOnly: true,
-                            onTap: () {
-                              _selectDate(context);
-                            },
-                            borderRadius: 30,
-                            height: MediaQuery.of(context).size.height * 0.05,
-                          ),
-                          SizedBox(height: 15),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CustomTextField(
-                                controller: passwordController,
-                                label: 'Password*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
-                                hintText: 'XXXXXXXX',
-                                imagePath: 'assets/images/password.png',
-                                obscureText: true,
-                                showVisibilityIcon: true,
-                                borderRadius: 30,
-                                height: MediaQuery.of(context).size.height * 0.05,
-                              ),
-
-                              // Password Strength Indicator
-                              if (_passwordStrength.isNotEmpty)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8, top: 4),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        'Strength: ',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.white70, // Changed for better visibility
-                                        ),
-                                      ),
-                                      Text(
-                                        _passwordStrength,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: _passwordStrengthColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                              if (_fieldErrors['password']?.isNotEmpty ?? false)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8, top: 4),
-                                  child: Text(
-                                    _fieldErrors['password']!,
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CustomTextField(
-                                controller: confirmPasswordController,
-                                label: 'Confirm Password*',
-                                labelStyle: TextStyle(color: AppColors.whiteBg),
-                                hintText: 'XXXXXXXX',
-                                imagePath: 'assets/images/password.png',
-                                obscureText: true,
-                                showVisibilityIcon: true,
-                                borderRadius: 30,
-                                height: MediaQuery.of(context).size.height * 0.05,
-                              ),
-
-                              // Confirm Password Strength Indicator
-                              if (_confirmPasswordStrength.isNotEmpty)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8, top: 4),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        'Strength: ',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                      Text(
-                                        _confirmPasswordStrength,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: _confirmPasswordStrengthColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                              if (confirmPasswordController.text.isNotEmpty)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8, top: 4),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        passwordController.text == confirmPasswordController.text
-                                            ? Icons.check_circle
-                                            : Icons.error,
-                                        color: passwordController.text == confirmPasswordController.text
-                                            ? Colors.green
-                                            : Colors.red,
-                                        size: 16,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        passwordController.text == confirmPasswordController.text
-                                            ? 'Passwords match'
-                                            : 'Passwords do not match',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: passwordController.text == confirmPasswordController.text
-                                              ? Colors.green
-                                              : Colors.red,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                              if (_fieldErrors['confirmPassword']?.isNotEmpty ?? false)
-                                Padding(
-                                  padding: EdgeInsets.only(left: 8, top: 4),
-                                  child: Text(
-                                    _fieldErrors['confirmPassword']!,
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Text(
-                            'Select OTP Method:',
-                            style: TextStyle(
-                              color: AppColors.whiteBg,
-                              fontSize: 16,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Obx(() {
-                            // Only one OTP method is ever shown - driven by
-                            // /api/MobileAPi/GetCommunicationPolicy's key_code:
-                            //   via_WABA / whatsapp -> WHATSAPP
-                            //   itel / telenor      -> SMS
-                            //   email               -> EMAIL
-                            final resolvedMethod = _communicationPolicyController.otpMethod.value;
-                            String resolvedValue;
-                            String label;
-                            if (resolvedMethod == OtpMethodOption.whatsapp) {
-                              resolvedValue = 'whatsapp';
-                              label = 'WHATSAPP';
-                            } else if (resolvedMethod == OtpMethodOption.email) {
-                              resolvedValue = 'email';
-                              label = 'EMAIL';
-                            } else {
-                              resolvedValue = 'sms';
-                              label = 'SMS';
-                            }
-
-                            if (_otpMethod != resolvedValue) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) {
-                                  setState(() {
-                                    _otpMethod = resolvedValue;
-                                  });
-                                }
-                              });
-                            }
-
-                            if (_communicationPolicyController.isLoading.value) {
-                              return const SizedBox(
-                                height: 24,
-                                width: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              );
-                            }
-
-                            return Row(
+                      const SizedBox(height: 22),
+                      AuthGlassCard(
+                        delayMs: 120,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const AuthSectionLabel('Personal information'),
+                            const SizedBox(height: 14),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Radio<String>(
-                                  value: resolvedValue,
-                                  groupValue: _otpMethod,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _otpMethod = value!;
-                                    });
-                                  },
-                                  activeColor: AppColors.whiteBg,
-                                  fillColor: MaterialStateProperty.all(Colors.white),
+                                Expanded(
+                                  child: AuthTextField(
+                                    controller: userNameController,
+                                    textInputAction: TextInputAction.next,
+                                    hintText: 'First name',
+                                    assetIcon: ImageConstant.authUser,
+                                    maxLength: 35,
+                                    errorText: _fieldErrors['firstName'],
+                                    onChanged: (_) => _clearError('firstName'),
+                                  ),
                                 ),
-                                Text(
-                                  label,
-                                  style: TextStyle(color: Colors.white),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: AuthTextField(
+                                    controller: lastNameController,
+                                    textInputAction: TextInputAction.next,
+                                    hintText: 'Last name',
+                                    assetIcon: ImageConstant.authUser,
+                                    maxLength: 35,
+                                    errorText: _fieldErrors['lastName'],
+                                    onChanged: (_) => _clearError('lastName'),
+                                  ),
                                 ),
                               ],
-                            );
-                          }),
-
-                          SizedBox(height: 30),
-                          Obx(() => Center(
-                            child: CustomButton(
-                              text: 'Register',
-                              onPressed: _submitForm,
-                              isLoading: _signUpController.isLoading.value,
-                              autoWidth: true,
-                              borderRadius: 30,
                             ),
-                          )),
-                          SizedBox(height: 20),
-                          Center(
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>  LoginScreen(),
+                            const SizedBox(height: gap),
+                            AuthTextField(
+                              controller: dobController,
+                              keyboardType: TextInputType.none,
+                              hintText: 'Date of birth (optional)',
+                              assetIcon: ImageConstant.authCake,
+                              readOnly: true,
+                              onTap: () => _selectDate(context),
+                            ),
+
+                            const SizedBox(height: 26),
+                            const AuthSectionLabel('Account details'),
+                            const SizedBox(height: 14),
+                            AuthTextField(
+                              controller: cnicController,
+                              keyboardType: TextInputType.text,
+                              textInputAction: TextInputAction.next,
+                              hintText: 'User ID',
+                              assetIcon: ImageConstant.authIdCard,
+                              errorText: _fieldErrors['cnic'],
+                              onChanged: (_) => _clearError('cnic'),
+                            ),
+                            const SizedBox(height: gap),
+                            AuthTextField(
+                              controller: mobileNoController,
+                              keyboardType: TextInputType.phone,
+                              textInputAction: TextInputAction.next,
+                              hintText: 'Mobile number',
+                              assetIcon: ImageConstant.authPhone,
+                              maxLength: 15,
+                              errorText: _fieldErrors['phone'],
+                              onChanged: (_) => _clearError('phone'),
+                            ),
+                            const SizedBox(height: gap),
+                            AuthTextField(
+                              controller: emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              hintText: 'abc@gmail.com',
+                              assetIcon: ImageConstant.authMail,
+                              maxLength: 200,
+                              errorText: _fieldErrors['email'],
+                              onChanged: (_) => _clearError('email'),
+                            ),
+
+                            const SizedBox(height: 26),
+                            const AuthSectionLabel('Security'),
+                            const SizedBox(height: 14),
+                            AuthTextField(
+                              controller: passwordController,
+                              textInputAction: TextInputAction.next,
+                              hintText: 'Password',
+                              assetIcon: ImageConstant.authLock,
+                              isPassword: true,
+                              maxLength: 20,
+                              errorText: _fieldErrors['password'],
+                              onChanged: (_) => _clearError('password'),
+                            ),
+                            if (_passwordStrength.isNotEmpty)
+                              _buildStrengthBar(_passwordStrength, _passwordStrengthColor),
+                            const SizedBox(height: gap),
+                            AuthTextField(
+                              controller: confirmPasswordController,
+                              textInputAction: TextInputAction.done,
+                              hintText: 'Confirm password',
+                              assetIcon: ImageConstant.authLock,
+                              isPassword: true,
+                              maxLength: 20,
+                              errorText: _fieldErrors['confirmPassword'],
+                              onChanged: (_) => _clearError('confirmPassword'),
+                            ),
+                            if (confirmPasswordController.text.isNotEmpty) _buildMatchRow(),
+
+                            const SizedBox(height: 26),
+                            const AuthSectionLabel('Select OTP method'),
+                            const SizedBox(height: 14),
+                            Obx(() {
+                              if (_communicationPolicyController.isLoading.value) {
+                                return const Center(
+                                  child: SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: AppLoader(),
                                   ),
                                 );
-                              },
-                              child: RichText(
-                                text: TextSpan(
-                                  text: 'Already have an account? ',
-                                  style: const TextStyle(color: Colors.white70), // Changed for better visibility
-                                  children: [
-                                    TextSpan(
-                                      text: 'Sign In',
-                                      style: TextStyle(
-                                        color: Colors.white, // Changed for better visibility
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                              }
+                              final method = _communicationPolicyController.otpMethod.value;
+                              return Row(
+                                children: [
+                                  // Already selected + locked: user change nahi kar sakta
+                                  IgnorePointer(
+                                    child: Checkbox(
+                                      value: true,
+                                      onChanged: (_) {},
+                                      activeColor: Colors.white,
+                                      checkColor: AppColors.appColor,
+                                      side: const BorderSide(color: Colors.white),
                                     ),
-                                  ],
+                                  ),
+                                  Text(
+                                    method.label,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }),
+
+                            const SizedBox(height: 28),
+                            Obx(() => AuthPrimaryButton(
+                              text: 'Create Account',
+                              onPressed: _signUpController.isLoading.value
+                                  ? () {}
+                                  : _submitForm,
+                              isLoading: _signUpController.isLoading.value,
+                            )),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      AuthFadeSlide(
+                        delayMs: 240,
+                        child: TextButton(
+                          onPressed: _goToLogin,
+                          child: RichText(
+                            text: const TextSpan(
+                              text: 'Already have an account?  ',
+                              style: TextStyle(color: Colors.white70, fontSize: 13.5),
+                              children: [
+                                TextSpan(
+                                  text: 'Sign In',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Colors.white,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
-
-                          SizedBox(height: 20),
-                        ],
+                        ),
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
-              ),
-            ],
+
+                Positioned(
+                  top: 8,
+                  left: 12,
+                  child: AuthGlassCircle(
+                    size: 40,
+                    onTap: _goToLogin,
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 17,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -796,8 +624,10 @@ class _SignUpNScreenState extends State<SignUpNScreen> {
       lastDate: DateTime.now(),
     );
     if (pickedDate != null) {
+      final d = pickedDate.day.toString().padLeft(2, '0');
+      final m = pickedDate.month.toString().padLeft(2, '0');
       setState(() {
-        dobController.text = "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
+        dobController.text = "$d-$m-${pickedDate.year}";
       });
     }
   }

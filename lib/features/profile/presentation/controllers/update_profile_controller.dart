@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:pakland/core/widgets/toast_message.dart';
-import 'package:pakland/features/profile/data/repositories/update_profile_trpo.dart';
+import 'package:pakland/features/profile/data/repositories/update_profile_repo.dart';
 import 'package:pakland/features/auth/presentation/controllers/login_controller.dart';
 
 class UpdateProfileController extends GetxController {
@@ -22,12 +22,10 @@ class UpdateProfileController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Get stored values
       final userId = await _storage.read(key: "user_id") ?? "";
       final password = await _storage.read(key: "user_password") ?? "";
       final otp = await _storage.read(key: "OTP") ?? "";
 
-      // Prepare request body
       final Map<String, dynamic> requestBody = {
         "cnic": userId,
         "email_address": emailAddress,
@@ -60,7 +58,6 @@ class UpdateProfileController extends GetxController {
       final response = await _repo.updateProfile(requestBody);
 
       if (response["StatusCode"] == "200") {
-        // Update all values in storage
         await Future.wait([
           _storage.write(key: "user_name", value: userName),
           _storage.write(key: "mobile_no1", value: mobileNo),
@@ -68,7 +65,6 @@ class UpdateProfileController extends GetxController {
           _storage.write(key: "address", value: address),
         ]);
 
-        // If profile image was updated, save the new path from the response
         if (profileImagePath.isNotEmpty && response["obj"] != null) {
           final updatedImagePath = response["obj"]["profile_image_path"]?.toString();
           if (updatedImagePath != null && updatedImagePath.isNotEmpty) {
@@ -76,10 +72,8 @@ class UpdateProfileController extends GetxController {
           }
         }
 
-        // Notify all listeners about the profile update
         Get.find<LoginController>().notifyProfileUpdated();
 
-        // Use showTopSnackBar instead of Get.snackbar
         showTopSnackBar(
           context,
           "User info updated successfully.",
@@ -89,7 +83,6 @@ class UpdateProfileController extends GetxController {
 
         return true;
       } else {
-        // Use showTopSnackBar instead of Get.snackbar
         showTopSnackBar(
           context,
           title: "Alert",

@@ -1,3 +1,4 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,6 +8,7 @@ import 'package:pakland/features/sos/presentation/controllers/sos_controller.dar
 import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
 import 'package:pakland/core/widgets/app_bar2.dart';
 import 'package:pakland/features/tickets/data/models/ticket_models.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class SOSListView extends StatefulWidget {
   const SOSListView({super.key});
@@ -22,7 +24,6 @@ class _SOSListViewState extends State<SOSListView> {
   @override
   void initState() {
     super.initState();
-    // Screen open hone par API call
     controller.loadActiveSOSEmergencies();
   }
 
@@ -35,7 +36,7 @@ class _SOSListViewState extends State<SOSListView> {
 
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: AppLoader());
         }
 
         final items = controller.activeSOSTickets;
@@ -104,7 +105,7 @@ class _SOSCreateViewState extends State<SOSCreateView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Send SOS')),
+      appBar: AppHeaderBar(title: const Text('Send SOS')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -171,32 +172,6 @@ class _SOSCreateViewState extends State<SOSCreateView> {
                 ),
               ],
             ),
-            // const SizedBox(height: 16),
-            // Obx(
-            //       () => ElevatedButton(
-            //     onPressed:
-            //     controller.creating.value
-            //         ? null
-            //         : () async {
-            //       final request = CreateTicketRequest(
-            //         brn_code: '00000',
-            //         oprationID: 'SOS',
-            //         title: 'SOS: ${type.value}',
-            //         description: descCtrl.text.trim(),
-            //         userId: userId ?? '',
-            //         ticketPriority: 'High',
-            //         latitude: double.tryParse(latCtrl.text.trim()),
-            //         longitude: double.tryParse(lngCtrl.text.trim()),
-            //       );
-            //       final result = await controller.createTicket(request);
-            //       if (result != null && mounted) Get.back();
-            //     },
-            //     child:
-            //     controller.creating.value
-            //         ? const CircularProgressIndicator()
-            //         : const Text('Send SOS'),
-            //   ),
-            // ),
           ],
         ),
       ),

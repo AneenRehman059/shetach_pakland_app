@@ -1,13 +1,11 @@
-// chat_file_picker.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ChatFilePicker {
-  static const int maxTotalSizeInBytes = 3 * 1024 * 1024; // 3 MB limit
+  static const int maxTotalSizeInBytes = 3 * 1024 * 1024;
 
-  /// ======== PICK FROM GALLERY =========
   static Future<List<File>> pickImages(BuildContext context) async {
     final picker = ImagePicker();
     final images = await picker.pickMultiImage();
@@ -20,7 +18,6 @@ class ChatFilePicker {
     return files;
   }
 
-  /// ======== CAMERA PICK =========
   static Future<List<File>> pickCamera(BuildContext context) async {
     final picker = ImagePicker();
     final img = await picker.pickImage(source: ImageSource.camera);
@@ -34,7 +31,6 @@ class ChatFilePicker {
     return [file];
   }
 
-  /// ======== DOCUMENT PICK =========
   static Future<List<File>> pickDocuments(BuildContext context) async {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
@@ -51,7 +47,6 @@ class ChatFilePicker {
     return files;
   }
 
-  /// ======== AUDIO PICK =========
   static Future<List<File>> pickAudio(BuildContext context) async {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
@@ -67,7 +62,6 @@ class ChatFilePicker {
     return files;
   }
 
-  /// ======== VIDEO PICK =========
   static Future<List<File>> pickVideo(BuildContext context) async {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
@@ -83,7 +77,6 @@ class ChatFilePicker {
     return files;
   }
 
-  /// ======== VALIDATE TOTAL SIZE =========
   static bool _validateSize(BuildContext context, List<File> files) {
     int total = files.fold(0, (sum, f) => sum + f.lengthSync());
 
@@ -96,7 +89,6 @@ class ChatFilePicker {
     return true;
   }
 
-  /// ======== ATTACHMENT SHEET UI (WhatsApp Style B1) =========
   static void openPickerSheet({
     required BuildContext context,
     required Function(List<File>) onFilesSelected,
@@ -106,7 +98,7 @@ class ChatFilePicker {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => Container(
-        height: MediaQuery.of(context).size.height * 0.35, // Fixed height
+        height: MediaQuery.of(context).size.height * 0.35,
         padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -115,7 +107,6 @@ class ChatFilePicker {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Drag handle
             Container(
               width: 40,
               height: 4,
@@ -126,9 +117,8 @@ class ChatFilePicker {
               ),
             ),
 
-            // Grid with fixed height
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.2, // Fixed height for grid
+              height: MediaQuery.of(context).size.height * 0.2,
               child: GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -190,9 +180,7 @@ class ChatFilePicker {
               ),
             ),
 
-            // Spacer to push content up
 
-            // Cancel button (WhatsApp style)
             SizedBox(
               width: double.infinity,
               child: TextButton(

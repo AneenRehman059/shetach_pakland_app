@@ -1,0 +1,11 @@
+import 'package:pakland/features/auth/domain/repositories/forgot_password_repository.dart';
+
+class ForgotPasswordUseCase {
+  final IForgotPasswordRepository _repository;
+
+  ForgotPasswordUseCase(this._repository);
+
+  Future<Map<String, dynamic>> call(Map<String, dynamic> body) {
+    return _repository.updatePassword(body);
+  }
+}

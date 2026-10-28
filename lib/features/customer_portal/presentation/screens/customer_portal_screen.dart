@@ -1,12 +1,16 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
 import 'package:pakland/features/billing/presentation/screens/user_files_screen.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/customer_portal/presentation/controllers/get_customer_portal_controller.dart';
+import 'package:pakland/core/utils/screen_helper.dart';
 import 'package:pakland/features/billing/presentation/screens/payment_plan_detail_screen.dart';
 import 'package:pakland/features/billing/presentation/screens/online_payments_screen.dart';
 
@@ -19,7 +23,6 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
   final controller = Get.put(CustomerPortalController());
   final _storage = const FlutterSecureStorage();
 
-  // Reactive variables for user data
   final userId = ''.obs;
   final userName = ''.obs;
   final userAddress = ''.obs;
@@ -27,18 +30,22 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
   @override
   void initState() {
     super.initState();
-
     controller.fetchCustomerData();
     _loadUserData();
   }
 
-  // Method to load user data from secure storage
+  Future<void> _refresh() async {
+    await Future.wait([
+      controller.fetchCustomerData(),
+      _loadUserData(),
+    ]);
+  }
+
   Future<void> _loadUserData() async {
     try {
       final id = await _storage.read(key: "user_id") ?? '';
       final name = await _storage.read(key: "user_name") ?? '';
       final address = await _storage.read(key: "address") ?? '';
-
       userId.value = id;
       userName.value = name;
       userAddress.value = address;
@@ -47,23 +54,31 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
     }
   }
 
+  String formatNumber(String? number) {
+    if (number == null || number.isEmpty) return "0";
+    try {
+      final value = double.tryParse(number) ?? 0;
+      return NumberFormat("#,##0").format(value);
+    } catch (e) {
+      return number;
+    }
+  }
+
+  String _getCombinedAddress(String a1, String a2, String a3) {
+    return [a1, a2, a3].where((s) => s.isNotEmpty).join(', ');
+  }
+
+  int _percent(double part, double whole) {
+    if (whole <= 0) return 0;
+    final p = (part / whole) * 100;
+    return p.round().clamp(0, 100);
+  }
+
+  double _asDouble(String? value) => double.tryParse(value ?? '') ?? 0;
+
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final appBarHeight = AppBar().preferredSize.height;
-    final statusBarHeight = MediaQuery.of(context).padding.top;
-    final availableHeight = screenHeight - appBarHeight - statusBarHeight;
-
-    String formatNumber(String? number) {
-      if (number == null || number.isEmpty) return "0";
-      try {
-        final value = double.tryParse(number) ?? 0;
-        final formatter = NumberFormat("#,##0");
-        return formatter.format(value);
-      } catch (e) {
-        return number;
-      }
-    }
+    final bool isTV = ScreenHelper.isTV(context);
 
     return WillPopScope(
       onWillPop: () async {
@@ -71,530 +86,232 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text('Customer Portal', style: TextStyle(color: Colors.white)),
-          centerTitle: true,
-          backgroundColor: AppColors.appColor,
-          iconTheme: IconThemeData(color: AppColors.whiteBg),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Get.offAll(MainWrapper());
-            },
-          ),
-        ),
+        backgroundColor: const Color(0xFFF4F6FB),
         body: Obx(() {
           if (controller.isLoading.value) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SpinKitWave(color: AppColors.appColor, size: 50.0),
-                  Text('Loading', style: TextStyle(color: AppColors.appColor)),
-                ],
-              ),
-            );
+            return _buildLoadingState(context, isTV);
           }
-
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final headerHeight = availableHeight * 0.10;
-              final personalInfoHeight = availableHeight * 0.24;
-              final fileStatusHeight = availableHeight * 0.37;
-              final paymentDetailsHeight = availableHeight * 0.23;
-
-              return SingleChildScrollView(
-                // physics: NeverScrollableScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Column(
-                    children: [
-                      Container(
-                        height: headerHeight,
-                        decoration: BoxDecoration(
-                          color: AppColors.appColor,
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10),
-                          ),
-                        ),
-                      ),
-
-                      Transform.translate(
-                        offset: Offset(0, -headerHeight * 0.8),
-                        child: Container(
-                          margin: EdgeInsets.symmetric(horizontal: 20),
-                          height: personalInfoHeight,
-                          decoration: _cardDecoration(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _sectionHeader("Personal Info"),
-                              Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _buildInfoRow(
-                                        "Name",
-                                        userName.value ?? "",
-                                        personalInfoHeight,
-                                      ),
-                                      _buildInfoRow(
-                                        "CNIC",
-                                        userId.value ?? "",
-                                        personalInfoHeight,
-                                      ),
-                                      _buildInfoRow(
-                                        "Total Files",
-                                        controller.customerObj.value?.totalFiles
-                                                .toString() ??
-                                            "0",
-                                        personalInfoHeight,
-                                      ),
-                                      _buildInfoRow(
-                                        "Address",
-                                        _getCombinedAddress(
-                                          controller
-                                                  .customerObj
-                                                  .value
-                                                  ?.address1 ??
-                                              "",
-                                          controller
-                                                  .customerObj
-                                                  .value
-                                                  ?.address2 ??
-                                              "",
-                                          controller
-                                                  .customerObj
-                                                  .value
-                                                  ?.address3 ??
-                                              "",
-                                        ),
-                                        personalInfoHeight,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      Transform.translate(
-                        offset: Offset(0, -headerHeight * 0.6),
-                        child: Container(
-                          margin: EdgeInsets.symmetric(horizontal:20),
-                          height: fileStatusHeight,
-                          decoration: _whiteCardDecoration(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                               //_sectionTitle("File Status"),
-                              Padding(
-                                padding:  EdgeInsets.only(
-                                  left:
-                                  MediaQuery.of(context).size.width *
-                                      0.02,
-                                  top:
-                                  MediaQuery.of(context).size.width *
-                                      0.02,
-                                ),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    "File Status",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.appColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              // In the file status section where GridView is used:
-                              Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    left:
-                                        MediaQuery.of(context).size.width *
-                                        0.04,
-                                    right:
-                                        MediaQuery.of(context).size.width *
-                                        0.04,
-                                  ),
-                                  child: LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      final itemW =
-                                          (constraints.maxWidth -
-                                              constraints.maxWidth * 0.18) /
-                                          2;
-                                      final itemH = constraints.maxHeight / 2;
-
-                                      return Column(
-                                        children: [
-                                          // Row 1
-                                          Expanded(
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceAround,
-                                              children: [
-                                                SizedBox(
-                                                  width: itemW,
-                                                  child: Padding(
-                                                    padding: EdgeInsets.only(
-                                                      top:
-                                                          constraints
-                                                              .maxHeight *
-                                                          0.04,
-                                                      // ✅ blob top space
-                                                      right:
-                                                          constraints.maxWidth *
-                                                          0.02,
-                                                      bottom:
-                                                          constraints
-                                                              .maxHeight *
-                                                          0.02,
-                                                    ),
-                                                    child: _buildStatusItem(
-                                                      "Total",
-                                                      controller
-                                                              .customerObj
-                                                              .value
-                                                              ?.total
-                                                              .toString() ??
-                                                          "0",
-                                                      context,
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(
-                                                  width: itemW,
-                                                  child: Padding(
-                                                    padding: EdgeInsets.only(
-                                                      top:
-                                                          constraints
-                                                              .maxHeight *
-                                                          0.04,
-                                                      left:
-                                                          constraints.maxWidth *
-                                                          0.02,
-                                                      bottom:
-                                                          constraints
-                                                              .maxHeight *
-                                                          0.02,
-                                                    ),
-                                                    child: _buildStatusItem(
-                                                      "Active",
-                                                      controller
-                                                              .customerObj
-                                                              .value
-                                                              ?.active
-                                                              .toString() ??
-                                                          "0",
-                                                      context,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          // Row 2
-                                          Expanded(
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceAround,
-                                              children: [
-                                                SizedBox(
-                                                  width: itemW,
-                                                  child: Padding(
-                                                    padding: EdgeInsets.only(
-                                                      top:
-                                                          constraints
-                                                              .maxHeight *
-                                                          0.04,
-                                                      // ✅ blob top space
-                                                      right:
-                                                          constraints.maxWidth *
-                                                          0.02,
-                                                      bottom:
-                                                          constraints
-                                                              .maxHeight *
-                                                          0.02,
-                                                    ),
-                                                    child: _buildStatusItem(
-                                                      "Locked",
-                                                      controller
-                                                              .customerObj
-                                                              .value
-                                                              ?.reserve
-                                                              .toString() ??
-                                                          "0",
-                                                      context,
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(
-                                                  width: itemW,
-                                                  child: Padding(
-                                                    padding: EdgeInsets.only(
-                                                      top:
-                                                          constraints
-                                                              .maxHeight *
-                                                          0.04,
-                                                      left:
-                                                          constraints.maxWidth *
-                                                          0.02,
-                                                      bottom:
-                                                          constraints
-                                                              .maxHeight *
-                                                          0.02,
-                                                    ),
-                                                    child: _buildStatusItem(
-                                                      "Canceled",
-                                                      controller
-                                                              .customerObj
-                                                              .value
-                                                              ?.canceled
-                                                              .toString() ??
-                                                          "0",
-                                                      context,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 10,
-                                ),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.appColor,
-                                    borderRadius: BorderRadius.circular(20.0),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.6),
-                                        blurRadius: 6,
-                                        offset: Offset(2, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Get.to(PayOnlineScreen(brnCode: '', brnName: '',));
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        right: 15,
-                                        bottom: 5,
-                                        top: 5,
-                                        left: 15,
-                                      ),
-                                      child: Text(
-                                        'Details',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                          shadows: [
-                                            Shadow(
-                                              color: Colors.black.withOpacity(
-                                                0.6,
-                                              ),
-                                              blurRadius: 6,
-                                              offset: Offset(2, 2),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      Transform.translate(
-                        offset: Offset(0, -headerHeight * 0.5),
-                        child: Container(
-                          margin: EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                          height: paymentDetailsHeight,
-                          decoration: _cardDecoration(
-                            color: AppColors.appColor,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _sectionHeader("Payment Details"),
-                              Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 4,
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _buildPaymentInfoRow(
-                                        "Total Amount",
-                                        formatNumber(
-                                          controller
-                                              .customerObj
-                                              .value
-                                              ?.totalAmount
-                                              .toString(),
-                                        ),
-                                        paymentDetailsHeight,
-                                      ),
-                                      _buildPaymentInfoRow(
-                                        "Total Received",
-                                        formatNumber(
-                                          controller
-                                              .customerObj
-                                              .value
-                                              ?.totalReceived
-                                              .toString(),
-                                        ),
-                                        paymentDetailsHeight,
-                                      ),
-                                      _buildPaymentInfoRow(
-                                        "Balance Amount",
-                                        formatNumber(
-                                          controller.customerObj.value?.totalOS
-                                              .toString(),
-                                        ),
-                                        paymentDetailsHeight,
-                                      ),
-                                      // Total OverDue with red background
-                                      _buildPaymentInfoRow(
-                                        "Total OverDue",
-                                        formatNumber(
-                                          controller
-                                              .customerObj
-                                              .value
-                                              ?.totalOverdue
-                                              .toString(),
-                                        ),
-                                        paymentDetailsHeight,
-                                        valueColor: Colors.white,
-                                        // Red background for OverDue
-                                        textColor:
-                                            Colors
-                                                .red[900]!, // Dark red text for better contrast
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
+          return isTV ? _buildTVLayout(context) : _buildMobileLayout(context);
         }),
       ),
     );
   }
 
-  String _getCombinedAddress(
-    String address1,
-    String address2,
-    String address3,
-  ) {
-    List<String> addressParts = [];
-
-    if (address1.isNotEmpty) addressParts.add(address1);
-    if (address2.isNotEmpty) addressParts.add(address2);
-    if (address3.isNotEmpty) addressParts.add(address3);
-
-    return addressParts.join(', ');
+  Widget _buildLoadingState(BuildContext context, bool isTV) {
+    final size = MediaQuery.of(context).size;
+    return Column(
+      children: [
+        isTV ? _buildTVAppBar(context) : _buildHeader(context, size),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Lottie.asset(
+                  'assets/images/loading.json',
+                  width: isTV ? 180 : 150,
+                  height: isTV ? 180 : 150,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Loading your portal…',
+                  style: TextStyle(
+                    color: Colors.black45,
+                    fontWeight: FontWeight.w500,
+                    fontSize: isTV ? 20 : size.width * 0.033,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
-  Widget _buildInfoRow(String label, String value, double containerHeight) {
-    final isAddress = label == "Address";
-    final rowHeight = containerHeight * 0.15;
+  double _headerHeight(Size size) => math.max(size.height * 0.20, size.width * 0.24);
 
-    return SizedBox(
-      height: rowHeight,
+  Widget _buildHeader(BuildContext context, Size size) {
+    return Container(
+      height: _headerHeight(size),
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.appColor, Color.lerp(AppColors.appColor, Colors.black, 0.28)!],
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.appColor.withOpacity(0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -size.width * 0.2,
+            right: -size.width * 0.15,
+            child: Container(
+              width: size.width * 0.55,
+              height: size.width * 0.55,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.06),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -size.width * 0.25,
+            left: -size.width * 0.1,
+            child: Container(
+              width: size.width * 0.4,
+              height: size.width * 0.4,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: size.width * 0.03, bottom: size.width * 0.07),
+                    child: _buildHeaderIconButton(
+                      icon: Icons.arrow_back,
+                      size: size,
+                      onPressed: () => Get.offAll(() => MainWrapper(initialIndex: 0)),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.center,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: size.width * 0.07),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Customer Portal',
+                            style: TextStyle(
+                              fontSize: size.width * 0.054,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          SizedBox(height: size.height * 0.003),
+                          Text(
+                            'Your account at a glance',
+                            style: TextStyle(
+                              fontSize: size.width * 0.028,
+                              color: Colors.white.withOpacity(0.75),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: EdgeInsets.only(right: size.width * 0.03, bottom: size.width * 0.07),
+                    child: _buildHeaderIconButton(
+                      icon: Icons.refresh_rounded,
+                      size: size,
+                      onPressed: _refresh,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderIconButton({
+    required IconData icon,
+    required Size size,
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: Colors.white.withOpacity(0.16),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: Padding(
+          padding: EdgeInsets.all(size.width * 0.022),
+          child: Icon(icon, color: Colors.white, size: size.width * 0.055),
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionLabel({required String title, required IconData icon, required Size size}) {
+    return Padding(
+      padding: EdgeInsets.only(left: size.width * 0.02, bottom: size.height * 0.01),
+      child: Row(
+        children: [
+          Icon(icon, size: size.width * 0.045, color: AppColors.appColor),
+          SizedBox(width: size.width * 0.018),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: size.width * 0.036,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormRow(String label, String value, Size size, {bool isAddress = false}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: size.height * 0.004),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
+            width: size.width * 0.24,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: size.width * 0.032,
+                color: Colors.white70,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
           Expanded(
-            child: Container(
-              height: rowHeight,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: AppColors.whiteBg,
+            child: Text(
+              value.isEmpty ? '-' : value,
+              style: TextStyle(
+                fontSize: size.width * 0.034,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
               ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                child:
-                    isAddress
-                        ? SingleChildScrollView(
-                          physics: ClampingScrollPhysics(),
-                          child: Text(
-                            value,
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
-                        : Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            value,
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-              ),
+              overflow: isAddress ? TextOverflow.visible : TextOverflow.ellipsis,
+              maxLines: isAddress ? 3 : 1,
             ),
           ),
         ],
@@ -602,135 +319,1114 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
     );
   }
 
-  Widget _buildPaymentInfoRow(
-    String label,
-    String value,
-    double containerHeight, {
-    Color? valueColor,
-    Color? textColor,
-  }) {
-    final rowHeight = containerHeight * 0.18;
+  static const double _kTabletRefHeight = 900;
 
-    return SizedBox(
-      height: rowHeight,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 11,
-                ),
-              ),
+  Widget _buildMobileLayout(BuildContext context) {
+    final screen = MediaQuery.of(context).size;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    final bool isWide = screen.shortestSide >= 600;
+    final bool twoCol = isWide && screen.width > screen.height;
+
+    final double refH = isWide ? math.min(screen.height, _kTabletRefHeight) : screen.height;
+    final double contentW = screen.width;
+    final double cardW = twoCol ? contentW / 2 : contentW;
+
+    final Size headerSize = isWide ? Size(math.min(screen.width, 600.0), refH) : screen;
+    final double topPad = _headerHeight(headerSize) * 0.75;
+
+    final double gap = isWide ? 16.0 : refH * 0.014;
+
+    final bool landscapePhone = !isWide && screen.width > screen.height;
+    final double availH = screen.height - topPad - bottomPadding - gap;
+    final double needK = twoCol ? 1.2 : 1.7;
+    final double designW =
+    landscapePhone ? cardW : math.min(cardW, math.max(availH, 0) / needK);
+    final size = Size(designW, refH);
+
+    Widget cards() => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildProfileCard(context, size),
+        SizedBox(height: gap),
+        _buildFileStatusCard(context, size),
+        SizedBox(height: gap),
+        _buildPaymentDetailsCard(context, size),
+      ],
+    );
+
+    Widget twoColumns() => Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildProfileCard(context, size),
+              SizedBox(height: gap),
+              _buildFileStatusCard(context, size),
+            ],
+          ),
+        ),
+        Expanded(child: _buildPaymentDetailsCard(context, size)),
+      ],
+    );
+
+    return Stack(
+      children: [
+        _buildHeader(context, headerSize),
+        Padding(
+          padding: EdgeInsets.only(top: topPad),
+          child: RefreshIndicator(
+            color: AppColors.appColor,
+            onRefresh: _refresh,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: SizedBox(
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: bottomPadding + gap),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.topCenter,
+                        child: SizedBox(
+                          width: contentW,
+                          child: twoCol ? twoColumns() : cards(),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(2.0),
-              child: Container(
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileCard(BuildContext context, Size size) {
+    return Obx(() => Container(
+      margin: EdgeInsets.symmetric(horizontal: size.width * 0.04),
+      padding: EdgeInsets.all(size.width * 0.038),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.appColor, AppColors.appColor.withOpacity(0.88)],
+        ),
+        borderRadius: BorderRadius.circular(size.width * 0.045),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.appColor.withOpacity(0.28),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: size.width * 0.135,
+                height: size.width * 0.135,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color:
-                      valueColor ??
-                      AppColors.whiteBg, // Use custom color if provided
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.6), width: 2),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 3)),
+                  ],
                 ),
-                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      color: textColor ?? Colors.black,
-                      // Use custom text color if provided
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                child: Icon(Icons.person_rounded, color: AppColors.appColor, size: size.width * 0.075),
+              ),
+              SizedBox(width: size.width * 0.035),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName.value.isNotEmpty ? userName.value : 'Customer',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: size.width * 0.048,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    SizedBox(height: size.height * 0.007),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: size.width * 0.028,
+                        vertical: size.height * 0.004,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(size.width * 0.03),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.folder_copy_outlined, size: size.width * 0.032, color: Colors.white),
+                          SizedBox(width: size.width * 0.014),
+                          Text(
+                            '${controller.customerObj.value?.totalFiles ?? 0} File(s)',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: size.width * 0.03,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: size.height * 0.012),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: size.width * 0.032, vertical: size.height * 0.005),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(size.width * 0.035),
+              border: Border.all(color: Colors.white.withOpacity(0.12)),
+            ),
+            child: Column(
+              children: [
+                _buildFormRow('CNIC', userId.value, size),
+                Divider(height: size.height * 0.012, color: Colors.white.withOpacity(0.12)),
+                _buildFormRow(
+                  'Address',
+                  _getCombinedAddress(
+                    controller.customerObj.value?.address1 ?? "",
+                    controller.customerObj.value?.address2 ?? "",
+                    controller.customerObj.value?.address3 ?? "",
+                  ),
+                  size,
+                  isAddress: true,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ));
+  }
+
+  Widget _buildFileStatusCard(BuildContext context, Size size) {
+    const ink = Color(0xFF1B2733);
+    const muted = Color(0xFF6B7785);
+    final w = size.width;
+
+    return Obx(() {
+      final obj = controller.customerObj.value;
+      final total = obj?.total ?? 0;
+      final active = obj?.active ?? 0;
+      final locked = obj?.reserve ?? 0;
+      final canceled = obj?.canceled ?? 0;
+
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: w * 0.04),
+        padding: EdgeInsets.fromLTRB(w * 0.04, w * 0.035, w * 0.04, w * 0.04),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(w * 0.05),
+          border: Border.all(color: const Color(0xFFE8ECF4)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.appColor.withOpacity(0.08),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(w * 0.022),
+                  decoration: BoxDecoration(
+                    color: AppColors.appColor.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(w * 0.03),
+                  ),
+                  child: Icon(Icons.folder_copy_outlined, size: w * 0.048, color: AppColors.appColor),
+                ),
+                SizedBox(width: w * 0.03),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Units/Files Detail',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: w * 0.04, color: ink),
+                      ),
+                    ],
+                  ),
+                ),
+                Material(
+                  color: AppColors.appColor,
+                  borderRadius: BorderRadius.circular(w * 0.05),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(w * 0.05),
+                    onTap: () => Get.to(() => PayOnlineScreen(brnCode: '', brnName: '')),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: w * 0.032, vertical: w * 0.02),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'View Details',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: w * 0.03,
+                            ),
+                          ),
+                          SizedBox(width: w * 0.01),
+                          Icon(Icons.arrow_forward_rounded, size: w * 0.038, color: Colors.white),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
+            SizedBox(height: w * 0.035),
 
-  // ... (Keep all other helper methods the same as in previous version)
-  BoxDecoration _cardDecoration({Color? color}) {
-    return BoxDecoration(
-      color: color ?? AppColors.appColor,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: AppColors.whiteBg, strokeAlign: 1),
-      boxShadow: [
-        BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2),
-      ],
-    );
-  }
+            _buildStatusDistributionBar(
+              w: w,
+              active: active,
+              locked: locked,
+              canceled: canceled,
+            ),
+            SizedBox(height: w * 0.035),
 
-  BoxDecoration _whiteCardDecoration() {
-    return BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: AppColors.whiteBg, width: 1),
-      boxShadow: [
-        BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2),
-      ],
-    );
-  }
-
-  Widget _sectionHeader(String title) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        color: AppColors.appColor.withOpacity(0.8),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(10),
-          topRight: Radius.circular(10),
-        ),
-      ),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ), // Reduced font size
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: EdgeInsets.all(8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.appColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  "File Status",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatusTile(
+                    w: w,
+                    label: 'Total',
+                    value: total,
+                    total: total,
+                    color: const Color(0xFF1E4D60),
+                    icon: Icons.layers_rounded,
                   ),
                 ),
-              ),
+                SizedBox(width: w * 0.03),
+                Expanded(
+                  child: _buildStatusTile(
+                    w: w,
+                    label: 'Active',
+                    value: active,
+                    total: total,
+                    color: const Color(0xFF2E7D32),
+                    icon: Icons.check_circle_rounded,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: w * 0.03),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatusTile(
+                    w: w,
+                    label: 'Locked',
+                    value: locked,
+                    total: total,
+                    color: const Color(0xFFD08A00),
+                    icon: Icons.lock_rounded,
+                  ),
+                ),
+                SizedBox(width: w * 0.03),
+                Expanded(
+                  child: _buildStatusTile(
+                    w: w,
+                    label: 'Canceled',
+                    value: canceled,
+                    total: total,
+                    color: const Color(0xFFD32F2F),
+                    icon: Icons.cancel_rounded,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildStatusDistributionBar({
+    required double w,
+    required int active,
+    required int locked,
+    required int canceled,
+  }) {
+    final sum = active + locked + canceled;
+    final radius = BorderRadius.circular(20);
+
+    if (sum <= 0) {
+      return ClipRRect(
+        borderRadius: radius,
+        child: Container(height: w * 0.02, color: const Color(0xFFE8ECF4)),
+      );
+    }
+
+    Widget seg(int value, Color color) => value <= 0
+        ? const SizedBox.shrink()
+        : Expanded(flex: value, child: Container(color: color));
+
+    return ClipRRect(
+      borderRadius: radius,
+      child: SizedBox(
+        height: w * 0.02,
+        child: Row(
+          children: [
+            seg(active, const Color(0xFF2E7D32)),
+            seg(locked, const Color(0xFFD08A00)),
+            seg(canceled, const Color(0xFFD32F2F)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusTile({
+    required double w,
+    required String label,
+    required int value,
+    required int total,
+    required Color color,
+    required IconData icon,
+  }) {
+    final share = total > 0 ? (value / total).clamp(0.0, 1.0) : 0.0;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: w * 0.03, vertical: w * 0.028),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(w * 0.04),
+        border: Border.all(color: color.withOpacity(0.18)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: w * 0.095,
+            height: w * 0.095,
+            decoration: BoxDecoration(color: color.withOpacity(0.14), shape: BoxShape.circle),
+            child: Icon(icon, size: w * 0.05, color: color),
+          ),
+          SizedBox(width: w * 0.025),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$value',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: w * 0.055,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1B2733),
+                    height: 1.1,
+                  ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: w * 0.03,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF6B7785),
+                  ),
+                ),
+                SizedBox(height: w * 0.012),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: share,
+                    minHeight: w * 0.01,
+                    backgroundColor: color.withOpacity(0.15),
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentDetailsCard(BuildContext context, Size size) {
+    return Obx(() {
+      final totalAmount = _asDouble(controller.customerObj.value?.totalAmount?.toString());
+      final totalReceived = _asDouble(controller.customerObj.value?.totalReceived?.toString());
+      final balance = _asDouble(controller.customerObj.value?.totalOS?.toString());
+      final overdue = _asDouble(controller.customerObj.value?.totalOverdue?.toString());
+      final receivedPercent = _percent(totalReceived, totalAmount);
+
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: size.width * 0.04),
+        padding: EdgeInsets.all(size.width * 0.04),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.appColor, AppColors.appColor.withOpacity(0.86)],
+          ),
+          borderRadius: BorderRadius.circular(size.width * 0.045),
+          boxShadow: [
+            BoxShadow(color: AppColors.appColor.withOpacity(0.28), blurRadius: 16, offset: const Offset(0, 6)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(size.width * 0.022),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), shape: BoxShape.circle),
+                  child: Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: size.width * 0.05),
+                ),
+                SizedBox(width: size.width * 0.03),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Payment Details',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: size.width * 0.04, color: Colors.white)),
+                      Text('Your account financial summary',
+                          style: TextStyle(fontSize: size.width * 0.028, color: Colors.white70, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: size.height * 0.014),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Amount Received',
+                    style: TextStyle(color: Colors.white70, fontSize: size.width * 0.03, fontWeight: FontWeight.w600)),
+                Text('$receivedPercent%',
+                    style: TextStyle(color: Colors.white, fontSize: size.width * 0.034, fontWeight: FontWeight.w800)),
+              ],
+            ),
+            SizedBox(height: size.height * 0.008),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                children: [
+                  Container(height: size.height * 0.012, color: Colors.white.withOpacity(0.16)),
+                  FractionallySizedBox(
+                    widthFactor: receivedPercent / 100,
+                    child: Container(
+                      height: size.height * 0.012,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [Colors.white, Colors.white.withOpacity(0.75)]),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: size.height * 0.014),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildPaymentStat(
+                    icon: Icons.request_quote_outlined,
+                    label: 'Total Amount',
+                    value: formatNumber(totalAmount.toStringAsFixed(0)),
+                    size: size,
+                  ),
+                ),
+                SizedBox(width: size.width * 0.03),
+                Expanded(
+                  child: _buildPaymentStat(
+                    icon: Icons.task_alt_rounded,
+                    label: 'Received',
+                    value: formatNumber(totalReceived.toStringAsFixed(0)),
+                    size: size,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: size.height * 0.01),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildPaymentStat(
+                    icon: Icons.account_balance_outlined,
+                    label: 'Balance',
+                    value: formatNumber(balance.toStringAsFixed(0)),
+                    size: size,
+                  ),
+                ),
+                SizedBox(width: size.width * 0.03),
+                Expanded(
+                  child: _buildPaymentStat(
+                    icon: Icons.warning_amber_rounded,
+                    label: 'OverDue',
+                    value: formatNumber(overdue.toStringAsFixed(0)),
+                    size: size,
+                    isWarning: overdue > 0,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildPaymentStat({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Size size,
+    bool isWarning = false,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: size.width * 0.03, vertical: size.height * 0.014),
+      decoration: BoxDecoration(
+        color: isWarning ? null : Colors.white.withOpacity(0.12),
+        gradient: isWarning
+            ? const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
+        )
+            : null,
+        boxShadow: isWarning
+            ? [
+          BoxShadow(
+            color: const Color(0xFFD32F2F).withOpacity(0.45),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ]
+            : null,
+        borderRadius: BorderRadius.circular(size.width * 0.035),
+        border: Border.all(color: isWarning ? const Color(0xFFFFCDD2).withOpacity(0.55) : Colors.white.withOpacity(0.14)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(size.width * 0.018),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(isWarning ? 0.22 : 0.18),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: size.width * 0.04, color: Colors.white),
+          ),
+          SizedBox(width: size.width * 0.022),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: TextStyle(color: isWarning ? Colors.white : Colors.white70, fontSize: size.width * 0.026, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Rs. $value',
+                    style: TextStyle(color: Colors.white, fontSize: size.width * 0.032, fontWeight: FontWeight.w800),
+                    maxLines: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTVAppBar(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.appColor, Color.lerp(AppColors.appColor, Colors.black, 0.28)!],
+        ),
+        boxShadow: [
+          BoxShadow(color: AppColors.appColor.withOpacity(0.35), blurRadius: 18, offset: const Offset(0, 8)),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: SafeArea(
+        bottom: false,
+        child: Row(children: [
+          _TVIconButton(icon: Icons.arrow_back, onTap: () => Get.offAll(() => MainWrapper(initialIndex: 0))),
+          const Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Customer Portal',
+                  style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 0.3),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Your account at a glance',
+                  style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          _TVIconButton(icon: Icons.refresh_rounded, onTap: _refresh),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildTVLayout(BuildContext context) {
+    return Column(
+      children: [
+        _buildTVAppBar(context),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Obx(() => Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 5, child: _buildProfileCardTV(context)),
+                    const SizedBox(width: 20),
+                    Expanded(flex: 5, child: _buildFileStatusCardTV(context)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildPaymentDetailsCardTV(context),
+              ],
+            )),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileCardTV(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.appColor, AppColors.appColor.withOpacity(0.88)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: AppColors.appColor.withOpacity(0.28), blurRadius: 16, offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withOpacity(0.6), width: 2),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 3))],
+            ),
+            child: Icon(Icons.person_rounded, color: AppColors.appColor, size: 34),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userName.value.isNotEmpty ? userName.value : 'Customer',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Colors.white, letterSpacing: 0.2),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.folder_copy_outlined, size: 14, color: Colors.white),
+                    const SizedBox(width: 6),
+                    Text('${controller.customerObj.value?.totalFiles ?? 0} File(s)',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                  ]),
+                ),
+              ],
+            ),
+          ),
+        ]),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.12)),
+          ),
+          child: Column(children: [
+            _buildFormRowTV('CNIC', userId.value),
+            Divider(height: 16, color: Colors.white.withOpacity(0.12)),
+            _buildFormRowTV(
+              'Address',
+              _getCombinedAddress(
+                controller.customerObj.value?.address1 ?? "",
+                controller.customerObj.value?.address2 ?? "",
+                controller.customerObj.value?.address3 ?? "",
+              ),
+              isAddress: true,
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildFormRowTV(String label, String value, {bool isAddress = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(width: 140, child: Text(label, style: const TextStyle(fontSize: 15, color: Colors.white70, fontWeight: FontWeight.w600))),
+        Expanded(
+          child: Text(
+            value.isEmpty ? '-' : value,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
+            overflow: isAddress ? TextOverflow.visible : TextOverflow.ellipsis,
+            maxLines: isAddress ? 3 : 1,
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildFileStatusCardTV(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 14, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Row(children: [
+              Icon(Icons.dashboard_customize_outlined, size: 18, color: Colors.black87),
+              SizedBox(width: 8),
+              Text('File Status', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87)),
+            ]),
+          ),
+          SizedBox(
+            height: 160,
+            child: Row(
+              children: [
+                Expanded(child: _buildStatusItem("Total", controller.customerObj.value?.total.toString() ?? "0", context)),
+                const SizedBox(width: 8),
+                Expanded(child: _buildStatusItem("Active", controller.customerObj.value?.active.toString() ?? "0", context)),
+                const SizedBox(width: 8),
+                Expanded(child: _buildStatusItem("Locked", controller.customerObj.value?.reserve.toString() ?? "0", context)),
+                const SizedBox(width: 8),
+                Expanded(child: _buildStatusItem("Canceled", controller.customerObj.value?.canceled.toString() ?? "0", context)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _TVActionButton(
+              label: 'View Details',
+              icon: Icons.arrow_forward_rounded,
+              isPrimary: true,
+              onTap: () => Get.to(() => PayOnlineScreen(brnCode: '', brnName: '')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentDetailsCardTV(BuildContext context) {
+    final totalAmount = _asDouble(controller.customerObj.value?.totalAmount?.toString());
+    final totalReceived = _asDouble(controller.customerObj.value?.totalReceived?.toString());
+    final balance = _asDouble(controller.customerObj.value?.totalOS?.toString());
+    final overdue = _asDouble(controller.customerObj.value?.totalOverdue?.toString());
+    final receivedPercent = _percent(totalReceived, totalAmount);
+
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.appColor, AppColors.appColor.withOpacity(0.86)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: AppColors.appColor.withOpacity(0.28), blurRadius: 16, offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), shape: BoxShape.circle),
+                child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Payment Details', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Colors.white)),
+                    Text('Your account financial summary',
+                        style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+              Text('$receivedPercent% Received',
+                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+                Container(height: 10, color: Colors.white.withOpacity(0.16)),
+                FractionallySizedBox(
+                  widthFactor: receivedPercent / 100,
+                  child: Container(
+                    height: 10,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [Colors.white, Colors.white.withOpacity(0.75)]),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildPaymentStatTV(
+                  icon: Icons.request_quote_outlined,
+                  label: 'Total Amount',
+                  value: formatNumber(totalAmount.toStringAsFixed(0)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _buildPaymentStatTV(
+                  icon: Icons.task_alt_rounded,
+                  label: 'Received',
+                  value: formatNumber(totalReceived.toStringAsFixed(0)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _buildPaymentStatTV(
+                  icon: Icons.account_balance_outlined,
+                  label: 'Balance',
+                  value: formatNumber(balance.toStringAsFixed(0)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _buildPaymentStatTV(
+                  icon: Icons.warning_amber_rounded,
+                  label: 'OverDue',
+                  value: formatNumber(overdue.toStringAsFixed(0)),
+                  isWarning: overdue > 0,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentStatTV({
+    required IconData icon,
+    required String label,
+    required String value,
+    bool isWarning = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: isWarning ? null : Colors.white.withOpacity(0.12),
+        gradient: isWarning
+            ? const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
+        )
+            : null,
+        boxShadow: isWarning
+            ? [
+          BoxShadow(
+            color: const Color(0xFFD32F2F).withOpacity(0.45),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ]
+            : null,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isWarning ? const Color(0xFFFFCDD2).withOpacity(0.55) : Colors.white.withOpacity(0.14)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(isWarning ? 0.22 : 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 16, color: Colors.white),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(label,
+                    style: TextStyle(color: isWarning ? Colors.white : Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Rs. $value',
+            style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildButton(
+      String text, {
+        required Size size,
+        IconData? icon,
+        bool isPrimary = true,
+        bool fullWidth = false,
+        VoidCallback? onPressed,
+      }) {
+    final borderRadius = BorderRadius.circular(size.width * 0.05);
+
+    if (isPrimary) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: borderRadius,
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [AppColors.appColor, AppColors.appColor.withOpacity(0.75)],
+          ),
+          boxShadow: [
+            BoxShadow(color: AppColors.appColor.withOpacity(0.4), blurRadius: 14, offset: const Offset(0, 6)),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: borderRadius,
+          child: InkWell(
+            borderRadius: borderRadius,
+            onTap: onPressed,
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: size.height * 0.019, horizontal: size.width * 0.04),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: size.width * 0.05, color: Colors.white),
+                    SizedBox(width: size.width * 0.02),
+                  ],
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: size.width * 0.04,
+                      letterSpacing: 0.2,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Material(
+      color: Colors.white,
+      borderRadius: borderRadius,
+      child: InkWell(
+        borderRadius: borderRadius,
+        onTap: onPressed,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            border: Border.all(color: AppColors.appColor.withOpacity(0.35), width: 1.3),
+          ),
+          padding: EdgeInsets.symmetric(vertical: size.height * 0.016, horizontal: size.width * 0.02),
+          child: Text(
+            text,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * 0.036, color: AppColors.appColor),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
@@ -746,84 +1442,52 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
         icon = Icons.list_alt_rounded;
         curveColor = Color(0xFF006064);
         break;
-
       case "Active":
         gradientColors = [Color(0xFF2E7D32), Color(0xFF66BB6A)];
         icon = Icons.check_circle_outline_rounded;
         curveColor = Color(0xFF2E7D32);
         break;
-
       case "Locked":
         gradientColors = [Color(0xFFB28704), Color(0xFFFFC857)];
         icon = Icons.lock_outline_rounded;
         curveColor = Color(0xFFB28704);
         break;
-
       case "Canceled":
         gradientColors = [Color(0xFFD32F2F), Color(0xFFFF6B6B)];
         icon = Icons.cancel_outlined;
         curveColor = Color(0xFFD32F2F);
         break;
-
       default:
         gradientColors = [Color(0xFF1565C0), Color(0xFF4A90D9)];
         icon = Icons.info_outline;
         curveColor = Color(0xFF1565C0);
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cardW = constraints.maxWidth;
-        final cardH = constraints.maxHeight;
+    return LayoutBuilder(builder: (context, constraints) {
+      final cardW = constraints.maxWidth;
+      final cardH = constraints.maxHeight.isInfinite ? 120.0 : constraints.maxHeight;
 
-        return Stack(
+      return SizedBox(
+        height: cardH,
+        child: Stack(
           children: [
-            /// White Card
             Positioned(
               top: cardH * 0.1,
               left: 0,
               right: 0,
               child: Container(
                 height: cardH * 0.6,
-
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.only(
                     topRight: Radius.circular(cardW * 0.15),
                     topLeft: Radius.circular(cardW * 0.15),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
-                      blurRadius: 7,
-                      //spreadRadius: -2,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 7, offset: Offset(0, 10))],
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 90,
-                      width: 30,
-                      decoration: BoxDecoration(
-                        color: curveColor,
-                        // gradient: LinearGradient(
-                        //   colors: gradientColors,
-                        //   begin: Alignment.topLeft,
-                        //   end: Alignment.bottomRight,
-                        // ),
-                      ),
-
-                      // color: curveColor,
-                    ),
-                  ],
-                ),
+                child: Row(children: [Container(height: 90, width: 30, color: curveColor)]),
               ),
             ),
-
-            /// Colored Top Bubble (Image 2 style)
             Positioned(
               top: 0,
               left: 0,
@@ -837,11 +1501,7 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
                       width: cardW * 0.65,
                       height: cardH * 0.30,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: gradientColors,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        gradient: LinearGradient(colors: gradientColors, begin: Alignment.topLeft, end: Alignment.bottomRight),
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(cardW * 0.15),
                           bottomRight: Radius.circular(cardW * 0.35),
@@ -849,54 +1509,23 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
                         ),
                       ),
                       child: Center(
-                        child: Text(
-                          value,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: cardW * 0.12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                          child: Text(value,
+                              style: TextStyle(color: Colors.white, fontSize: cardW * 0.12, fontWeight: FontWeight.bold))),
                     ),
-
                     Expanded(
                       child: Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(cardW * 0.15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.12),
-                              blurRadius: 7,
-                              //spreadRadius: -4,
-                              offset: Offset(
-                                0,
-                                10,
-                              ), // shadow bottom ki taraf push
-                            ),
-                          ],
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 7, offset: Offset(0, 10))],
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              icon,
-                              size: cardW * 0.15,
-                              color: gradientColors[0],
-                            ),
-
+                            Icon(icon, size: cardW * 0.15, color: gradientColors[0]),
                             SizedBox(height: 6),
-
-                            Text(
-                              label,
-                              style: TextStyle(
-                                fontSize: cardW * 0.09,
-                                fontWeight: FontWeight.w600,
-                                color: gradientColors[0],
-                              ),
-                            ),
+                            Text(label, style: TextStyle(fontSize: cardW * 0.09, fontWeight: FontWeight.w600, color: gradientColors[0])),
                           ],
                         ),
                       ),
@@ -906,138 +1535,118 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
               ),
             ),
           ],
-        );
+        ),
+      );
+    });
+  }
+}
+
+class _TVIconButton extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _TVIconButton({required this.icon, required this.onTap});
+
+  @override
+  State<_TVIconButton> createState() => _TVIconButtonState();
+}
+
+class _TVIconButtonState extends State<_TVIconButton> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (f) => setState(() => _isFocused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.select || event.logicalKey == LogicalKeyboardKey.enter)) {
+          widget.onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
       },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _isFocused ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.16),
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(color: _isFocused ? Colors.white : Colors.transparent, width: 2),
+          ),
+          child: Icon(widget.icon, color: Colors.white, size: 28),
+        ),
+      ),
     );
   }
+}
 
-  // Widget _buildStatusItem(String label, String value, BuildContext context) {
-  //   List<Color> gradientColors;
-  //   IconData icon;
-  //
-  //   switch (label) {
-  //     case "Total":
-  //
-  //       gradientColors = [ Color(0xFF006064),Color(0xFF4DD0E1),];
-  //       icon = Icons.list_alt_rounded;
-  //       break;
-  //     case "Active":
-  //       gradientColors = [ Color(0xFF2E7D32),Color(0xFF66BB6A),];
-  //       icon = Icons.check_circle_outline_rounded;
-  //       break;
-  //     case "Lock":
-  //       gradientColors = [ Color(0xFFE65100),Color(0xFFFFB74D),];
-  //       icon = Icons.lock_outline_rounded;
-  //       break;
-  //     case "Canceled":
-  //       gradientColors = [ Color(0xFFCC0000),Color(0xFFFF6B6B),];
-  //       icon = Icons.cancel_outlined;
-  //       break;
-  //     default:
-  //       gradientColors = [ Color(0xFF1565C0),Color(0xFF4A90D9),];
-  //       icon = Icons.info_outline;
-  //   }
-  //
-  //   return LayoutBuilder(
-  //     builder: (context, constraints) {
-  //       final cardW = constraints.maxWidth;
-  //       final cardH = constraints.maxHeight;
-  //       final blobH = cardH * 0.30;
-  //       final blobW = cardW * 0.70;
-  //       final overlapTop = cardH * 0.05;
-  //
-  //       return Stack(
-  //         clipBehavior: Clip.none, // ✅ bahar overflow allow
-  //         alignment: Alignment.topLeft,
-  //         children: [
-  //
-  //           // ✅ White card — neeche
-  //           Positioned(
-  //             top: blobH * 0.5,
-  //             left: 0,
-  //             right: 0,
-  //             bottom: 0,
-  //             child: Container(
-  //               decoration: BoxDecoration(
-  //                 color: Colors.white,
-  //                 borderRadius: BorderRadius.circular(cardW * 0.12),
-  //                 boxShadow: [
-  //                   BoxShadow(
-  //                     color: Colors.black.withOpacity(0.12),
-  //                     blurRadius: 10,
-  //                     offset: Offset(0, 6),
-  //                   ),
-  //                 ],
-  //               ),
-  //               child: Column(
-  //                 mainAxisAlignment: MainAxisAlignment.end,
-  //                 children: [
-  //                   Icon(
-  //                     icon,
-  //                     size: cardW * 0.18,
-  //                     color: gradientColors[0],
-  //                   ),
-  //                   SizedBox(height: cardH * 0.02),
-  //                   Padding(
-  //                     padding: EdgeInsets.only(bottom: cardH * 0.08),
-  //                     child: Text(
-  //                       label,
-  //                       style: TextStyle(
-  //                         fontSize: cardW * 0.11,
-  //                         fontWeight: FontWeight.w600,
-  //                         color: gradientColors[0],
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //
-  //           // ✅ Colored blob — upar, card pe overlap
-  //           Positioned(
-  //             top: 0,
-  //             child: Container(
-  //               width: blobW,
-  //               height: blobH,
-  //               decoration: BoxDecoration(
-  //                 gradient: LinearGradient(
-  //                   colors: gradientColors,
-  //                   begin: Alignment.topLeft,
-  //                   end: Alignment.bottomRight,
-  //                 ),
-  //                 borderRadius: BorderRadius.only(
-  //                   topLeft: Radius.circular(cardW * 0.12),
-  //                 //  bottomLeft: Radius.circular(cardW * 0.12),
-  //                   bottomRight: Radius.circular(cardW * 0.12),
-  //                   topRight: Radius.circular(cardW * 0.12),
-  //
-  //
-  //                 ), // pill shape
-  //                 // boxShadow: [
-  //                 //   BoxShadow(
-  //                 //     color: gradientColors[0].withOpacity(0.4),
-  //                 //     blurRadius: 8,
-  //                 //     offset: Offset(0, 4),
-  //                 //   ),
-  //                 // ],
-  //               ),
-  //               child: Center(
-  //                 child: Text(
-  //                   value,
-  //                   style: TextStyle(
-  //                     color: Colors.white,
-  //                     fontSize: cardW * 0.14,
-  //                     fontWeight: FontWeight.bold,
-  //                   ),
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
+class _TVActionButton extends StatefulWidget {
+  final String label;
+  final IconData? icon;
+  final bool isPrimary;
+  final VoidCallback onTap;
+  const _TVActionButton({
+    required this.label,
+    required this.onTap,
+    this.icon,
+    this.isPrimary = false,
+  });
+
+  @override
+  State<_TVActionButton> createState() => _TVActionButtonState();
+}
+
+class _TVActionButtonState extends State<_TVActionButton> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final fgColor = widget.isPrimary ? Colors.white : (_isFocused ? Colors.white : AppColors.appColor);
+
+    return Focus(
+      onFocusChange: (f) => setState(() => _isFocused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.select || event.logicalKey == LogicalKeyboardKey.enter)) {
+          widget.onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            gradient: widget.isPrimary
+                ? LinearGradient(colors: [AppColors.appColor, AppColors.appColor.withOpacity(0.75)])
+                : null,
+            color: widget.isPrimary ? null : (_isFocused ? AppColors.appColor : Colors.white),
+            borderRadius: BorderRadius.circular(20.0),
+            boxShadow: [
+              BoxShadow(
+                color: _isFocused ? AppColors.appColor.withOpacity(0.5) : Colors.black.withOpacity(0.15),
+                blurRadius: _isFocused ? 14 : 6,
+                offset: const Offset(2, 2),
+              )
+            ],
+            border: _isFocused ? Border.all(color: Colors.white, width: 2) : null,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.icon != null) ...[
+                Icon(widget.icon, size: 20, color: fgColor),
+                const SizedBox(width: 8),
+              ],
+              Text(widget.label, style: TextStyle(fontWeight: FontWeight.bold, color: fgColor, fontSize: 16)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

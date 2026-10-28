@@ -21,7 +21,6 @@ class CommentsModel {
   final DateTime createdAt;
   final String? username;
 
-  /// Convert JSON to model
   factory CommentsModel.fromJson(Map<String, dynamic> json) {
     return CommentsModel(
       id: json['Id'] ?? json['id'] ?? 0,
@@ -38,7 +37,6 @@ class CommentsModel {
     );
   }
 
-  /// Convert model to JSON
   Map<String, dynamic> toJson() {
     return {
       'Id': id,
@@ -53,7 +51,6 @@ class CommentsModel {
     };
   }
 
-  /// Create a request payload for adding a comment
   static Map<String, dynamic> createRequest({
     required String ticketId,
     required String userId,
@@ -65,7 +62,6 @@ class CommentsModel {
       'TicketId': ticketId,
       'UserId': userId,
       'Text': text,
-      // Send null if no media to avoid FK error
       'MediaId': (mediaId == null || mediaId == 0) ? null : mediaId,
       'CommentType': commentType,
     };

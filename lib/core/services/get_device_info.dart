@@ -4,12 +4,11 @@ import 'dart:io';
 class DeviceInfoService {
   static final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
 
-  // Get device identifier (MAC address alternative)
   static Future<String> getDeviceIdentifier() async {
     try {
       if (Platform.isAndroid) {
         final AndroidDeviceInfo androidInfo = await _deviceInfo.androidInfo;
-        return androidInfo.id; // ANDROID_ID
+        return androidInfo.id;
       } else if (Platform.isIOS) {
         final IosDeviceInfo iosInfo = await _deviceInfo.iosInfo;
         return iosInfo.identifierForVendor ?? 'ios_unknown';
@@ -21,7 +20,6 @@ class DeviceInfoService {
     }
   }
 
-  // Get detailed device information
   static Future<Map<String, String>> getDeviceInfo() async {
     try {
       if (Platform.isAndroid) {
@@ -69,7 +67,6 @@ class DeviceInfoService {
     }
   }
 
-  // Get platform name
   static String getPlatform() {
     if (Platform.isAndroid) return "android";
     if (Platform.isIOS) return "ios";
@@ -79,7 +76,6 @@ class DeviceInfoService {
     return "web";
   }
 
-  // Get operating system
   static String getOperatingSystem() {
     return Platform.operatingSystem;
   }

@@ -1,14 +1,17 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:lottie/lottie.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:printing/printing.dart';
 import 'package:pakland/features/billing/presentation/controllers/get_account_statement_controller.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
+import 'package:pakland/core/widgets/custom_buttons.dart';
 
 class AccountStatementScreen extends StatefulWidget {
   final String registrationNo;
@@ -36,23 +39,58 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
   bool _isLoading = true;
   bool _isDisposing = false;
   bool _isSaving = false;
+  String _webError = '';
   final List<String> copies = ["Client", "Office", "Account"];
 
   @override
   void initState() {
     super.initState();
+    controller.isLoading.value = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchStatement());
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.fetchAccountStatement(
-        brnCode: widget.brnCode,
-        registrationNo: widget.registrationNo,
-        idNo: widget.idNo,
-        userName: widget.idNo,
-        reportId: 100201,
-        receiptNo: '',
-        copies: copies,
-      );
+  Future<void> _fetchStatement() {
+    setState(() {
+      _webError = '';
+      _isLoading = true;
+      progress = 0;
     });
+    return controller.fetchAccountStatement(
+      brnCode: widget.brnCode,
+      registrationNo: widget.registrationNo,
+      idNo: widget.idNo,
+      userName: widget.idNo,
+      reportId: 100201,
+      receiptNo: '',
+      copies: copies,
+    );
+  }
+
+  Widget _errorView(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.description_outlined, color: Colors.grey, size: 64),
+            const SizedBox(height: 16),
+            const Text(
+              'Statement could not be loaded',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            CustomButton(text: 'Retry', autoWidth: true, onPressed: _fetchStatement),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -73,7 +111,7 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
         return true;
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppHeaderBar(
           backgroundColor: AppColors.appColor,
           title: const Text(
             "Account Statement",
@@ -96,10 +134,7 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
               child: SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2.5,
-                ),
+                child: AppLoader(),
               ),
             )
                 : IconButton(
@@ -115,7 +150,17 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SpinKitWave(color: AppColors.appColor, size: 50.0),
+                  Positioned.fill(
+                    child: Container(
+                      child: Center(
+                        child: Lottie.asset(
+                          'assets/images/loading.json',
+                          width: 150,
+                          height: 150,
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Loading Statement Data...',
@@ -131,21 +176,13 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
 
           final reportUrl = controller.accountStatement.value?.reportUrl ?? '';
 
-          if (reportUrl.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.description, color: Colors.grey, size: 64),
-                  SizedBox(height: 16),
-                  Text(
-                    'No statement data available',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
+          if (reportUrl.isEmpty || !controller.accountStatement.value!.success) {
+            return _errorView(controller.error.value.isNotEmpty
+                ? controller.error.value
+                : 'No statement data available');
           }
+
+          if (_webError.isNotEmpty) return _errorView(_webError);
 
           return Column(
             children: [
@@ -161,6 +198,8 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
                         initialSettings: InAppWebViewSettings(
                           javaScriptEnabled: true,
                           useOnLoadResource: true,
+                          domStorageEnabled: true,
+                          mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
                           mediaPlaybackRequiresUserGesture: false,
                           allowFileAccessFromFileURLs: true,
                           allowsInlineMediaPlayback: true,
@@ -202,19 +241,16 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
                             action: HttpAuthResponseAction.PROCEED,
                           );
                         },
-                        // onReceivedError: (controller, request, error) {
-                        //   debugPrint("WebView Error: ${error.description}");
-                        //   setState(() {
-                        //     _isLoading = false;
-                        //   });
-                        //
-                        //   showTopSnackBar(
-                        //     context,
-                        //     "Failed to load content: ${error.description}",
-                        //     Colors.orange.withOpacity(0.7),
-                        //     icon: Icons.warning,
-                        //   );
-                        // },
+                        onReceivedError: (controller, request, error) {
+                          if (request.isForMainFrame ?? true) {
+                            setState(() => _webError = error.description);
+                          }
+                        },
+                        onReceivedHttpError: (controller, request, errorResponse) {
+                          if ((request.isForMainFrame ?? false) && (errorResponse.statusCode ?? 0) >= 400) {
+                            setState(() => _webError = 'Server error ${errorResponse.statusCode}');
+                          }
+                        },
                         onConsoleMessage: (controller, consoleMessage) {
                           debugPrint("WebView Console: ${consoleMessage.message}");
                         },
@@ -239,8 +275,17 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                SpinKitWave(color: AppColors.appColor, size: 40.0),
-                                const SizedBox(height: 16),
+                                Positioned.fill(
+                                  child: Container(
+                                    child: Center(
+                                      child: Lottie.asset(
+                                        'assets/images/loading.json',
+                                        width: 150,
+                                        height: 150,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                                 Text(
                                   'Loading Account Statement...',
                                   style: TextStyle(
@@ -261,7 +306,6 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
       ),
     );
   }
-// Replace _launchPrintUrl and add these methods to _AccountStatementScreenState
 
   Future<void> _launchPrintUrl() async {
     final reportUrl = controller.accountStatement.value?.reportUrl ?? '';
@@ -276,7 +320,6 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
       return;
     }
 
-    // ✅ Directly trigger PDF save — no new screen needed
     await _saveAsPdf(reportUrl);
   }
 
@@ -294,18 +337,14 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // Step 1: Get raw HTML from webview
       String html = await _getPageHtml();
 
-      // Step 2: Remove <noscript> blocks
       html = _removeNoscriptTags(html);
 
-      // Step 3: Embed all images as base64
       html = await _embedImagesAsBase64(html, reportUrl);
 
       setState(() => _isSaving = false);
 
-      // Step 4: Open print/save dialog
       await Printing.layoutPdf(
         onLayout: (format) async {
           return await Printing.convertHtml(

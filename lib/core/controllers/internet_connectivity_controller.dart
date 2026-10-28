@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
-import 'package:pakland/core/widgets/no_nerwork_screen.dart';
+import 'package:pakland/core/widgets/no_network_screen.dart';
 
 class InternetConnectivityController extends GetxController {
   final Connectivity _connectivity = Connectivity();
   RxBool isConnected = true.obs;
   bool isCheckingConnection = false;
 
-  // NEW: track whether we're the ones who pushed OfflineScreen
   bool _isOfflineScreenShown = false;
 
   @override
@@ -63,12 +62,9 @@ class InternetConnectivityController extends GetxController {
   void _returnToLastScreen() {
     if (_isOfflineScreenShown) {
       _isOfflineScreenShown = false;
-      // Pop OfflineScreen off the stack -> reveals the exact previous screen
       if (Get.key.currentState?.canPop() ?? false) {
         Get.back();
       } else {
-        // Fallback only if there's genuinely nothing to go back to
-        // (e.g. app was launched while offline)
         Get.offAll(() => MainWrapper(initialIndex: 0));
       }
     }
@@ -85,7 +81,7 @@ class InternetConnectivityController extends GetxController {
       if (!results.contains(ConnectivityResult.none)) {
         isConnected.value = true;
         update();
-        _returnToLastScreen(); // uses the same pop logic now
+        _returnToLastScreen();
 
         showTopSnackBar(
           context,

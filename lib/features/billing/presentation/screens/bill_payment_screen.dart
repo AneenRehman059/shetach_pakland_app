@@ -1,10 +1,11 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/billing/presentation/controllers/payment_controller.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
 
 class BillPaymentScreen extends StatefulWidget {
   final String registrationNo;
@@ -102,7 +103,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
     return Scaffold(
 
       backgroundColor: const Color(0xFFF4F5F7),
-      appBar: AppBar(
+      appBar: AppHeaderBar(
         elevation: 0,
         backgroundColor: AppColors.appColor,
         centerTitle: true,
@@ -157,15 +158,6 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
                             'Rs. ${_formatAmount(widget.totalOutstanding)}',
                           ),
 
-                          // if (widget.overDueAmount > 0) ...[
-                          //   const SizedBox(height: 8),
-                          //   _SummaryRow(
-                          //     label: 'Overdue Amount',
-                          //     value:
-                          //     'Rs. ${_formatAmount(widget.overDueAmount)}',
-                          //     valueColor: Colors.red,
-                          //   ),
-                          // ],
                           const SizedBox(height: 12),
                           Divider(color: Colors.grey.shade300, height: 1),
                           const SizedBox(height: 12),
@@ -280,7 +272,6 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 8),
-                // drag handle
                 Container(
                   width: 40,
                   height: 4,
@@ -402,9 +393,6 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
   }
 }
 
-/// ---------------------------------------------------------------------------
-/// TOP AMOUNT SUMMARY CARD
-/// ---------------------------------------------------------------------------
 class _AmountHeaderCard extends StatelessWidget {
   final String registrationNo;
   final String memberName;
@@ -440,8 +428,8 @@ class _AmountHeaderCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             colors: [
-              AppColors.appColor,                       // solid primary
-              AppColors.appColor.withOpacity(0.85),     // lighter shade
+              AppColors.appColor,
+              AppColors.appColor.withOpacity(0.85),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -451,7 +439,6 @@ class _AmountHeaderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Small chip + secure icon row
             Row(
               children: [
                 Container(
@@ -513,7 +500,6 @@ class _AmountHeaderCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Details
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -584,9 +570,6 @@ class _AmountHeaderCard extends StatelessWidget {
   }
 }
 
-/// ---------------------------------------------------------------------------
-/// GENERIC SECTION CARD
-/// ---------------------------------------------------------------------------
 class _SectionCard extends StatelessWidget {
   final String title;
   final IconData? titleIcon;
@@ -747,9 +730,6 @@ class _TermItem extends StatelessWidget {
   }
 }
 
-/// ---------------------------------------------------------------------------
-/// FIXED BOTTOM BAR
-/// ---------------------------------------------------------------------------
 class BottomActionBar extends StatelessWidget {
   final String amountLabel;
   final String amountValue;
@@ -839,10 +819,7 @@ class BottomActionBar extends StatelessWidget {
                   elevation: enabled ? 3 : 0,
                 ),
                 child: isLoading
-                    ? SpinKitWave(
-                  color: Colors.white,
-                  size: 20,
-                )
+                    ? AppLoader(size: 20)
                     : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

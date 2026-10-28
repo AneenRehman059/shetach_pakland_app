@@ -1,5 +1,6 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:pakland/core/utils/screen_helper.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -13,7 +14,8 @@ import 'package:pakland/features/billing/data/models/client_bill_model.dart';
 import 'package:pakland/core/services/server_date.dart';
 import 'package:pakland/features/billing/presentation/screens/view_bill_screen.dart';
 import 'package:pakland/core/constants/api_constant.dart';
-import 'package:pakland/features/billing/presentation/screens/get_bill_receipts_screen.dart'; 
+import 'package:pakland/core/widgets/app_header_bar.dart';
+import 'package:pakland/features/billing/presentation/screens/get_bill_receipts_screen.dart';
 class ClientListScreen extends StatefulWidget {
   const ClientListScreen({super.key});
 
@@ -41,11 +43,9 @@ class _ClientListScreenState extends State<ClientListScreen> {
   final RxDouble selectedTotalAmount = 0.0.obs;
   final RxList<String> selectedBillKeys = <String>[].obs;
 
-  // Two separate controllers for horizontal scrolling
   final ScrollController _headerHorizontalController = ScrollController();
   final ScrollController _dataHorizontalController = ScrollController();
 
-  // One controller for vertical scrolling (data only)
   final ScrollController _dataVerticalController = ScrollController();
 
   @override
@@ -56,23 +56,18 @@ class _ClientListScreenState extends State<ClientListScreen> {
     companyController.fetchAndStoreCompanyDetails("SHET");
     PakistanDateHelper.initialize();
 
-    // SYNC BOTH HORIZONTAL CONTROLLERS
     _headerHorizontalController.addListener(_syncHorizontalScroll);
     _dataHorizontalController.addListener(_syncHorizontalScroll);
   }
 
   void _syncHorizontalScroll() {
-    // When EITHER scrolls horizontally, sync BOTH
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_headerHorizontalController.hasClients && _dataHorizontalController.hasClients) {
-        // Get which controller triggered the scroll
         if (_headerHorizontalController.position.hasContentDimensions &&
             _dataHorizontalController.position.hasContentDimensions) {
-          // Sync header to data
           if (_dataHorizontalController.offset != _headerHorizontalController.offset) {
             _headerHorizontalController.jumpTo(_dataHorizontalController.offset);
           }
-          // Sync data to header
           if (_headerHorizontalController.offset != _dataHorizontalController.offset) {
             _dataHorizontalController.jumpTo(_headerHorizontalController.offset);
           }
@@ -151,7 +146,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
     ));
   }
 
-  // Add this new navigation method for bill receipts
   void _navigateToBillReceiptsScreen(String registrationNo, int billNo) {
     Get.to(() => GetBillReceiptsScreen(
       brnCode: "SHE000",
@@ -249,7 +243,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
     ));
   }
 
-  // Helper methods
   String getMonthName(int month) => [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -268,11 +261,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
       ? Colors.red.shade700
       : Colors.grey.shade700;
 
-  // Widget builders
   Widget _buildSliderSection(double sliderHeight, Size size) {
     return Obx(() {
       if (companyController.sliders.isEmpty) {
-        return SizedBox(height: sliderHeight, child: Center(child: SpinKitWave(color: AppColors.appColor, size: 30.0)));
+        return SizedBox(height: sliderHeight, child: Center(child: AppLoader(size: 30)));
       }
 
       return Stack(children: [
@@ -285,7 +277,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(url, fit: BoxFit.fill, width: size.width,
-                  loadingBuilder: (context, child, loadingProgress) => loadingProgress == null ? child : Center(child: SpinKitWave(color: AppColors.appColor, size: 30.0)),
+                  loadingBuilder: (context, child, loadingProgress) => loadingProgress == null ? child : Center(child: AppLoader(size: 30)),
                   errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey.shade200, child: const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey))),
                 ),
               ),
@@ -377,7 +369,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   Widget _buildLoading(String text, Size size, double iconSize) => Center(
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      SpinKitWave(color: AppColors.appColor, size: iconSize),
+      AppLoader(size: (iconSize) * 1.8),
       SizedBox(height: size.height * 0.02),
       Text(text, style: TextStyle(fontSize: size.width < 600 ? 14 : 16, color: Colors.grey.shade700)),
     ]),
@@ -428,14 +420,13 @@ class _ClientListScreenState extends State<ClientListScreen> {
   }
 
   bool get isTablet {
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    return shortestSide > 600;
+
+    return ScreenHelper.isTablet(context);
   }
 
   Widget _buildDataCell(String text, TextAlign align, bool isTabletDevice,
       {Color? color, bool isAmount = false, VoidCallback? onTap, Bill? bill, String? status}) {
 
-    // Check if this is a status cell with bill info
     final bool isStatusCell = bill != null && status != null;
     final bool isClickable = onTap != null || isStatusCell;
 
@@ -451,7 +442,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
       ),
     );
 
-    // If this is a status cell with bill info, handle both Paid and Unpaid
     if (isStatusCell) {
       return GestureDetector(
         onTap: () {
@@ -479,7 +469,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
       );
     }
 
-    // If onTap is provided, wrap with GestureDetector
     if (onTap != null) {
       return GestureDetector(
         onTap: onTap,
@@ -495,7 +484,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
       );
     }
 
-    // Regular non-clickable cell
     return Padding(
       padding: isTabletDevice
           ? const EdgeInsets.all(12)
@@ -522,7 +510,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
     );
   }
 
-  // Helper to calculate table width
   double _calculateTableWidth(Map<int, TableColumnWidth> columnWidths) {
     double totalWidth = 0;
     for (int i = 0; i < columnWidths.length; i++) {
@@ -531,12 +518,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
         totalWidth += width.value;
       }
     }
-    // Add border widths (8 columns * 2 borders * 1px each)
     totalWidth += 16;
     return totalWidth;
   }
 
-  // Tablet layout builder
   Widget _buildTabletLayout(
       List<Bill> bills,
       double tableWidth,
@@ -544,14 +529,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
       Widget Function() buildDataRows) {
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // For tablets, we can display more rows without scrolling vertically
-    // by adjusting the container height based on number of rows
-    final double rowHeight = 60.0; // Approximate height per row
-    final double totalRowsHeight = (bills.length + 2) * rowHeight; // +2 for total rows
+    final double rowHeight = 60.0;
+    final double totalRowsHeight = (bills.length + 2) * rowHeight;
     final double maxTableHeight = screenHeight * 0.6;
     final double actualTableHeight = totalRowsHeight.clamp(200.0, maxTableHeight);
 
-    // Check if horizontal scrolling is needed
     final screenWidth = MediaQuery.of(context).size.width;
     final bool needsHorizontalScroll = tableWidth > screenWidth * 0.95;
 
@@ -569,10 +551,9 @@ class _ClientListScreenState extends State<ClientListScreen> {
         ],
       ),
       child: needsHorizontalScroll
-          ? // With horizontal scrolling
+          ?
       Column(
         children: [
-          // Header with horizontal scroll
           Container(
             height: 45,
             decoration: BoxDecoration(
@@ -592,7 +573,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
               ),
             ),
           ),
-          // Data rows with both horizontal and vertical scroll
           Expanded(
             child: SingleChildScrollView(
               controller: _dataVerticalController,
@@ -611,7 +591,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
           ),
         ],
       )
-          : // Without horizontal scrolling (fits screen)
+          :
       Column(
         children: [
           Container(
@@ -645,60 +625,51 @@ class _ClientListScreenState extends State<ClientListScreen> {
   }
 
   Widget _buildBillTable(List<Bill> bills) {
-    // Calculate grand total
     final double grandTotal = bills.fold(
         0.0, (double sum, Bill bill) => sum + _calculateTotalDueAmount(bill));
     final double selectedGrandTotal = selectedTotalAmount.value;
 
-    // Determine if we should use tablet layout
     final useTabletLayout = isTablet;
 
-    // Get screen dimensions
     final screenWidth = MediaQuery.of(context).size.width;
-    final availableWidth = screenWidth - (useTabletLayout ? 32 : 16); // Account for padding
+    final availableWidth = screenWidth - (useTabletLayout ? 32 : 16);
 
-    // For tablets, calculate dynamic widths that fit the screen
     Map<int, TableColumnWidth> getColumnWidths() {
       if (useTabletLayout) {
-        // For tablets, use flexible widths based on available space
-        // Distribute width proportionally based on content needs
         return {
-          0: FlexColumnWidth(0.9),  // Reg No
-          1: FlexColumnWidth(0.7),  // Block
-          2: FlexColumnWidth(0.8),  // Plot
-          3: FlexColumnWidth(1.2),  // Meter No
-          4: FlexColumnWidth(1.2),  // Meter Category
-          5: FlexColumnWidth(1.0),  // Surcharge Amt (NEW)
-          6: FlexColumnWidth(1.1),  // Due Date
-          7: FlexColumnWidth(1.3),  // Amount
-          8: FlexColumnWidth(0.9),  // Status
-          9: FlexColumnWidth(0.7),  // View
-          10: FlexColumnWidth(0.6), // Checkbox
+          0: FlexColumnWidth(0.9),
+          1: FlexColumnWidth(0.7),
+          2: FlexColumnWidth(0.8),
+          3: FlexColumnWidth(1.2),
+          4: FlexColumnWidth(1.2),
+          5: FlexColumnWidth(1.0),
+          6: FlexColumnWidth(1.1),
+          7: FlexColumnWidth(1.3),
+          8: FlexColumnWidth(0.9),
+          9: FlexColumnWidth(0.7),
+          10: FlexColumnWidth(0.6),
         };
       } else {
-        // Mobile layout (fixed widths) - Adjusted to accommodate new column
         return {
-          0: const FixedColumnWidth(70),   // Reg No
-          1: const FixedColumnWidth(70),   // Block
-          2: const FixedColumnWidth(75),   // Plot
-          3: const FixedColumnWidth(90),   // Meter No
-          4: const FixedColumnWidth(90),   // Meter Category
-          5: const FixedColumnWidth(85),   // Surcharge Amt (NEW)
-          6: const FixedColumnWidth(90),   // Due Date
-          7: const FixedColumnWidth(90),   // Amount
-          8: const FixedColumnWidth(70),   // Status
-          9: const FixedColumnWidth(60),   // View
-          10: const FixedColumnWidth(50),  // Checkbox
+          0: const FixedColumnWidth(70),
+          1: const FixedColumnWidth(70),
+          2: const FixedColumnWidth(75),
+          3: const FixedColumnWidth(90),
+          4: const FixedColumnWidth(90),
+          5: const FixedColumnWidth(85),
+          6: const FixedColumnWidth(90),
+          7: const FixedColumnWidth(90),
+          8: const FixedColumnWidth(70),
+          9: const FixedColumnWidth(60),
+          10: const FixedColumnWidth(50),
         };
       }
     }
 
-    // Calculate total table width for horizontal scrolling (mobile only)
     final double tableWidth = useTabletLayout
-        ? 0 // Not used for tablet
-        : 70 + 70 + 75 + 90 + 90 + 85 + 90 + 90 + 70 + 60 + 50 + 16; // Updated with new column
+        ? 0
+        : 70 + 70 + 75 + 90 + 90 + 85 + 90 + 90 + 70 + 60 + 50 + 16;
 
-    // Build header row
     Widget buildHeaderRow() {
       return Container(
         decoration: BoxDecoration(
@@ -721,12 +692,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 _buildHeaderCell('Plot', useTabletLayout),
                 _buildHeaderCell('Meter No', useTabletLayout),
                 _buildHeaderCell('Meter Type', useTabletLayout),
-                _buildHeaderCell('Surcharge', useTabletLayout),   // NEW COLUMN
+                _buildHeaderCell('Surcharge', useTabletLayout),
                 _buildHeaderCell('Due Date', useTabletLayout),
                 _buildHeaderCell('Amount', useTabletLayout),
                 _buildHeaderCell('Status', useTabletLayout),
                 _buildHeaderCell('View', useTabletLayout),
-                _buildHeaderCell('', useTabletLayout), // Checkbox column (empty header)
+                _buildHeaderCell('', useTabletLayout),
               ],
             ),
           ],
@@ -734,7 +705,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
       );
     }
 
-    // Build data rows (without header)
     Widget buildDataRows() {
       return Table(
         border: TableBorder.all(
@@ -744,7 +714,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
         columnWidths: getColumnWidths(),
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: [
-          // Data Rows
           ...bills.asMap().entries.map((entry) {
             final index = entry.key;
             final bill = entry.value;
@@ -752,7 +721,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
             final status = _getPaymentStatus(bill);
             final statusColor = _getStatusColor(status);
             final dueAmount = _calculateTotalDueAmount(bill);
-            final surchargeAmt = bill.surchargeAmt; // Get surcharge amount from bill
+            final surchargeAmt = bill.surchargeAmt;
             final dueDate = '${bill.billDueDate.day}/${bill.billDueDate.month}/${bill.billDueDate.year}';
 
             return TableRow(
@@ -760,42 +729,36 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 color: index % 2 == 0 ? Colors.grey[50] : Colors.white,
               ),
               children: [
-                // Reg No
                 _buildDataCell(
                   bill.registrationNo,
                   TextAlign.center,
                   useTabletLayout,
                   color: AppColors.appColor,
                 ),
-                // Block
                 _buildDataCell(
                   bill.blockNo,
                   TextAlign.center,
                   useTabletLayout,
                   color: Colors.deepPurple.shade700,
                 ),
-                // Plot
                 _buildDataCell(
                   bill.plotNo,
                   TextAlign.center,
                   useTabletLayout,
                   color: AppColors.appColor,
                 ),
-                // Meter No
                 _buildDataCell(
                   bill.meterNo.isEmpty ? 'N/A' : bill.meterNo,
                   TextAlign.center,
                   useTabletLayout,
                   color: Colors.teal.shade700,
                 ),
-                // Meter Category
                 _buildDataCell(
                   bill.meterCategory.isEmpty ? 'N/A' : bill.meterCategory,
                   TextAlign.center,
                   useTabletLayout,
                   color: Colors.indigo.shade700,
                 ),
-                // Surcharge Amt (NEW)
                 _buildDataCell(
                   surchargeAmt > 0 ? '${_formatAmount(surchargeAmt)}' : '-',
                   TextAlign.right,
@@ -803,14 +766,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   color: surchargeAmt > 0 ? Colors.orange.shade700 : Colors.grey.shade600,
                   isAmount: surchargeAmt > 0,
                 ),
-                // Due Date
                 _buildDataCell(
                   dueDate,
                   TextAlign.center,
                   useTabletLayout,
                   color: Colors.red.shade700,
                 ),
-                // Amount
                 _buildDataCell(
                   '${_formatAmount(dueAmount)}',
                   TextAlign.right,
@@ -818,7 +779,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   color: Colors.green.shade700,
                   isAmount: true,
                 ),
-                // Status
                 _buildDataCell(
                   status,
                   TextAlign.center,
@@ -827,7 +787,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   bill: bill,
                   status: status,
                 ),
-                // View Icon
                 TableCell(
                   verticalAlignment: TableCellVerticalAlignment.middle,
                   child: Center(
@@ -844,7 +803,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     ),
                   ),
                 ),
-                // Checkbox
                 TableCell(
                   verticalAlignment: TableCellVerticalAlignment.middle,
                   child: Center(
@@ -867,7 +825,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
             );
           }).toList(),
 
-          // Total Row
           TableRow(
             decoration: BoxDecoration(
               color: Colors.blue[50],
@@ -881,7 +838,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
               TableCell(child: Container()),
               TableCell(child: Container()),
               TableCell(child: Container()),
-              TableCell(child: Container()), // Surcharge total (blank)
+              TableCell(child: Container()),
               TableCell(
                 child: Container(
                   padding: useTabletLayout
@@ -920,7 +877,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
             ],
           ),
 
-          // Selected Row
           TableRow(
             decoration: BoxDecoration(
               color: Colors.orange[50],
@@ -929,9 +885,9 @@ class _ClientListScreenState extends State<ClientListScreen> {
               TableCell(child: Container()),
               TableCell(child: Container()),
               TableCell(child: Container()),
-              TableCell(child: Container()), // Meter No (blank)
-              TableCell(child: Container()), // Meter Category (blank)
-              TableCell(child: Container()), // Surcharge (blank)
+              TableCell(child: Container()),
+              TableCell(child: Container()),
+              TableCell(child: Container()),
               TableCell(
                 child: Text(
                   'Selected:',
@@ -1019,7 +975,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
           borderRadius: BorderRadius.circular(12),
           child: Column(
             children: [
-              // Header (no scrolling needed)
               Container(
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.only(
@@ -1030,7 +985,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 ),
                 child: buildHeaderRow(),
               ),
-              // Data rows with vertical scrolling only
               Expanded(
                 child: SingleChildScrollView(
                   controller: _dataVerticalController,
@@ -1043,7 +997,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
         ),
       );
     } else {
-      // Mobile layout (with horizontal scrolling)
       return SizedBox(
         height: MediaQuery.of(context).size.height * 0.5,
         child: Column(
@@ -1096,7 +1049,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
     final bottomNavHeight = MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight;
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: AppHeaderBar(
         title: Text('Bills', style: TextStyle(color: AppColors.whiteBg, fontSize: titleFontSize, fontWeight: FontWeight.w600)),
         backgroundColor: AppColors.appColor,
         iconTheme: IconThemeData(color: AppColors.whiteBg),
@@ -1143,7 +1096,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1196,12 +1148,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 Divider(height: 1, color: Colors.grey.shade200),
                 const SizedBox(height: 14),
 
-                // Options
                 _paymentMethodCard(
                   title: 'UBL Bank Account',
                   subtitle: 'Pay using your UBL account',
                   assetPath: ImageConstant.ubl,
-                  brandColor: const Color(0xFF0A7D3B), // optional
+                  brandColor: const Color(0xFF0A7D3B),
                   onTap: () => Get.back(result: 'UBL'),
                 ),
                 const SizedBox(height: 12),
@@ -1209,13 +1160,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   title: 'JazzCash Wallet',
                   subtitle: 'Pay using JazzCash mobile wallet',
                   assetPath: ImageConstant.jazzcash,
-                  brandColor: const Color(0xFFE11B22), // optional
+                  brandColor: const Color(0xFFE11B22),
                   onTap: () => Get.back(result: 'JAZZCASH'),
                 ),
 
                 const SizedBox(height: 16),
 
-                // Footer
                 Row(
                   children: [
                     Expanded(

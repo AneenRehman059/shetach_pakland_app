@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pakland/core/constants/image_url_helper.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
 import 'package:pakland/features/company/data/repositories/company_repo.dart';
 import 'package:pakland/core/constants/api_constant.dart';
+import 'package:pakland/core/services/video_background_service.dart';
 
 class CompanyController extends GetxController {
   final CompanyRepository _companyRepo = CompanyRepository();
@@ -20,7 +22,7 @@ class CompanyController extends GetxController {
   var privacyPolicy = ''.obs;
   var whatsappNumber = ''.obs;
   var isShowCloseStatus = false.obs;
-  var alterMessage = ''.obs; // Added this
+  var alterMessage = ''.obs;
 
   var baseUrl = ''.obs;
   bool _dataLoaded = false;
@@ -57,16 +59,26 @@ class CompanyController extends GetxController {
           await storage.write(key: "whatsapp_number", value: whats);
         }
 
-        // Store is_show_close_status
         final showCloseStatus = companyObj["is_show_close_status"] ?? false;
         isShowCloseStatus.value = showCloseStatus;
         await storage.write(key: "is_show_close_status", value: showCloseStatus.toString());
 
-        // Store alter_message
         final alterMsg = companyObj["alter_message"]?.toString() ??
             "This file is canceled/locked. Please contact support department for more details.";
         alterMessage.value = alterMsg;
         await storage.write(key: "alter_message", value: alterMsg);
+
+        final rawVideo = (companyObj["advertise_video"] ?? '').toString().trim();
+        if (rawVideo.isNotEmpty) {
+          final normalized = rawVideo.replaceAll('\\', '/');
+          final videoUrl = Uri.encodeFull(
+            ImageUrlHelper.resolve(normalized, ApiConstants.baseUrl),
+          );
+          await storage.write(
+            key: VideoBackgroundService.storageKeyVideoUrl,
+            value: videoUrl,
+          );
+        }
 
         await storage.write(key: "company_data", value: jsonEncode(companyObj));
         await storage.write(
@@ -106,27 +118,18 @@ class CompanyController extends GetxController {
           privacyPolicy.value = companyObj["privacy_policy"].toString();
         }
 
-        // Update all observables
         socialLinks.value = List<Map<String, dynamic>>.from(companyObj["social_Links"] ?? []);
         mobileSOPs.value = List<Map<String, dynamic>>.from(companyObj["mobile_SOPs"] ?? []);
         mobileDocuments.value = List<Map<String, dynamic>>.from(companyObj["mobile_Documents"] ?? []);
         sliders.value = List<Map<String, dynamic>>.from(companyObj["sliders"] ?? []);
         mobileTabs.value = List<Map<String, dynamic>>.from(companyObj["mobile_home_menu"] ?? []);
 
-        // Filter active tabs
         _filterActiveTabs();
 
         _dataLoaded = true;
         isLoading.value = false;
       }
     } catch (e) {
-      showTopSnackBar(
-          Get.context!,
-          title:"Alert",
-          "Some technical fault occured! Try again later.",
-          Colors.red.withOpacity(0.7),
-          icon: Icons.warning
-      );
       debugPrint("Error storing company details: $e");
       isLoading.value = false;
       rethrow;
@@ -142,7 +145,7 @@ class CompanyController extends GetxController {
     final baseUrlData = await storage.read(key: 'base_url');
     final privacyPolicyData = await storage.read(key: 'privacy_policy');
     final isShowCloseStatusData = await storage.read(key: 'is_show_close_status');
-    final alterMessageData = await storage.read(key: 'alter_message'); // Added this
+    final alterMessageData = await storage.read(key: 'alter_message');
 
     final whatsapp = await storage.read(key: 'whatsapp_number');
     if (whatsapp != null && whatsapp.isNotEmpty) {
@@ -155,12 +158,10 @@ class CompanyController extends GetxController {
       baseUrl.value = ApiConstants.baseUrl;
     }
 
-    // Load is_show_close_status
     if (isShowCloseStatusData != null) {
       isShowCloseStatus.value = isShowCloseStatusData.toLowerCase() == 'true';
     }
 
-    // Load alter_message
     if (alterMessageData != null) {
       alterMessage.value = alterMessageData;
     } else {
@@ -185,7 +186,6 @@ class CompanyController extends GetxController {
 
     if (mobileTabsJson != null) {
       mobileTabs.value = List<Map<String, dynamic>>.from(jsonDecode(mobileTabsJson));
-      // Filter active tabs
       _filterActiveTabs();
     }
 
@@ -198,13 +198,7 @@ class CompanyController extends GetxController {
   }
 
   String getFullImageUrl(String path) {
-    if (path.isEmpty) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    String cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    return '${baseUrl.value}/$cleanPath';
+    return ImageUrlHelper.resolve(path, baseUrl.value);
   }
 
   bool get isDataLoaded => _dataLoaded;
@@ -227,9 +221,7 @@ class CompanyController extends GetxController {
     return null;
   }
 
-  // Getter for isShowCloseStatus
   bool get showCloseStatus => isShowCloseStatus.value;
 
-  // Getter for alterMessage
   String get alterMessageValue => alterMessage.value;
 }

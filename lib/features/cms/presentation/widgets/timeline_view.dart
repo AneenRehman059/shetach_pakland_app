@@ -1,11 +1,11 @@
 
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 
 import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
-import 'package:pakland/features/cms/data/models/timeLine_model.dart';
+import 'package:pakland/features/cms/data/models/timeline_model.dart';
 
 // update
 class TimelineView extends StatelessWidget {
@@ -28,10 +28,7 @@ class TimelineView extends StatelessWidget {
     return Obx(() {
       if (controller.timelineLoading.value) {
         return Center(
-          child: SpinKitWave(
-            color: AppColors.primaryColor,
-            size: 24.0,
-          ),
+          child: AppLoader(size: 24),
         );
       }
 

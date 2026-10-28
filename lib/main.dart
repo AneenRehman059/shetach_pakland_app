@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as Math;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:pakland/core/utils/screen_helper.dart';
+import 'package:pakland/core/services/video_background_service.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -14,8 +18,8 @@ import 'package:pakland/features/profile/presentation/screens/personal_detail_sc
 import 'package:pakland/core/services/server_date.dart';
 import 'package:pakland/core/services/fcm_notification_service.dart';
 import 'package:pakland/features/splash/presentation/screens/splash_screen.dart';
-import 'package:pakland/core/permissions/location_permission_handler.dart';
 import 'package:pakland/core/permissions/microphone_permission_handler.dart';
+import 'package:pakland/core/permissions/location_permission_handler.dart';
 import 'package:pakland/core/widgets/bottom_app_bar.dart';
 import 'package:pakland/features/auth/presentation/screens/change_password_screen.dart';
 import 'package:pakland/core/theme/colors.dart';
@@ -27,7 +31,7 @@ import 'package:pakland/core/controllers/theme_controller.dart';
 import 'package:pakland/features/tickets/presentation/controllers/tickets_controller.dart';
 import 'package:pakland/features/dashboard/presentation/screens/about_us_screen.dart';
 import 'package:pakland/features/cms/presentation/screens/admin_dashboard.dart';
-import 'package:pakland/features/cms/presentation/screens/admin_main_dashbord.dart';
+import 'package:pakland/features/cms/presentation/screens/admin_main_dashboard.dart';
 import 'package:pakland/features/cms/presentation/screens/client_dashboard.dart';
 import 'package:pakland/features/cms/presentation/screens/cms_dashboard_screen.dart';
 import 'package:pakland/features/feedback/presentation/screens/cms_feedback_screen.dart';
@@ -41,6 +45,8 @@ import 'package:pakland/features/help_support/presentation/screens/help_support_
 import 'package:pakland/features/auth/presentation/screens/login_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+const String kAppFontFamily = 'Poppins';
+
 final notificationService = FirebaseNotificationService();
 
 void main() async {
@@ -48,6 +54,14 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   HttpOverrides.global = MyHttpOverrides();
+
+  try {
+    if (Platform.isAndroid) {
+      final info = await DeviceInfoPlugin().androidInfo;
+      ScreenHelper.isTvDevice =
+          info.systemFeatures.contains('android.software.leanback');
+    }
+  } catch (_) {}
 
   final themeController = Get.put(ThemeController(), permanent: true);
   Get.put(InternetConnectivityController(), permanent: true);
@@ -67,7 +81,6 @@ void main() async {
   await PakistanDateHelper.initialize();
   await notificationService.initialize();
 
-  // ✅ Capture kill-state message HERE — earliest possible point
   initialNotificationMessage = await FirebaseMessaging.instance.getInitialMessage();
   print('📌 main() captured initialMessage: ${initialNotificationMessage?.data}');
 
@@ -87,7 +100,6 @@ void main() async {
       final String ticketId = launchDetails.notificationResponse!.payload!;
       print('📌 Launch ticketId from local notification: $ticketId');
 
-      // Store ticketId so MainWrapper can use it
       pendingKillStateTicketId = ticketId;
     }
   }
@@ -127,7 +139,13 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _checkAppVersion() async {
     try {
-      await _companyController.fetchAndStoreCompanyDetails(compCode);
+      try {
+        await _companyController
+            .fetchAndStoreCompanyDetails(compCode)
+            .timeout(const Duration(seconds: 3));
+      } on TimeoutException {
+        debugPrint("Company info slow - continuing with stored data");
+      }
 
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       _currentVersion = packageInfo.version;
@@ -160,10 +178,10 @@ class _MyAppState extends State<MyApp> {
       } else {
         setState(() {
           _homeWidget = MicrophonePermissionHandler(
-            loadingWidget: _buildLoadingScreen('Initializing app...'),
+            loadingWidget: _buildLoadingScreen(''),
             child: LocationPermissionHandler(
               child: const SplashScreen(),
-              loadingWidget: _buildLoadingScreen('Initializing app...'),
+              loadingWidget: _buildLoadingScreen(''),
             ),
           );
           _isCheckingVersion = false;
@@ -174,15 +192,28 @@ class _MyAppState extends State<MyApp> {
 
       setState(() {
         _homeWidget = MicrophonePermissionHandler(
-          loadingWidget: _buildLoadingScreen('Initializing app...'),
+          loadingWidget: _buildLoadingScreen(''),
           child: LocationPermissionHandler(
             child: const SplashScreen(),
-            loadingWidget: _buildLoadingScreen('Initializing app...'),
+            loadingWidget: _buildLoadingScreen(''),
           ),
         );
         _isCheckingVersion = false;
       });
     }
+  }
+
+  Widget _buildLoadingScreen(String message) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+          ],
+        ),
+      ),
+    );
   }
 
   bool _isVersionLower(String currentVersion, String requiredVersion) {
@@ -205,19 +236,6 @@ class _MyAppState extends State<MyApp> {
       debugPrint("Error comparing versions: $e");
       return false;
     }
-  }
-
-  Widget _buildLoadingScreen(String message) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildUpdateDialog() {
@@ -243,7 +261,6 @@ class _MyAppState extends State<MyApp> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Top gradient section
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(24),
@@ -296,7 +313,6 @@ class _MyAppState extends State<MyApp> {
                   ),
                 ),
 
-                // Content section
                 Padding(
                   padding: EdgeInsets.all(24),
                   child: Column(
@@ -440,14 +456,21 @@ class _MyAppState extends State<MyApp> {
     return Obx(() {
       return GetMaterialApp(
         navigatorKey: notificationService.navigatorKey,
+        navigatorObservers: [videoRouteObserver],
         debugShowCheckedModeBanner: false,
         theme: ThemeData.light().copyWith(
           scaffoldBackgroundColor: Colors.white,
           primaryColor: Colors.blue,
+          textTheme: ThemeData.light().textTheme.apply(fontFamily: kAppFontFamily),
+          primaryTextTheme:
+          ThemeData.light().primaryTextTheme.apply(fontFamily: kAppFontFamily),
         ),
         darkTheme: ThemeData.dark().copyWith(
           scaffoldBackgroundColor: Colors.black,
           primaryColor: Colors.blue,
+          textTheme: ThemeData.dark().textTheme.apply(fontFamily: kAppFontFamily),
+          primaryTextTheme:
+          ThemeData.dark().primaryTextTheme.apply(fontFamily: kAppFontFamily),
         ),
         getPages: [
           GetPage(name: '/login', page: () => const LoginScreen()),
@@ -465,12 +488,10 @@ class _MyAppState extends State<MyApp> {
               })
           ),
           GetPage(name: '/adminDashboard', page: () {
-            // Ensure TicketController is available
             final ticketController = Get.isRegistered<TicketController>()
                 ? Get.find<TicketController>()
                 : Get.put(TicketController());
 
-            // Initialize controller in background
             if (!ticketController.isInitialized) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 ticketController.initializeController();
@@ -481,16 +502,14 @@ class _MyAppState extends State<MyApp> {
               ticketController: ticketController,
               userType: ticketController.userType.value.isNotEmpty
                   ? ticketController.userType.value
-                  : 'Admin', // Default fallback
+                  : 'Admin',
             );
           }),
           GetPage(name: '/clintDashboard', page: () {
-            // Ensure TicketController is available
             final ticketController = Get.isRegistered<TicketController>()
                 ? Get.find<TicketController>()
                 : Get.put(TicketController());
 
-            // Initialize controller in background
             if (!ticketController.isInitialized) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 ticketController.initializeController();
@@ -519,15 +538,12 @@ class _MyAppState extends State<MyApp> {
                 return TicketDetailView(ticket: args['ticket']);
               }),
           GetPage(name: '/main_screen', page: () => MainWrapper()),
-          // SOS
           GetPage(name: '/UserSOS', page: () => const SOSView()),
           GetPage(
               name: '/SOSAlarm',
               page: () {
                 final args =Get.arguments as Map<String,dynamic>;
                 return SOSAlarmScreen(ticket: args['ticket']);
-                // final args = Get.arguments as Map<String, dynamic>?;
-                // return SOSAlarmScreen(ticketId: args?['ticketId'] ?? '');
               }),
           GetPage(name: '/SOSListView', page: () => const SOSListView()),
         ],

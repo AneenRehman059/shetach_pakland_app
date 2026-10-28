@@ -5,6 +5,7 @@ class CustomTextField extends StatefulWidget {
   final String label;
   final String hintText;
   final TextStyle? labelStyle;
+  final TextStyle? hintStyle;
   final IconData? icon;
   final String? imagePath;
   final bool obscureText;
@@ -19,13 +20,17 @@ class CustomTextField extends StatefulWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final double? borderRadius;
+  final double? imageIconSize;
   final List<TextInputFormatter>? inputFormatters;
+  final bool isDarkStyle;
+  final bool? showLabel;
 
   const CustomTextField({
     super.key,
     required this.label,
     required this.hintText,
     this.labelStyle,
+    this.hintStyle,
     this.icon,
     this.imagePath,
     this.obscureText = false,
@@ -41,6 +46,9 @@ class CustomTextField extends StatefulWidget {
     this.onTap,
     this.borderRadius,
     this.inputFormatters,
+    this.isDarkStyle = false,
+    this.showLabel,
+    this.imageIconSize,
   });
 
   @override
@@ -140,7 +148,6 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions
     final Size screenSize = MediaQuery.of(context).size;
     final double screenWidth = screenSize.width;
     final double screenHeight = screenSize.height;
@@ -148,15 +155,12 @@ class _CustomTextFieldState extends State<CustomTextField> {
     final horizontalPadding = screenSize.width * 0.04;
     final verticalPadding = screenSize.height * 0.015;
 
-    // Responsive font sizes
     final double labelFontSize = screenWidth > 600 ? 14 : 13;
-    final double hintFontSize = screenWidth > 600 ? 15 : 14;
+    final double hintFontSize = screenWidth > 600 ? 17 : 16;
 
-    // Responsive icon sizes
     final double iconSize = screenWidth > 600 ? 22 : 20;
     final double visibilityIconSize = screenWidth > 600 ? 20 : 18;
 
-    // Responsive heights and paddings
     final double defaultTextFieldHeight = screenHeight * 0.06;
     final double labelSpacing = screenHeight * 0.008;
     final EdgeInsets defaultContentPadding = EdgeInsets.symmetric(
@@ -205,117 +209,127 @@ class _CustomTextFieldState extends State<CustomTextField> {
     required double labelSpacing,
     required EdgeInsets contentPadding,
   }) {
-    final size = MediaQuery.of(context).size;
+    final bool dark = widget.isDarkStyle;
+    final bool showLabel = widget.showLabel ?? !dark;
 
-    final horizontalPadding = size.width * 0.04;
-    final verticalPadding = size.height * 0.015;
+    final Color textColor = dark ? Colors.white : Colors.white;
+    final Color hintColor = dark ? Colors.white70 : Colors.white;
+    final Color iconColor = dark ? Colors.white : AppColors.appColor;
+    final Color underlineColor = dark ? Colors.white : AppColors.appColor;
+    final Color underlineFocusedColor = dark ? Colors.white : AppColors.appColor;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.label,
-          style: widget.labelStyle ?? TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: labelFontSize,
-          ),
-        ),
-        SizedBox(height: labelSpacing),
-        Container(
-          height: widget.height ?? defaultTextFieldHeight,
-          decoration: BoxDecoration(
-            color: AppColors.bgColor,
-            borderRadius: BorderRadius.circular(
-              widget.borderRadius ?? screenWidth * 0.025,
-            ),
-            border: Border.all(
-              color: _isEmailInvalid ? Colors.red : AppColors.appColor,
-              width: 1.0,
+        if (showLabel) ...[
+          Text(
+            widget.label,
+            style: widget.labelStyle ?? TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: labelFontSize,
+              color: textColor,
             ),
           ),
-          child: TextFormField(
-            controller: widget.controller,
-            obscureText: _obscureText,
-            keyboardType: widget.keyboardType,
-            inputFormatters: widget.inputFormatters,
-            maxLength: _getMaxLength(),
-            onChanged: (value) {
-              widget.onChanged?.call(value);
+          SizedBox(height: labelSpacing),
+        ],
+        TextFormField(
+          controller: widget.controller,
+          obscureText: _obscureText,
+          keyboardType: widget.keyboardType,
+          inputFormatters: widget.inputFormatters,
+          maxLength: _getMaxLength(),
+          cursorColor: textColor,
+          onChanged: (value) {
+            widget.onChanged?.call(value);
 
-              if (widget.keyboardType == TextInputType.emailAddress) {
-                _validateEmail();
-              }
-            },
-            validator: (value) {
-              final minLength = _getMinLength();
-              if (minLength != null && (value?.length ?? 0) < minLength && (value?.isNotEmpty ?? false)) {
-                return '${widget.label} must be at least $minLength characters';
-              }
+            if (widget.keyboardType == TextInputType.emailAddress) {
+              _validateEmail();
+            }
+          },
+          validator: (value) {
+            final minLength = _getMinLength();
+            if (minLength != null && (value?.length ?? 0) < minLength && (value?.isNotEmpty ?? false)) {
+              return '${widget.label} must be at least $minLength characters';
+            }
 
-              if (widget.validator != null) {
-                return widget.validator!(value);
-              }
+            if (widget.validator != null) {
+              return widget.validator!(value);
+            }
 
-              return null;
-            },
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: hintFontSize,
+            return null;
+          },
+          style: TextStyle(
+            color: textColor,
+            fontSize: hintFontSize,
+          ),
+          readOnly: widget.readOnly,
+          onTap: widget.onTap,
+          decoration: InputDecoration(
+            isDense: true,
+            prefixIconConstraints: BoxConstraints(
+              minWidth: (widget.imageIconSize ?? iconSize) + (screenWidth * 0.03) + 20,
+              minHeight: (widget.imageIconSize ?? iconSize) + 20,
             ),
-            readOnly: widget.readOnly,
-            onTap: widget.onTap,
-            decoration: InputDecoration(
-              prefixIcon: widget.icon != null
-                  ? Icon(
-                widget.icon,
-                size: iconSize,
-                color: AppColors.appColor,
-              )
-                  : (widget.imagePath != null
-                  ? Padding(
-                padding: EdgeInsets.all(screenWidth * 0.03),
-                child: Image.asset(
-                  widget.imagePath!,
-                  width: iconSize,
-                  height: iconSize,
-                ),
-              )
-                  : null),
-              suffixIcon: widget.showVisibilityIcon
-                  ? IconButton(
-                icon: Icon(
-                  _obscureText ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey,
-                  size: visibilityIconSize,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscureText = !_obscureText;
-                  });
-                },
-              )
-                  : (widget.keyboardType == TextInputType.emailAddress
-                  ? _buildEmailValidationIcon()
-                  : null),
-              hintText: widget.hintText,
-              hintStyle: TextStyle(
-                color: Colors.black38,
+            prefixIcon: widget.icon != null
+                ? Icon(
+              widget.icon,
+              size: iconSize,
+              color: iconColor,
+            )
+                : (widget.imagePath != null
+                ? Padding(
+              padding: EdgeInsets.only(right: screenWidth * 0.03),
+              child: Image.asset(
+                widget.imagePath!,
+                width: widget.imageIconSize ?? iconSize,
+                height: widget.imageIconSize ?? iconSize,
+                fit: BoxFit.contain,
+                color: dark ? Colors.white : null,
+              ),
+            )
+                : null),
+
+            suffixIcon: widget.showVisibilityIcon
+                ? IconButton(
+              icon: Icon(
+                _obscureText ? Icons.visibility_off : Icons.visibility,
+                color: dark ? Colors.white70 : Colors.grey,
+                size: visibilityIconSize,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureText = !_obscureText;
+                });
+              },
+            )
+                : (widget.keyboardType == TextInputType.emailAddress
+                ? _buildEmailValidationIcon()
+                : null),
+            hintText: widget.hintText,
+            hintStyle: widget.hintStyle ?? TextStyle(
+                color: hintColor,
                 fontSize: hintFontSize,
-              ),
-              hintTextDirection: TextDirection.ltr,
-             // contentPadding: widget.contentPadding ?? contentPadding,
-              contentPadding: widget.contentPadding ??
-                  EdgeInsets.symmetric(
-                    horizontal: horizontalPadding,
-                    vertical: verticalPadding,
-                  ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide.none,
-              ),
-              counterText: '',
+                fontWeight: FontWeight.bold
             ),
+            hintTextDirection: TextDirection.ltr,
+            contentPadding: widget.contentPadding ??
+                EdgeInsets.symmetric(
+                  horizontal: 0,
+                  vertical: screenHeight * 0.012,
+                ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: _isEmailInvalid ? Colors.red : underlineColor,
+                width: 1,
+              ),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: _isEmailInvalid ? Colors.red : underlineFocusedColor,
+                width: 1.2,
+              ),
+            ),
+            counterText: '',
           ),
         ),
       ],
@@ -387,9 +401,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
               )
                   : null,
               hintText: widget.hintText,
-              hintStyle: TextStyle(
+              hintStyle: widget.hintStyle ?? TextStyle(
                 fontSize: hintFontSize,
-                color: Colors.black38,
+                color: Colors.white,
               ),
               filled: true,
               fillColor: AppColors.bgColor,

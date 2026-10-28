@@ -6,7 +6,7 @@ import 'package:pakland/features/billing/data/models/get_statement_model.dart';
 
 import 'package:pakland/core/constants/api_constant.dart';
 import 'package:pakland/features/billing/data/models/account_statement_model.dart';
-import 'package:pakland/features/billing/data/repositories/account_statment_repo.dart';
+import 'package:pakland/features/billing/data/repositories/account_statement_repo.dart';
 
 class AccountStatementController extends GetxController {
   final AccountStatementRepository _repository = AccountStatementRepository();
@@ -32,6 +32,7 @@ class AccountStatementController extends GetxController {
     try {
       isLoading.value = true;
       error.value = '';
+      accountStatement.value = null;
 
       final request = AccountStatementRequest(
         brnCode: brnCode,
@@ -46,18 +47,11 @@ class AccountStatementController extends GetxController {
       final response = await _repository.getAccountStatement(request);
       accountStatement.value = response;
 
-      if (!response.success) {
-        throw Exception('Failed to generate statement');
+      if (!response.success || response.reportUrl.isEmpty) {
+        throw Exception(response.message.isNotEmpty ? response.message : 'Statement could not be generated');
       }
     } catch (e) {
-      error.value = e.toString();
-      // Get.snackbar(
-      //   'Error',
-      //   e.toString(),
-      //   snackPosition: SnackPosition.BOTTOM,
-      //   backgroundColor: Colors.red,
-      //   colorText: Colors.white,
-      // );
+      error.value = e.toString().replaceFirst('Exception: ', '');
     } finally {
       isLoading.value = false;
     }

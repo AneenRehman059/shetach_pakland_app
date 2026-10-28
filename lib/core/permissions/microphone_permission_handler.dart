@@ -1,7 +1,8 @@
+import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:pakland/core/permissions/microphone_permisson.dart';
+import 'package:pakland/core/permissions/microphone_permission.dart';
 
 class MicrophonePermissionHandler extends StatefulWidget {
   final Widget child;
@@ -39,6 +40,8 @@ class _MicrophonePermissionHandlerState
     // If permission is not granted, directly request it
     if (!status.isGranted) {
       await MicrophonePermissionService.requestMicrophonePermission();
+      // let the Activity resume before the next permission dialog
+      await Future.delayed(const Duration(milliseconds: 400));
     }
 
     if (mounted) {
@@ -58,7 +61,7 @@ class _MicrophonePermissionHandlerState
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
+                  AppLoader(),
                   SizedBox(height: 20),
                   Text('Checking microphone permission...'),
                 ],

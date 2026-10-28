@@ -24,17 +24,22 @@ class ImageConstant {
   static var jazzcash = 'assets/images/jazzcash.png';
   static var ubl = 'assets/images/ubl.png';
   static var map = 'assets/images/map.png';
+  static var thumb1 = 'assets/images/thumb1.png';
+  static var thumb2 = 'assets/images/thumb2.png';
+  static var thumb3 = 'assets/images/thumb3.png';
+  static var lottieAnim = 'assets/images/loading.json';
 
   static var user_profile = 'assets/images/profile.jpg';
 
   static var home = 'assets/images/home.png';
-  static var profile = 'assets/images/person.png';
+  static var profile = 'assets/images/user.png';
   static var sales = 'assets/images/sales.png';
   static var about = 'assets/images/about.png';
   static var no_net_bg = 'assets/images/no_network_bg.jpeg';
   static var logout = 'assets/images/logout.png';
   static var bsm_adv = 'assets/images/bsm_devlopers.png';
   static var she_t = 'assets/images/she_t.png';
+  static var book = 'assets/images/booking_bg.png';
 
   static var bsm_g = 'assets/images/bsm_g.jpg';
   static var ab1 = 'assets/images/ab1.png';
@@ -45,27 +50,9 @@ class ImageConstant {
   static var icon_person = 'assets/images/icon_person.png';
   static var sc = 'assets/images/sc1.png';
   static var pakland = 'assets/images/pakland.png';
-
-  static var book = 'assets/images/booking_bg.png';
-  static var faq = 'assets/images/faqs.png';
-  static var delete = 'assets/images/delete.png';
-  static var pay_online_bg = 'assets/images/pay_online_bg_img.jpg';
-  static var she = 'assets/images/she.png';
-  static var user = 'assets/images/user.png';
-  static var cell = 'assets/images/cell.png';
-  static var mail = 'assets/images/mail.png';
-  static var supp = 'assets/images/support.png';
-  static var cnic = 'assets/images/cnic.png';
-  static var sale_center = 'assets/images/building.png';
-  static var dob = 'assets/images/birthday.png';
-  static var password = 'assets/images/password.png';
-  static var pass = 'assets/images/passwords.png';
-  static var detail = 'assets/images/detail.png';
-  static var det = 'assets/images/detail.png';
-  static var history = 'assets/images/history.png';
-  static var help = 'assets/images/supp.png';
-  static var metro = 'assets/images/metro.jpg';
-  static var feedback = 'assets/images/metro.jpg';
+  static var statemnt = 'assets/images/statement.png';
+  static var receipt = 'assets/images/receipt.png';
+  static var pay_now = 'assets/images/pay_now.png';
 
   static var rs10 = 'assets/images/10.png';
   static var rs20 = 'assets/images/20.png';
@@ -75,4 +62,29 @@ class ImageConstant {
   static var rs1000 = 'assets/images/1000.png';
   static var rs5000 = 'assets/images/5000.png';
 
+  static var authUser = 'assets/icons/auth_user.png';
+  static var authLock = 'assets/icons/auth_lock.png';
+  static var authMail = 'assets/icons/auth_mail.png';
+  static var authPhone = 'assets/icons/auth_smartphone.png';
+  static var authCake = 'assets/icons/auth_cake.png';
+  static var authIdCard = 'assets/icons/auth_id_card.png';
+  static var authEye = 'assets/icons/auth_eye.png';
+  static var authEyeOff = 'assets/icons/auth_eye_off.png';
+
+  static var icKeyRound = 'assets/icons/ic_key_round.png';
+  static var icShieldCheck = 'assets/icons/ic_shield_check.png';
+  static var icShield = 'assets/icons/ic_shield.png';
+  static var icInfo = 'assets/icons/ic_info.png';
+  static var icCircleCheck = 'assets/icons/ic_circle_check.png';
+  static var icCircleAlert = 'assets/icons/ic_circle_alert.png';
+  static var icCircle = 'assets/icons/ic_circle.png';
+  static var icHouse = 'assets/icons/ic_house.png';
+  static var icHeadset = 'assets/icons/ic_headset.png';
+  static var icPhone = 'assets/icons/ic_phone.png';
+  static var icClock = 'assets/icons/ic_clock.png';
+  static var icMessage = 'assets/icons/ic_message_square.png';
+  static var icPenLine = 'assets/icons/ic_pen_line.png';
+  static var icAtSign = 'assets/icons/ic_at_sign.png';
+  static var icSend = 'assets/icons/ic_send.png';
+  static var icLockKeyhole = 'assets/icons/ic_lock_keyhole.png';
 }

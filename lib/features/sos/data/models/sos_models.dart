@@ -71,7 +71,6 @@ class FCMTokenUpdateRequest {
 
   FCMTokenUpdateRequest({required this.userId, required this.fcmToken});
 
-  // Convert the object to JSON for API call
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
@@ -242,7 +241,6 @@ class StopSOSAlarmResponse {
   });
 
   factory StopSOSAlarmResponse.fromJson(Map<String, dynamic> json) {
-    // Handle both cases: when response is in 'obj' or directly in root
     final data = json['obj'] ?? json;
 
     return StopSOSAlarmResponse(

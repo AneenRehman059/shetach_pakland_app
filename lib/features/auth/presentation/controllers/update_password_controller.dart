@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:pakland/features/auth/data/repositories/update_password_repo.dart';
+import 'package:pakland/features/auth/domain/usecases/update_password_usecase.dart';
 
 class UpdatePasswordController extends GetxController {
-  final _repo = UpdatePasswordRepository();
+  final UpdatePasswordUseCase _updatePasswordUseCase =
+      UpdatePasswordUseCase(UpdatePasswordRepository());
   final _storage = const FlutterSecureStorage();
   var isLoading = false.obs;
 
@@ -86,7 +88,7 @@ class UpdatePasswordController extends GetxController {
         "webViewVersion": "string"
       };
 
-      bool success = await _repo.updatePassword(body);
+      bool success = await _updatePasswordUseCase(body);
 
       if (success) {
         await _storage.write(key: "user_password", value: newPassword);
