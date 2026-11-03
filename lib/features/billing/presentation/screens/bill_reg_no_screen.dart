@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:pakland/core/utils/screen_helper.dart';
@@ -1136,7 +1137,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Get.back(result: null),
+                      onPressed: () => SafeNav.back(result: null),
                       icon: const Icon(Icons.close),
                       splashRadius: 18,
                       tooltip: 'Close',
@@ -1153,7 +1154,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   subtitle: 'Pay using your UBL account',
                   assetPath: ImageConstant.ubl,
                   brandColor: const Color(0xFF0A7D3B),
-                  onTap: () => Get.back(result: 'UBL'),
+                  onTap: () => SafeNav.back(result: 'UBL'),
                 ),
                 const SizedBox(height: 12),
                 _paymentMethodCard(
@@ -1161,7 +1162,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   subtitle: 'Pay using JazzCash mobile wallet',
                   assetPath: ImageConstant.jazzcash,
                   brandColor: const Color(0xFFE11B22),
-                  onTap: () => Get.back(result: 'JAZZCASH'),
+                  onTap: () => SafeNav.back(result: 'JAZZCASH'),
                 ),
 
                 const SizedBox(height: 16),
@@ -1177,7 +1178,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => Get.back(result: null),
+                      onPressed: () => SafeNav.back(result: null),
                       child: const Text('Cancel'),
                     ),
                   ],

@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
@@ -225,7 +226,7 @@ class _TicketCreateViewState extends State<TicketCreateView> {
           buttonColor: Colors.red,
           radius: 10,
           onConfirm: () {
-            Get.back();
+            SafeNav.back();
             setState(() => _uploadProgress = 0);
           },
         );
@@ -255,7 +256,7 @@ class _TicketCreateViewState extends State<TicketCreateView> {
         buttonColor: Colors.red,
         radius: 10,
         onConfirm: () {
-          Get.back();
+          SafeNav.back();
           setState(() => _uploadProgress = 0);
         },
       );

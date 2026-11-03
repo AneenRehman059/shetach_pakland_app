@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/loader.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -32,7 +33,7 @@ class _UserFilesScreenState extends State<UserFilesScreen> {
     return StatusBarWrapper(
       child: WillPopScope(
         onWillPop: () async {
-          Get.back();
+          SafeNav.back();
           return false;
         },
         child: Scaffold(

@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ class BiometricDialogs {
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
+            onPressed: () => SafeNav.back(),
             child: const Text('OK'),
           ),
         ],
@@ -133,7 +134,7 @@ class BiometricDialogs {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Get.back(),
+                      onPressed: () => SafeNav.back(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white.withOpacity(0.9),
                         foregroundColor: Colors.black87,
@@ -237,7 +238,7 @@ class BiometricDialogs {
                       Expanded(
                         child: TextButton(
                           onPressed: () {
-                            Get.back();
+                            SafeNav.back();
                             onKeepPrevious();
                           },
                           style: TextButton.styleFrom(
@@ -264,7 +265,7 @@ class BiometricDialogs {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            Get.back();
+                            SafeNav.back();
                             onDisablePrevious();
                           },
                           style: ElevatedButton.styleFrom(
@@ -474,7 +475,7 @@ class BiometricDialogs {
                       children: [
                         Expanded(
                           child: TextButton(
-                            onPressed: () => Get.back(),
+                            onPressed: () => SafeNav.back(),
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.symmetric(
                                 vertical: screenHeight * 0.018,
@@ -499,7 +500,7 @@ class BiometricDialogs {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              Get.back();
+                              SafeNav.back();
                               onDisableAndContinue();
                             },
                             style: ElevatedButton.styleFrom(

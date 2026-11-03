@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/loader.dart';
 import 'dart:io';
 
@@ -141,7 +142,7 @@ class _ViewBillScreenState extends State<ViewBillScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () async {
               await _cleanupWebView();
-              Get.back();
+              SafeNav.back();
             },
           ),
           actions: [

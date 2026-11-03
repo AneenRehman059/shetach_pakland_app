@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:get/get.dart';
@@ -693,7 +694,7 @@ class TicketController extends GetxController {
       confirmTextColor: Colors.white,
       buttonColor: Colors.red,
       radius: 10,
-      onConfirm: () => Get.back(),
+      onConfirm: () => SafeNav.back(),
     );
   }
 

@@ -67,6 +67,8 @@ class _DashboardMenusState extends State<DashboardMenus> {
         return PrivacyPolicyScreen();
       case 'form validation':
         return VerifyFormNumberScreen();
+      case 'digital_map':
+        return VerifyFormNumberScreen();
       default:
         return Container();
     }

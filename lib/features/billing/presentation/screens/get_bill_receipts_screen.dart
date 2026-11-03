@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:pakland/core/utils/screen_helper.dart';
@@ -89,7 +90,7 @@ class _GetBillReceiptsScreenState extends State<GetBillReceiptsScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Get.back(),
+          onPressed: () => SafeNav.back(),
         ),
       ),
       body: Obx(() {

@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -142,7 +143,7 @@ class SOSAlarmScreen extends StatelessWidget {
         duration: const Duration(seconds: 2),
       );
       await Future.delayed(const Duration(milliseconds: 500));
-      Get.back();
+      SafeNav.back();
     } catch (e) {
       showTopSnackBar(
         context,
@@ -174,7 +175,7 @@ class SOSAlarmScreen extends StatelessWidget {
       final latestTicket = await ticketRepo.getTicket(ticket.id);
 
       if (Get.isDialogOpen ?? false) {
-        Get.back();
+        SafeNav.back();
       }
 
       if (latestTicket != null && latestTicket.status == "In Progress") {
@@ -213,7 +214,7 @@ class SOSAlarmScreen extends StatelessWidget {
       );
 
       if (Get.isDialogOpen ?? false) {
-        Get.back();
+        SafeNav.back();
       }
 
       if (success) {
@@ -266,7 +267,7 @@ class SOSAlarmScreen extends StatelessWidget {
       }
     } catch (e) {
       if (Get.isDialogOpen ?? false) {
-        Get.back();
+        SafeNav.back();
       }
 
       showTopSnackBar(

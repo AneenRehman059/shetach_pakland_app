@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/loader.dart';
 import 'dart:io';
 
@@ -189,7 +190,7 @@ class _ReceiptImageScreenState extends State<ReceiptImageScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Get.back(),
+          onPressed: () => SafeNav.back(),
         ),
         actions: [
           Padding(

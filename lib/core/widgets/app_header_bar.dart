@@ -58,7 +58,10 @@ class AppHeaderBar extends StatelessWidget implements PreferredSizeWidget {
     if (onBackPressed != null) {
       onBackPressed!();
     } else if (Navigator.of(context).canPop()) {
-      Get.back();
+      // Get.back() pehle closeCurrentSnackbar() chalata hai, jo kisi atke hue
+      // Get.snackbar par LateInitializationError deta hai aur back rok deta hai.
+      // Navigator.pop() snackbar state se independent hai.
+      Navigator.of(context).pop();
     }
   }
 

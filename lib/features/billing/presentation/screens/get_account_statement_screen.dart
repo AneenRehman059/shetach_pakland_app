@@ -37,7 +37,6 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
   double progress = 0;
   InAppWebViewController? webController;
   bool _isLoading = true;
-  bool _isDisposing = false;
   bool _isSaving = false;
   String _webError = '';
   final List<String> copies = ["Client", "Office", "Account"];
@@ -95,7 +94,8 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
 
   @override
   void dispose() {
-    webController?.stopLoading();
+    // InAppWebView apna native channel khud dispose karta hai.
+    // Yahan stopLoading() call karna MissingPluginException deta hai.
     webController = null;
     Get.delete<AccountStatementController>();
     super.dispose();
@@ -103,14 +103,7 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        setState(() => _isDisposing = true);
-        await Future.delayed(const Duration(milliseconds: 150));
-        webController?.stopLoading();
-        return true;
-      },
-      child: Scaffold(
+    return Scaffold(
         appBar: AppHeaderBar(
           backgroundColor: AppColors.appColor,
           title: const Text(
@@ -118,15 +111,6 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
             style: TextStyle(color: Colors.white, fontSize: 18),
           ),
           centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () async {
-              setState(() => _isDisposing = true);
-              await Future.delayed(const Duration(milliseconds: 150));
-              webController?.stopLoading();
-              Get.back();
-            },
-          ),
           actions: [
             _isSaving
                 ? const Padding(
@@ -150,16 +134,10 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Positioned.fill(
-                    child: Container(
-                      child: Center(
-                        child: Lottie.asset(
-                          'assets/images/loading.json',
-                          width: 150,
-                          height: 150,
-                        ),
-                      ),
-                    ),
+                  Lottie.asset(
+                    'assets/images/loading.json',
+                    width: 150,
+                    height: 150,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -190,7 +168,6 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
                 Expanded(
                   child: Stack(
                     children: [
-                      if (!_isDisposing)
                       InAppWebView(
                         initialUrlRequest: URLRequest(
                           url: WebUri(reportUrl),
@@ -210,21 +187,25 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
                         ),
                         onWebViewCreated: (controller) {
                           webController = controller;
+                          if (!mounted) return;
                           setState(() {
                             _isLoading = true;
                           });
                         },
                         onProgressChanged: (controller, progressValue) {
+                          if (!mounted) return;
                           setState(() => progress = progressValue / 100);
                         },
                         onLoadStart: (controller, url) async {
                           debugPrint("Account Statement Loading URL: $url");
+                          if (!mounted) return;
                           setState(() {
                             _isLoading = true;
                           });
                         },
                         onLoadStop: (controller, url) async {
                           debugPrint("Account Statement Loaded: $url");
+                          if (!mounted) return;
                           setState(() {
                             _isLoading = false;
                           });
@@ -242,12 +223,12 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
                           );
                         },
                         onReceivedError: (controller, request, error) {
-                          if (request.isForMainFrame ?? true) {
+                          if (mounted && (request.isForMainFrame ?? true)) {
                             setState(() => _webError = error.description);
                           }
                         },
                         onReceivedHttpError: (controller, request, errorResponse) {
-                          if ((request.isForMainFrame ?? false) && (errorResponse.statusCode ?? 0) >= 400) {
+                          if (mounted && (request.isForMainFrame ?? false) && (errorResponse.statusCode ?? 0) >= 400) {
                             setState(() => _webError = 'Server error ${errorResponse.statusCode}');
                           }
                         },
@@ -275,16 +256,10 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Positioned.fill(
-                                  child: Container(
-                                    child: Center(
-                                      child: Lottie.asset(
-                                        'assets/images/loading.json',
-                                        width: 150,
-                                        height: 150,
-                                      ),
-                                    ),
-                                  ),
+                                Lottie.asset(
+                                  'assets/images/loading.json',
+                                  width: 150,
+                                  height: 150,
                                 ),
                                 Text(
                                   'Loading Account Statement...',
@@ -303,7 +278,6 @@ class _AccountStatementScreenState extends State<AccountStatementScreen> {
             ],
           );
         }),
-      ),
     );
   }
 

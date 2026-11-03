@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -25,7 +26,7 @@ class AppDialogs {
       child: Row(
         children: [
           IconButton(
-            onPressed: () => Get.back(),
+            onPressed: () => SafeNav.back(),
             icon: Icon(Icons.close, color: AppColors.textPrimaryColor),
           ),
           Expanded(
@@ -65,12 +66,12 @@ class AppDialogs {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => Get.back(result: false),
+                    onPressed: () => SafeNav.back(result: false),
                     child: Text(cancelText),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: () => Get.back(result: true),
+                    onPressed: () => SafeNav.back(result: true),
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
                     child: Text(confirmText, style: TextStyle(color: AppColors.textPrimaryColor)),
                   ),
@@ -104,7 +105,7 @@ class AppDialogs {
                   final value = options[index];
                   return ListTile(
                     title: Text(value),
-                    onTap: () => Get.back(result: value),
+                    onTap: () => SafeNav.back(result: value),
                   );
                 },
               ),
@@ -112,7 +113,7 @@ class AppDialogs {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: () => Get.back(),
+                onPressed: () => SafeNav.back(),
                 child: Text(cancelText),
               ),
             ),
@@ -157,12 +158,12 @@ class AppDialogs {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => Get.back(),
+                    onPressed: () => SafeNav.back(),
                     child: Text(cancelText),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: () => Get.back(result: controller.text.trim()),
+                    onPressed: () => SafeNav.back(result: controller.text.trim()),
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
                     child: Text(confirmText, style: TextStyle(color: AppColors.textPrimaryColor)),
                   ),
@@ -193,7 +194,7 @@ class AppDialogs {
               child: CircleAvatar(
                 backgroundColor: Colors.black.withOpacity(0.5),
                 child: IconButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => SafeNav.back(),
                   icon: const Icon(Icons.close, color: Colors.red),
                 ),
               ),

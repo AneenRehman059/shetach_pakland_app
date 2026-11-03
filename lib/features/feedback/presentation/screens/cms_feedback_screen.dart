@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -79,7 +80,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     return Scaffold(
       appBar: AppHeaderBar(
         automaticallyImplyLeading: false,
-        //leading: IconButton(onPressed: () => Get.back(),
+        //leading: IconButton(onPressed: () => SafeNav.back(),
         leading: IconButton(onPressed: () => Get.offAllNamed('/main_screen'),
             icon:Icon(Icons.arrow_back_outlined)),
         title: Padding(

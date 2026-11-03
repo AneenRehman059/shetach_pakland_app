@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -213,7 +214,7 @@ class _ReceiptTableViewState extends State<ReceiptTableView> {
                     child: _buildHeaderIconButton(
                       icon: Icons.arrow_back,
                       size: size,
-                      onPressed: () => Get.back(),
+                      onPressed: () => SafeNav.back(),
                     ),
                   ),
                 ),

@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -67,7 +68,7 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
       final allBranches = _socialController.branches;
 
       if (allBranches.isEmpty) {
-        Get.back();
+        SafeNav.back();
         _showNoBranchAvailableDialog();
         return;
       }
@@ -76,13 +77,13 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          Get.back();
+          SafeNav.back();
           Get.snackbar('Permission Denied', 'Location permission is required.');
           return;
         }
       }
       if (permission == LocationPermission.deniedForever) {
-        Get.back();
+        SafeNav.back();
         Get.snackbar('Permission Denied', 'Enable location from app settings.');
         return;
       }
@@ -148,7 +149,7 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
         }
       }
 
-      Get.back();
+      SafeNav.back();
 
       Map<String, dynamic>? nearestBranch;
       double minDistance = double.infinity;
@@ -177,7 +178,7 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
       }
 
     } catch (e) {
-      Get.back();
+      SafeNav.back();
       print('Error in SOS handler: $e');
       Get.snackbar('Error', 'Something went wrong. Please try again.');
     }
@@ -242,7 +243,7 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => SafeNav.back(),
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
@@ -327,7 +328,7 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => SafeNav.back(),
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,
@@ -412,7 +413,7 @@ class _SOSButtonCloneState extends State<SOSButtonClone>
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => SafeNav.back(),
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,

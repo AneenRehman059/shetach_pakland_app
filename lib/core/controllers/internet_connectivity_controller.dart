@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -63,7 +64,7 @@ class InternetConnectivityController extends GetxController {
     if (_isOfflineScreenShown) {
       _isOfflineScreenShown = false;
       if (Get.key.currentState?.canPop() ?? false) {
-        Get.back();
+        SafeNav.back();
       } else {
         Get.offAll(() => MainWrapper(initialIndex: 0));
       }

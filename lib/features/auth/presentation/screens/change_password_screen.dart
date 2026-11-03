@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'package:pakland/core/widgets/responsive_body.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -219,7 +220,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             title: 'Change Password',
             subtitle: 'Keep your account safe with a strong password.',
             heroIcon: Icons.lock_reset_rounded,
-            onBack: () => Get.back(),
+            onBack: () => SafeNav.back(),
             trailing: AppHeaderAction(
               assetIcon: ImageConstant.icHouse,
               tooltip: 'Home',

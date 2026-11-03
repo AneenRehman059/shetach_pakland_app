@@ -1,3 +1,4 @@
+import 'package:pakland/core/utils/safe_nav.dart';
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -189,7 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   padding: EdgeInsets.symmetric(vertical: h * 0.015),
                 ),
-                onPressed: () => Get.back(),
+                onPressed: () => SafeNav.back(),
                 child: const Text("Cancel", style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
@@ -203,7 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   padding: EdgeInsets.symmetric(vertical: h * 0.015),
                 ),
-                onPressed: () async { Get.back(); await loginController.logout(); },
+                onPressed: () async { SafeNav.back(); await loginController.logout(); },
                 child: const Text("Logout", style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
@@ -217,7 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final bool isTV = ScreenHelper.isTV(context);
     return WillPopScope(
-      onWillPop: () async { Get.back(); return false; },
+      onWillPop: () async { SafeNav.back(); return false; },
       child: Scaffold(
         backgroundColor: isTV ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF4F6FB),
         appBar: isTV

@@ -26,6 +26,7 @@ import 'package:pakland/core/services/get_device_info.dart';
 import 'package:pakland/features/sos/data/models/sos_models.dart';
 
 import '../../auth_widget/auth_wdget.dart';
+import '../../auth_widget/login_help_sheet.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -743,15 +744,7 @@ class _LoginScreenState extends State<LoginScreen>
           _buildBottomImageItem(
             imagePath: 'assets/images/help.png',
             label: 'Need Help?',
-            onTap: () {
-              showTopSnackBar(
-                context,
-                title: "Sign In",
-                "You're already on the Sign In screen",
-                Colors.blue.withOpacity(0.7),
-                icon: Icons.info,
-              );
-            },
+            onTap: () => LoginHelpSheet.show(context),
           ),
           _buildBottomImageItem(
             imagePath: 'assets/images/guest.png',
