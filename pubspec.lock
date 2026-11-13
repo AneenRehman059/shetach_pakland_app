@@ -672,6 +672,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  foundation:
+    dependency: "direct main"
+    description:
+      name: foundation
+      sha256: "6f1fda07bd2a422145724b0f94ee68fabac95fabff982d5f334fe1a38cbed6a7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.5"
   gallery_saver_plus:
     dependency: "direct main"
     description:
@@ -744,6 +752,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.5"
+  gestures:
+    dependency: "direct main"
+    description:
+      name: gestures
+      sha256: "6e75e4ba1ad033a8be9a682974dfe6a2be96ab07b4aa8335ed37bbecb75b7770"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   get:
     dependency: "direct main"
     description:
@@ -1814,7 +1830,7 @@ packages:
     source: hosted
     version: "4.13.0"
   webview_flutter_android:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: webview_flutter_android
       sha256: "9a25f6b4313978ba1c2cda03a242eea17848174912cfb4d2d8ee84a556f248e3"
@@ -1830,7 +1846,7 @@ packages:
     source: hosted
     version: "2.14.0"
   webview_flutter_wkwebview:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: webview_flutter_wkwebview
       sha256: fb46db8216131a3e55bcf44040ca808423539bc6732e7ed34fb6d8044e3d512f

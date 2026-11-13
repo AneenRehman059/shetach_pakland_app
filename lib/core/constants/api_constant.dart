@@ -92,8 +92,7 @@ class ApiConstants {
   static const String respondToSOSUrl = "$cmsBase/RespondToSOS";
   static const String testFCMNotificationUrl = "$cmsBase/TestFCMNotification";
   static const String testFCMConnectionUrl = "$cmsBase/TestFCMConnection";
-
-
+  static const String getMapUrl = "$baseUrl/api/MobileApi/GetDigitalMap";
 
 
   static String buildImageUrl(String? imagePath) {

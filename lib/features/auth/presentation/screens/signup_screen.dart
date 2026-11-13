@@ -34,6 +34,10 @@ class _SignUpNScreenState extends State<SignUpNScreen>
   final lastNameController = TextEditingController();
   final dobController = TextEditingController();
 
+  // Full international number incl. country code, e.g. +923001234567
+  String _fullPhoneNumber = '';
+  bool _isPhoneValid = false;
+
   final _signUpController = Get.put(SignUpController());
   final _communicationPolicyController = Get.put(CommunicationPolicyController());
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -187,8 +191,11 @@ class _SignUpNScreenState extends State<SignUpNScreen>
       isValid = false;
     }
 
-    if (mobileNoController.text.isEmpty) {
+    if (mobileNoController.text.isEmpty || _fullPhoneNumber.isEmpty) {
       _fieldErrors['phone'] = 'Please enter your phone number';
+      isValid = false;
+    } else if (!_isPhoneValid) {
+      _fieldErrors['phone'] = 'Please enter a valid phone number';
       isValid = false;
     }
 
@@ -228,10 +235,16 @@ class _SignUpNScreenState extends State<SignUpNScreen>
   Future<void> _submitForm() async {
     if (_validateFields()) {
       Map<String, String> deviceInfo = await DeviceInfoService.getDeviceInfo();
+
+      // Remove the leading "+" so the number is sent as e.g. "923014230204"
+      final String formattedMobileNo = _fullPhoneNumber.startsWith('+')
+          ? _fullPhoneNumber.substring(1)
+          : _fullPhoneNumber;
+
       final signUpData = SignUpRequestModel(
         cnic: cnicController.text,
         password: passwordController.text,
-        mobileNo: mobileNoController.text,
+        mobileNo: formattedMobileNo,
         emailAddress: emailController.text,
         address: "lahore",
         userName: userNameController.text,
@@ -468,15 +481,23 @@ class _SignUpNScreenState extends State<SignUpNScreen>
                               onChanged: (_) => _clearError('cnic'),
                             ),
                             const SizedBox(height: gap),
-                            AuthTextField(
+                            AuthPhoneField(
                               controller: mobileNoController,
-                              keyboardType: TextInputType.phone,
-                              textInputAction: TextInputAction.next,
                               hintText: 'Mobile number',
-                              assetIcon: ImageConstant.authPhone,
-                              maxLength: 15,
+                              initialCountryCode: 'PK',
                               errorText: _fieldErrors['phone'],
-                              onChanged: (_) => _clearError('phone'),
+                              onChanged: (completeNumber, valid, isEmpty) {
+                                setState(() {
+                                  _fullPhoneNumber = completeNumber;
+                                  _isPhoneValid = valid;
+                                  _fieldErrors['phone'] = (isEmpty || valid)
+                                      ? ''
+                                      : 'Please enter a valid phone number';
+                                });
+                              },
+                              onCountryChanged: () {
+                                setState(() => _isPhoneValid = false);
+                              },
                             ),
                             const SizedBox(height: gap),
                             AuthTextField(

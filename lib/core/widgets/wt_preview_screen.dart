@@ -1,4 +1,3 @@
-import 'package:pakland/core/widgets/loader.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -523,7 +522,10 @@ class _WhatsAppMultiFilePreviewState extends State<WhatsAppMultiFilePreview> {
                           ? Container(
                         width: 30,
                         height: 30,
-                        child: AppLoader(),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                           : Container(
                         width: 30,

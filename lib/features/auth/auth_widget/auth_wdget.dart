@@ -1,6 +1,7 @@
 import 'package:pakland/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:pakland/core/theme/colors.dart';
 
 import '../../../core/constants/image_constant.dart';
@@ -298,6 +299,123 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 Expanded(
                   child: Text(
                     widget.errorText!,
+                    style: TextStyle(color: errorColor, fontSize: 12, height: 1.25),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Phone field with a country-code picker (flag + dial code).
+/// Styled to match [AuthTextField]. Reports the full international number
+/// (e.g. "+923001234567") through [onChanged].
+class AuthPhoneField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final String? errorText;
+  final String initialCountryCode;
+
+  /// completeNumber (with "+" and country code), isValid, isEmpty
+  final void Function(String completeNumber, bool isValid, bool isEmpty)? onChanged;
+  final VoidCallback? onCountryChanged;
+
+  const AuthPhoneField({
+    super.key,
+    required this.controller,
+    this.hintText = 'Mobile number',
+    this.errorText,
+    this.initialCountryCode = 'PK',
+    this.onChanged,
+    this.onCountryChanged,
+  });
+
+  OutlineInputBorder _border(Color color, [double width = 1]) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(color: color, width: width),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasError = errorText != null && errorText!.isNotEmpty;
+    final Color errorColor = AppColors.softCorelRedColor;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Theme(
+          data: Theme.of(context).copyWith(
+            textSelectionTheme: const TextSelectionThemeData(
+              cursorColor: Colors.white,
+            ),
+          ),
+          child: IconTheme(
+            // makes the dropdown arrow visible on the dark field
+            data: const IconThemeData(color: Colors.white70),
+            child: IntlPhoneField(
+              controller: controller,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+              // error is shown below the field (same as AuthTextField)
+              autovalidateMode: AutovalidateMode.disabled,
+              decoration: InputDecoration(
+                isDense: true,
+                counterText: '',
+                filled: true,
+                fillColor: Colors.black.withOpacity(0.22),
+                hintText: hintText,
+                hintStyle: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+                contentPadding:
+                const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+                border: _border(Colors.white.withOpacity(0.2)),
+                enabledBorder:
+                _border(hasError ? errorColor : Colors.white.withOpacity(0.2)),
+                focusedBorder: _border(hasError ? errorColor : Colors.white, 1.5),
+              ),
+              dropdownTextStyle: const TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+              ),
+              flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 4),
+              dropdownIconPosition: IconPosition.trailing,
+              showDropdownIcon: true,
+              initialCountryCode: initialCountryCode,
+              disableLengthCheck: false,
+              onChanged: (phone) {
+                final bool isEmpty = phone.number.isEmpty;
+                final bool valid = !isEmpty && phone.isValidNumber();
+                onChanged?.call(phone.completeNumber, valid, isEmpty);
+              },
+              onCountryChanged: (country) => onCountryChanged?.call(),
+            ),
+          ),
+        ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(left: 6, top: 6, right: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(Icons.error_outline, size: 14, color: errorColor),
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    errorText!,
                     style: TextStyle(color: errorColor, fontSize: 12, height: 1.25),
                   ),
                 ),

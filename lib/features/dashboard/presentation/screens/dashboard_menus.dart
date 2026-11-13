@@ -25,6 +25,8 @@ import 'package:pakland/features/billing/presentation/screens/check_form_number_
 import 'package:pakland/features/billing/presentation/screens/payment_plans_screen.dart';
 import 'package:pakland/features/auth/presentation/screens/login_screen.dart';
 
+import '../../../digital_map/digital_map_logs.dart';
+
 class DashboardMenus extends StatefulWidget {
   const DashboardMenus({super.key});
 
@@ -67,8 +69,8 @@ class _DashboardMenusState extends State<DashboardMenus> {
         return PrivacyPolicyScreen();
       case 'form validation':
         return VerifyFormNumberScreen();
-      case 'digital_map':
-        return VerifyFormNumberScreen();
+      case 'digitalmap':
+        return DigitalMapScreen();
       default:
         return Container();
     }

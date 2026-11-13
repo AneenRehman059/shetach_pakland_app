@@ -68,6 +68,10 @@ dependencies:
   gallery_saver_plus: ^3.2.9
   intl_phone_field: ^3.2.0
   lottie: ^3.3.3
+  webview_flutter_android: ^4.10.1
+  webview_flutter_wkwebview: ^3.13.0
+  gestures: ^1.0.0
+  foundation: ^0.0.5
 
 dev_dependencies:
   flutter_launcher_icons: "^0.14.4"
