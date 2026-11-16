@@ -81,7 +81,6 @@ class ApiConstants {
   static const String getTicketsByAminIdUrl = "$cmsBase/GetTicketsByAdminId";
   static const String getBranchesByUserId = "$cmsBase/GetBranchesByUserId";
 
-
   static const String sendSOSNotificationUrl = "$cmsBase/SendSOSNotification";
   static const String updateFCMTokenUrl = "$cmsBase/UpdateFCMToken";
   static const String getSOSTicketUrl = "$cmsBase/GetSOSTicket";
