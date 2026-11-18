@@ -32,6 +32,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   final FocusNode _phoneFocusNode = FocusNode();
   final FocusNode _emailFocusNode = FocusNode();
 
+  // Stable key: keyboard khulne par intro/privacy hide hone se form card ki
+  // position badalti hai. Is key ki wajah se Flutter form ko recreate nahi
+  // karta, focus bacha rehta hai aur keyboard band nahi hota.
+  final GlobalKey _formCardKey = GlobalKey(debugLabel: 'helpFormCard');
+
   Future<void> _handleSend() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
@@ -78,6 +83,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       phone: phone,
       message: message,
     );
+
+    if (!mounted) return;
 
     if (success) {
       _nameController.clear();
@@ -141,27 +148,28 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   }
 
   BoxDecoration _cardDecoration() => BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _border),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.appColor.withOpacity(0.07),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      );
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(24),
+    border: Border.all(color: _border),
+    boxShadow: [
+      BoxShadow(
+        color: AppColors.appColor.withOpacity(0.07),
+        blurRadius: 20,
+        offset: const Offset(0, 8),
+      ),
+    ],
+  );
 
   Widget _buildPortraitLayout(BuildContext context) {
-    final bool keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+    final bool keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return LayoutBuilder(
       builder: (context, c) {
         const double minContent = 540;
         final bool showIntro = !keyboardOpen && c.maxHeight >= 640;
         final bool showPrivacy = !keyboardOpen && c.maxHeight >= 700;
-        final double contentH = c.maxHeight > minContent ? c.maxHeight : minContent;
+        final double contentH =
+        c.maxHeight > minContent ? c.maxHeight : minContent;
         final bool canScroll = c.maxHeight < minContent;
 
         return SingleChildScrollView(
@@ -182,7 +190,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                       _buildIntroCard(),
                       const SizedBox(height: 12),
                     ],
-                    Expanded(child: _buildFormCard()),
+                    // KEY: position badalne par bhi form ki state/focus bachi rahegi
+                    Expanded(
+                      key: _formCardKey,
+                      child: _buildFormCard(),
+                    ),
                     if (showPrivacy) ...[
                       const SizedBox(height: 10),
                       _buildPrivacyNote(),
@@ -225,7 +237,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 ),
               ],
             ),
-            child: AssetIcon(ImageConstant.icHeadset, color: Colors.white, size: 24),
+            child: AssetIcon(ImageConstant.icHeadset,
+                color: Colors.white, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -234,7 +247,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               children: [
                 const Text(
                   'How can we help you?',
-                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: _ink),
+                  style: TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w800,
+                      color: _ink),
                 ),
                 const SizedBox(height: 2),
                 Row(
@@ -277,7 +293,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   color: AppColors.appColor.withOpacity(0.10),
                   borderRadius: BorderRadius.circular(11),
                 ),
-                child: AssetIcon(ImageConstant.icMessage, color: AppColors.appColor, size: 19),
+                child: AssetIcon(ImageConstant.icMessage,
+                    color: AppColors.appColor, size: 19),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -286,11 +303,15 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   children: [
                     Text(
                       'Send us a message',
-                      style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: _ink),
+                      style: TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w800,
+                          color: _ink),
                     ),
                     Text(
                       'Fields marked * are required',
-                      style: TextStyle(fontSize: 11.5, color: Color(0xFF8A94A3)),
+                      style:
+                      TextStyle(fontSize: 11.5, color: Color(0xFF8A94A3)),
                     ),
                   ],
                 ),
@@ -387,21 +408,22 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               child: loading
                   ? const AppLoader(size: 22)
                   : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AssetIcon(ImageConstant.icSend, color: Colors.white, size: 19),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'SEND MESSAGE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ],
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AssetIcon(ImageConstant.icSend,
+                      color: Colors.white, size: 19),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'SEND MESSAGE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
                     ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -415,12 +437,14 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AssetIcon(ImageConstant.icShield, size: 16, color: Colors.grey.shade600),
+          AssetIcon(ImageConstant.icShield,
+              size: 16, color: Colors.grey.shade600),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Your details are kept private and are only used to respond to your request.',
-              style: TextStyle(fontSize: 12, height: 1.4, color: Colors.grey.shade600),
+              style: TextStyle(
+                  fontSize: 12, height: 1.4, color: Colors.grey.shade600),
             ),
           ),
         ],
@@ -499,6 +523,7 @@ class _PolishedTextFieldState extends State<_PolishedTextField> {
   }
 
   void _handleFocusChange() {
+    if (!mounted) return;
     setState(() => _isFocused = _focusNode.hasFocus);
   }
 
@@ -527,19 +552,19 @@ class _PolishedTextFieldState extends State<_PolishedTextField> {
         ),
         boxShadow: _isFocused
             ? [
-                BoxShadow(
-                  color: accent.withOpacity(0.16),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
+          BoxShadow(
+            color: accent.withOpacity(0.16),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ]
             : [],
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           crossAxisAlignment:
-              expands ? CrossAxisAlignment.stretch : CrossAxisAlignment.center,
+          expands ? CrossAxisAlignment.stretch : CrossAxisAlignment.center,
           children: [
             Padding(
               padding: EdgeInsets.only(top: expands ? 10 : 0),
@@ -572,7 +597,7 @@ class _PolishedTextFieldState extends State<_PolishedTextField> {
                 minLines: expands ? null : widget.minLines,
                 expands: expands,
                 textAlignVertical:
-                    expands ? TextAlignVertical.top : TextAlignVertical.center,
+                expands ? TextAlignVertical.top : TextAlignVertical.center,
                 style: const TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w600,

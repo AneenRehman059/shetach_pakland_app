@@ -52,6 +52,8 @@ class _DashboardMenusState extends State<DashboardMenus> {
         return ClientListScreen();
       case 'booking':
         return BookingScreen();
+      case 'digitalmap':
+        return DigitalMapScreen();
       case 'payment plan':
         return PaymentPlanScreen();
       case 'social':
@@ -69,8 +71,6 @@ class _DashboardMenusState extends State<DashboardMenus> {
         return PrivacyPolicyScreen();
       case 'form validation':
         return VerifyFormNumberScreen();
-      case 'digitalmap':
-        return DigitalMapScreen();
       default:
         return Container();
     }
@@ -103,22 +103,27 @@ class _DashboardMenusState extends State<DashboardMenus> {
   }
 
   void _handleScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.minScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.minScrollExtent) {
       setState(() => _showDownArrow = true);
-    } else if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    } else if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       setState(() => _showDownArrow = false);
     }
   }
 
   void _scrollTo(bool toBottom) {
     _scrollController.animateTo(
-      toBottom ? _scrollController.position.maxScrollExtent : _scrollController.position.minScrollExtent,
+      toBottom
+          ? _scrollController.position.maxScrollExtent
+          : _scrollController.position.minScrollExtent,
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
   }
 
-  void _handleNavigationWithLoginCheck(BuildContext context, Widget screen, {bool requiresLogin = false}) async {
+  void _handleNavigationWithLoginCheck(BuildContext context, Widget screen,
+      {bool requiresLogin = false}) async {
     if (requiresLogin) {
       final isLoggedIn = await LoginCheckUtil.isUserLoggedIn();
 
@@ -168,7 +173,7 @@ class _DashboardMenusState extends State<DashboardMenus> {
 
         if (companyController.isLoading.value && tabs.isEmpty) {
           return Center(
-            child: AppLoader(),
+            child: CircularProgressIndicator(color: AppColors.appColor),
           );
         }
 
@@ -195,7 +200,8 @@ class _DashboardMenusState extends State<DashboardMenus> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(left: 4, bottom: 12, top: 4),
+                      padding:
+                      const EdgeInsets.only(left: 4, bottom: 12, top: 4),
                       child: Row(
                         children: [
                           Container(
@@ -221,7 +227,7 @@ class _DashboardMenusState extends State<DashboardMenus> {
                     ),
                     GridView.builder(
                       shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
+                      physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: isTablet ? 3 : 2,
                         crossAxisSpacing: screenSize.width * 0.04,
@@ -231,9 +237,9 @@ class _DashboardMenusState extends State<DashboardMenus> {
                       itemCount: tabs.length,
                       itemBuilder: (context, index) {
                         final tab = tabs[index];
-                        final tabName = tab['home_menu_en'] ?? tab['home_menu_en'] ?? 'Unknown';
+                        final tabName =
+                            tab['home_menu_en']?.toString() ?? 'Unknown';
                         final iconPath = tab['icon']?.toString() ?? '';
-                        final isActive = tab['isActive'] ?? true;
 
                         return _buildMenuItem(
                           context,
@@ -281,7 +287,9 @@ class _DashboardMenusState extends State<DashboardMenus> {
                         return ScaleTransition(scale: animation, child: child);
                       },
                       child: Icon(
-                        _showDownArrow ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                        _showDownArrow
+                            ? Icons.keyboard_arrow_down
+                            : Icons.keyboard_arrow_up,
                         key: ValueKey<bool>(_showDownArrow),
                         color: Colors.white,
                         size: screenSize.width * 0.06,
@@ -297,19 +305,29 @@ class _DashboardMenusState extends State<DashboardMenus> {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, String iconPath, String text, {VoidCallback? onTap}) {
+  /// Splits the label into at most two lines on word boundaries, so a word
+  /// is never broken in the middle (e.g. "Developme / nt").
+  List<String> _splitLabel(String text) {
+    final words = text.trim().split(RegExp(r'\s+'));
+    if (words.length <= 2) return words;
+    return [words.first, words.sublist(1).join(' ')];
+  }
+
+  Widget _buildMenuItem(BuildContext context, String iconPath, String text,
+      {VoidCallback? onTap}) {
     final screenSize = MediaQuery.of(context).size;
     String fullImageUrl = companyController.getFullImageUrl(iconPath);
     final iconColor = AppColors.appColor;
+    final iconBox = screenSize.width * 0.10;
+    final lines = _splitLabel(text);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
             color: Colors.white,
@@ -326,8 +344,8 @@ class _DashboardMenusState extends State<DashboardMenus> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: screenSize.width * 0.12,
-                height: screenSize.width * 0.12,
+                width: iconBox,
+                height: iconBox,
                 alignment: Alignment.center,
                 child: fullImageUrl.isNotEmpty
                     ? ClipRRect(
@@ -335,8 +353,8 @@ class _DashboardMenusState extends State<DashboardMenus> {
                   child: Image.network(
                     fullImageUrl,
                     fit: BoxFit.contain,
-                    width: screenSize.width * 0.3,
-                    height: screenSize.width * 0.3,
+                    width: iconBox,
+                    height: iconBox,
                     errorBuilder: (c, e, s) => Icon(
                       Icons.image_not_supported,
                       size: screenSize.width * 0.06,
@@ -347,25 +365,41 @@ class _DashboardMenusState extends State<DashboardMenus> {
                       return SizedBox(
                         width: screenSize.width * 0.05,
                         height: screenSize.width * 0.05,
-                        child: AppLoader(),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: iconColor,
+                        ),
                       );
                     },
                   ),
                 )
-                    : Icon(Icons.image_not_supported, size: screenSize.width * 0.06, color: iconColor),
+                    : Icon(Icons.image_not_supported,
+                    size: screenSize.width * 0.06, color: iconColor),
               ),
-              SizedBox(width: screenSize.width * 0.03),
+              SizedBox(width: screenSize.width * 0.02),
               Expanded(
-                child: Text(
-                  text,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: screenSize.width * 0.033,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1B2733),
-                    height: 1.2,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: lines
+                      .map(
+                        (line) => FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        line,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontSize: screenSize.width * 0.033,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1B2733),
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  )
+                      .toList(),
                 ),
               ),
             ],

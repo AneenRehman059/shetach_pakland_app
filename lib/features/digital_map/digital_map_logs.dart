@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,9 @@ import 'package:pakland/features/digital_map/filter/my_filter_sheet_map.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+
+import '../../core/theme/colors.dart';
+import '../booking/presentation/screens/booking_screen.dart';
 
 class DigitalMapScreen extends StatefulWidget {
   const DigitalMapScreen({super.key});
@@ -43,9 +48,8 @@ class _DigitalMapScreen extends State<DigitalMapScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Defer until the first frame so the context is fully ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) openFilterSheet();
+      openFilterSheet();
     });
   }
 
@@ -58,6 +62,37 @@ class _DigitalMapScreen extends State<DigitalMapScreen>
   @override
   void didChangeMetrics() {
     super.didChangeMetrics();
+  }
+  Future<void> _onInterested(String raw) async {
+    if (!mounted) return;
+    try {
+      final Map<String, dynamic> data =
+      jsonDecode(raw) as Map<String, dynamic>;
+
+      String clean(dynamic v) => (v ?? '').toString().trim();
+
+      final String plotSize = clean(data['plotSize']);
+      final String plotNature = clean(data['plotNature']);
+      final String plotType = clean(data['plotType']);
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => BookingScreen(
+            initialBranchCode: _branchCode,
+            initialProject: _projectName,
+            initialBlockNo: _blockNo,
+            initialBlock: _blockName,
+            initialPlotSize: plotSize.isEmpty ? null : plotSize,
+            initialPlotNature: plotNature.isEmpty ? null : plotNature,
+            initialPlotType: plotType.isEmpty ? null : plotType,
+          ),
+        ),
+      );
+      if (!mounted) return;
+      await _controller?.runJavaScript(JavaScriptCode.resetCode);
+    } catch (e) {
+      debugPrint('[DigitalMap] _onInterested error: $e');
+    }
   }
 
   Future<void> openFilterSheet() async {
@@ -137,6 +172,12 @@ class _DigitalMapScreen extends State<DigitalMapScreen>
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(const Color(0xFF003331))
         ..setUserAgent(JavaScriptCode.desktopUserAgent)
+        ..addJavaScriptChannel(
+          'InterestedChannel',
+          onMessageReceived: (JavaScriptMessage message) {
+            _onInterested(message.message);
+          },
+        )
         ..setNavigationDelegate(
           NavigationDelegate(
             onPageStarted: (_) {
@@ -235,7 +276,7 @@ class _DigitalMapScreen extends State<DigitalMapScreen>
                         icon: const Icon(Icons.filter_list_rounded),
                         label: const Text('Show Map'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3993AD),
+                          backgroundColor: AppColors.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -252,7 +293,8 @@ class _DigitalMapScreen extends State<DigitalMapScreen>
               ),
             if (_controller != null)
               Positioned.fill(
-                child: effectiveTurns == 0
+                child:
+                effectiveTurns == 0
                     ? WebViewWidget(
                   controller: _controller!,
                   gestureRecognizers: {
@@ -271,50 +313,6 @@ class _DigitalMapScreen extends State<DigitalMapScreen>
                               () => EagerGestureRecognizer(),
                         ),
                       },
-                    ),
-                  ),
-                ),
-              ),
-            // Filter summary bar, drawn above the WebView so taps reach it.
-            if (_hasFilter && _controller != null)
-              Positioned(
-                top: 8,
-                left: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: openFilterSheet,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.55),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.filter_list_rounded,
-                          color: Colors.white70,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            [_projectName, _blockName]
-                                .where((e) => e != null && e.trim().isNotEmpty)
-                                .join('  →  '),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        const Icon(Icons.edit, color: Colors.white54, size: 16),
-                      ],
                     ),
                   ),
                 ),
@@ -369,7 +367,7 @@ class _DigitalMapScreen extends State<DigitalMapScreen>
                 left: 20,
                 child: FloatingActionButton(
                   mini: true,
-                  backgroundColor: const Color(0xFF3993AD),
+                  backgroundColor: AppColors.primaryColor,
                   onPressed: () {
                     setState(() {
                       _horizontalQuarterTurns =

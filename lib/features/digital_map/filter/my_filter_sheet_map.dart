@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pakland/features/booking/data/repositories/booking_repo.dart';
 
+import '../../../core/theme/colors.dart';
+
 class MyFilterSheetMapInventroy extends StatefulWidget {
   final String? filterSelectedBranchCode;
   final String? filterSelectedBlockNo;
@@ -28,8 +30,8 @@ class _MyFilterSheetMapInventroyState extends State<MyFilterSheetMapInventroy> {
   bool _isLoadingBlocks = false;
 
   bool get _hasSelection =>
-      _tmpBranch != null &&
-          (_tmpBranch!['brn_code']?.toString().isNotEmpty ?? false);
+      _tmpBlock != null &&
+          (_tmpBlock!['block_name']?.toString().isNotEmpty ?? false);
 
   @override
   void initState() {
@@ -129,14 +131,16 @@ class _MyFilterSheetMapInventroyState extends State<MyFilterSheetMapInventroy> {
       icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
       dropdownColor: Colors.white,
       style: const TextStyle(color: Colors.black87, fontSize: 14),
-      items: _branches.map((branch) {
+      items:
+      _branches.map((branch) {
         final name = branch['brn_name']?.toString().trim() ?? '';
         return DropdownMenuItem<String>(
           value: name,
           child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
         );
       }).toList(),
-      onChanged: _isLoadingBranches
+      onChanged:
+      _isLoadingBranches
           ? null
           : (value) {
         setState(() {
@@ -168,14 +172,16 @@ class _MyFilterSheetMapInventroyState extends State<MyFilterSheetMapInventroy> {
       icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
       dropdownColor: Colors.white,
       style: const TextStyle(color: Colors.black87, fontSize: 14),
-      items: _blocks.map((block) {
+      items:
+      _blocks.map((block) {
         final name = block['block_name']?.toString().trim() ?? '';
         return DropdownMenuItem<String>(
           value: name,
           child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
         );
       }).toList(),
-      onChanged: (_tmpBranch == null || _isLoadingBlocks)
+      onChanged:
+      (_tmpBranch == null || _isLoadingBlocks)
           ? null
           : (value) {
         setState(() {
@@ -270,24 +276,38 @@ class _MyFilterSheetMapInventroyState extends State<MyFilterSheetMapInventroy> {
                 ),
               ),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                _hasSelection ? Colors.blue.shade400 : Colors.grey.shade300,
+            Divider(color: Colors.grey.shade300, thickness: 1, height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                  _hasSelection
+                      ? AppColors.primaryColor
+                      : Colors.grey.shade300,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed:
+                _hasSelection
+                    ? () {
+                  Navigator.of(context).pop(<String, dynamic>{
+                    'branchCode': _tmpBranch?['brn_code']?.toString(),
+                    'blockNo':
+                    _tmpBlock?['block_code']?.toString() ??
+                        _tmpBlock?['block_no']?.toString(),
+                    'projectName': _tmpBranch?['brn_name']?.toString(),
+                    'blockName': _tmpBlock?['block_name']?.toString(),
+                  });
+                }
+                    : null,
+                child: const Text(
+                  'Show Map',
+                  style: TextStyle(fontSize: 16,color: Colors.white, fontWeight: FontWeight.w600),
+                ),
               ),
-              onPressed: _hasSelection
-                  ? () {
-                // FIX: use Navigator, not Get.back
-                Navigator.of(context).pop(<String, dynamic>{
-                  'branchCode': _tmpBranch?['brn_code']?.toString(),
-                  'blockNo': _tmpBlock?['block_code']?.toString() ??
-                      _tmpBlock?['block_no']?.toString(),
-                  'projectName': _tmpBranch?['brn_name']?.toString(),
-                  'blockName': _tmpBlock?['block_name']?.toString(),
-                });
-              }
-                  : null,
-              child: const Text('Show Map'),
             ),
           ],
         ),

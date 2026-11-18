@@ -2,13 +2,22 @@ class JavaScriptCode {
   static var desktopUserAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+  static const String resetCode =
+      'window.__resetMapUI && window.__resetMapUI();';
+
   static var javascriptCode = r'''
 (function () {
   if (window.__mapScreenInitDone) return;
   window.__mapScreenInitDone = true;
 
+  /* The site's ".row" has margin-left:-15px, which shifts the map image.
+     Plot numbers are positioned from the container origin, so we keep the
+     same offset on the image. Change this number only if the plot numbers
+     are still off horizontally (negative = image moves left). */
+  var IMG_OFFSET_X = -15;
+
   /* ================================================================
-     1. FORCE MOBILE VIEWPORT (Disables native zoom, we handle custom zoom)
+     1. FORCE MOBILE VIEWPORT
      ================================================================ */
   var meta = document.querySelector('meta[name="viewport"]');
   if (!meta) {
@@ -19,7 +28,7 @@ class JavaScriptCode {
   meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
 
   /* ================================================================
-     2. CSS INJECTION (Header scaling & fixed layouts)
+     2. CSS INJECTION
      ================================================================ */
   var customStyle = document.createElement('style');
   customStyle.innerHTML = `
@@ -28,7 +37,7 @@ class JavaScriptCode {
       height: 100% !important;
       margin: 0 !important;
       padding: 0 !important;
-      overflow: hidden !important; /* Prevent native scroll */
+      overflow: hidden !important;
       background-color: #003331 !important;
       touch-action: none !important;
     }
@@ -45,13 +54,12 @@ class JavaScriptCode {
       transform-origin: top left !important;
     }
 
-    /* Force all header controls into 1 single line with a minimum width */
     .filter-controls-container {
       display: flex !important;
-      flex-wrap: nowrap !important; 
+      flex-wrap: nowrap !important;
       align-items: flex-end !important;
       gap: 10px !important;
-      min-width: 1100px !important; /* Forces desktop width, JS will scale it down */
+      min-width: 1100px !important;
     }
 
     .filter-box { flex: 1 !important; }
@@ -62,12 +70,12 @@ class JavaScriptCode {
       display: flex !important;
       align-items: flex-end !important;
       gap: 8px !important;
-      flex: 0 0 350px !important; /* Fixed width for Search + Retrieve button */
+      flex: 0 0 350px !important;
     }
 
     .search-input-field { flex: 1 !important; }
     .search-input-field input { height: 32px !important; width: 100% !important; font-size: 13px !important; }
-    
+
     .btn-retrieve-style {
       background-color: #3993ad !important; color: #fff !important; font-weight: bold !important;
       height: 32px !important; padding: 0 16px !important; border-radius: 4px !important;
@@ -85,7 +93,7 @@ class JavaScriptCode {
       z-index: 10000 !important;
       border-left: 1px solid rgba(255,255,255,0.2) !important;
     }
-    
+
     #sidebarappend {
       overflow-y: auto !important;
       overflow-x: hidden !important;
@@ -94,12 +102,13 @@ class JavaScriptCode {
     }
 
     #sidebarappend a {
-      display: block !important; color: #fff !important; font-size: 12px !important; 
+      display: block !important; color: #fff !important; font-size: 12px !important;
       font-weight: bold !important; padding: 5px 0 !important; text-decoration: none !important;
       border-bottom: 1px solid rgba(255,255,255,0.1) !important;
     }
 
-    /* ── MAP CANVAS ── */
+    /* ── MAP CANVAS ──
+       Container origin (0,0) is the origin for all plot margins from the API. */
     #PlotsAppendid {
       position: absolute !important;
       top: 0 !important; left: 0 !important;
@@ -108,10 +117,154 @@ class JavaScriptCode {
       will-change: transform !important;
       z-index: 1 !important;
     }
-    #PlotsAppendid img { pointer-events: none !important; }
+    /* restore the image offset the original page had (.row negative margin) */
+    #PlotsAppendid > div:first-child {
+      margin-left: ${IMG_OFFSET_X}px !important;
+    }
+    #PlotsAppendid img { pointer-events: none !important; max-width: none !important; }
     .modal { z-index: 20000 !important; }
+
+    /* ── PLOT INFO MODAL: compact size ── */
+    #exampleModal .modal-dialog {
+      width: 420px !important;
+      max-width: 94vw !important;
+      margin: 6px auto !important;
+    }
+    #exampleModal .modal-content {
+      max-height: calc(100vh - 12px) !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      border-radius: 10px !important;
+    }
+    #exampleModal, #exampleModal * { touch-action: pan-y !important; }
+
+    #exampleModal .modal-header {
+      padding: 6px 12px !important;
+      min-height: 0 !important;
+    }
+    #exampleModal .modal-header .modal-title {
+      font-size: 14px !important;
+      line-height: 1.2 !important;
+      margin: 0 !important;
+    }
+    #exampleModal .modal-header .close { margin-top: -2px !important; font-size: 22px !important; }
+
+    #exampleModal .modal-body {
+      padding: 8px 10px !important;
+    }
+    #exampleModal .modal-body h4 {
+      font-size: 14px !important;
+      margin: 0 0 6px 0 !important;
+    }
+    #exampleModal .modal-body .row {
+      margin-left: -4px !important;
+      margin-right: -4px !important;
+    }
+    #exampleModal .modal-body .row > [class*="col-md-"] {
+      float: left !important;
+      width: 33.3333% !important;
+      max-width: 33.3333% !important;
+      flex: 0 0 33.3333% !important;
+      padding: 0 4px !important;
+      margin-bottom: 4px !important;
+    }
+    #exampleModal label {
+      font-size: 11px !important;
+      margin-bottom: 1px !important;
+    }
+    #exampleModal input.form-control {
+      height: 26px !important;
+      font-size: 12px !important;
+      padding: 2px 6px !important;
+    }
+
+    /* hide Reserve / Allocation / Go To Live */
+    #exampleModal .StatusAdd,
+    #exampleModal #goToLive,
+    #exampleModal .info,
+    #exampleModal .info2 {
+      display: none !important;
+    }
+
+    #interestedWrap {
+      padding: 8px 12px 12px 12px;
+      background: #9c3bd9;
+      text-align: center;
+    }
+    #interestedBtn {
+      width: 100%;
+      height: 38px;
+      border: none;
+      border-radius: 8px;
+      background: #3993ad;
+      color: #fff;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   `;
   document.head.appendChild(customStyle);
+
+  /* ================================================================
+     2b. MODAL HELPERS + "INTERESTED" BUTTON
+     ================================================================ */
+  function val(id) {
+    var el = document.getElementById(id);
+    return el ? (el.value || '').toString().trim() : '';
+  }
+
+  // Force-close the plot modal immediately (no animation needed), so it can
+  // never stay on top of the map and block touches.
+  function closePlotModal() {
+    if (window.jQuery) { try { window.jQuery('#exampleModal').modal('hide'); } catch (_) {} }
+    var m = document.getElementById('exampleModal');
+    if (m) {
+      m.classList.remove('in');
+      m.style.display = 'none';
+      m.setAttribute('aria-hidden', 'true');
+    }
+    document.body.classList.remove('modal-open');
+    document.body.style.paddingRight = '';
+    var backs = document.querySelectorAll('.modal-backdrop');
+    for (var i = 0; i < backs.length; i++) backs[i].parentNode.removeChild(backs[i]);
+  }
+
+  function addInterestedButton() {
+    if (document.getElementById('interestedBtn')) return;
+    var content = document.querySelector('#exampleModal .modal-content');
+    if (!content) { setTimeout(addInterestedButton, 500); return; }
+
+    var wrap = document.createElement('div');
+    wrap.id = 'interestedWrap';
+    wrap.innerHTML = '<button type="button" id="interestedBtn">Interested</button>';
+    content.appendChild(wrap);
+
+    document.getElementById('interestedBtn').addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      var payload = {
+        branchCode: val('brncode'),
+        blockNo: val('blockno'),
+        plotNo: val('plotno'),
+        plotSize: val('PlotSize'),
+        plotNature: val('PlotNature'),
+        plotType: val('Type')
+      };
+
+      closePlotModal();
+
+      try {
+        if (window.InterestedChannel) {
+          window.InterestedChannel.postMessage(JSON.stringify(payload));
+        }
+      } catch (err) {}
+
+      // second cleanup in case bootstrap finished its own hide late
+      setTimeout(closePlotModal, 400);
+    });
+  }
+  addInterestedButton();
 
   /* ================================================================
      3. DYNAMIC LAYOUT & SCALING LOGIC
@@ -119,7 +272,7 @@ class JavaScriptCode {
   var currentScale = 1.0;
   var currentPanX = 0;
   var currentPanY = 0;
-  
+
   function applyTransform() {
     var mapEl = document.getElementById('PlotsAppendid');
     if (mapEl) {
@@ -130,18 +283,16 @@ class JavaScriptCode {
   }
 
   function recalculateLayout() {
-    // 1. Scale Header Down to fit the phone screen width
     var header = document.getElementById('mainHeaderContainer');
-    var targetHeaderWidth = 1120; // Required pixels for buttons to fit
+    var targetHeaderWidth = 1120;
     var screenW = window.innerWidth;
     var headerScale = screenW < targetHeaderWidth ? (screenW / targetHeaderWidth) : 1;
-    
+
     if (header) {
       header.style.transform = 'scale(' + headerScale + ')';
       header.style.width = (100 / headerScale) + '%';
     }
 
-    // 2. Adjust Sidebar based on real scaled header height
     var sidebar = document.getElementById('mapSidebar');
     var sidebarAppend = document.getElementById('sidebarappend');
     var rect = header ? header.getBoundingClientRect() : { height: 70 };
@@ -157,28 +308,32 @@ class JavaScriptCode {
     return headerH;
   }
 
-  /* FIT MAP AUTOMATICALLY TO BODY */
+  /* Fit the whole map image into the free area (uses the image's real
+     position inside the container, so margins are respected). */
   function autoFitMap() {
     var img = document.querySelector('#PlotsAppendid img');
     if (!img || img.naturalWidth === 0) {
-      setTimeout(autoFitMap, 500); // Wait for image load
+      setTimeout(autoFitMap, 500);
       return;
     }
-    
+
     var headerH = recalculateLayout();
-    var availW = window.innerWidth - 65; // Screen minus sidebar
-    var availH = window.innerHeight - headerH; // Screen minus header
-    
-    // Calculate zoom needed to fit the whole map image inside the body
-    var scaleW = availW / img.naturalWidth;
-    var scaleH = availH / img.naturalHeight;
-    currentScale = Math.min(scaleW, scaleH) * 0.95; // 95% to give a tiny padding
+    var availW = window.innerWidth - 65;
+    var availH = window.innerHeight - headerH;
+
+    var imgW = img.naturalWidth;
+    var imgH = img.naturalHeight;
+    var ox = img.offsetLeft || 0;   // image offset inside container
+    var oy = img.offsetTop || 0;
+
+    var scaleW = availW / imgW;
+    var scaleH = availH / imgH;
+    currentScale = Math.min(scaleW, scaleH) * 0.95;
     if (currentScale < 0.1) currentScale = 0.1;
     if (currentScale > 2.0) currentScale = 2.0;
 
-    // Center the map in available space
-    currentPanX = (availW - (img.naturalWidth * currentScale)) / 2;
-    currentPanY = headerH + (availH - (img.naturalHeight * currentScale)) / 2;
+    currentPanX = (availW - imgW * currentScale) / 2 - ox * currentScale;
+    currentPanY = headerH + (availH - imgH * currentScale) / 2 - oy * currentScale;
     applyTransform();
   }
 
@@ -186,9 +341,8 @@ class JavaScriptCode {
     recalculateLayout();
     autoFitMap();
   });
-  
-  // Kickstart layout
-  setInterval(recalculateLayout, 1000); // Fallback
+
+  setInterval(recalculateLayout, 1000);
   setTimeout(autoFitMap, 800);
 
   /* ================================================================
@@ -257,22 +411,27 @@ class JavaScriptCode {
     }
   }, { passive: true });
 
+  document.addEventListener('touchcancel', function () {
+    isDragging = false; isPinching = false;
+  }, { passive: true });
+
   /* ================================================================
      5. CENTER MAP ON SELECTED PLOT (SIDEBAR / SEARCH)
+     NOTE: the page calls plot_div(id, TOP_margin, LEFT_margin)
      ================================================================ */
   var prevPlotDiv = window.plot_div;
-  window.plot_div = function (id, left_margin, top_margin) {
+  window.plot_div = function (id, top_margin, left_margin) {
     if (typeof prevPlotDiv === 'function') {
-      try { prevPlotDiv(id, left_margin, top_margin); } catch (_) {}
+      try { prevPlotDiv(id, top_margin, left_margin); } catch (_) {}
     }
-    var lm = parseFloat(left_margin);
     var tm = parseFloat(top_margin);
+    var lm = parseFloat(left_margin);
     if (!isNaN(lm) && !isNaN(tm)) {
       var headerH = document.getElementById('mainHeaderContainer').getBoundingClientRect().height;
       var viewW = window.innerWidth - 65;
       var viewH = window.innerHeight - headerH;
 
-      if (currentScale < 1.0) currentScale = 1.3; // Zoom in slightly when clicked
+      if (currentScale < 1.0) currentScale = 1.3;
       currentPanX = (viewW / 2) - (lm * currentScale);
       currentPanY = headerH + (viewH / 2) - (tm * currentScale);
       applyTransform();
@@ -291,7 +450,7 @@ class JavaScriptCode {
     if (sel && e.touches.length === 1 && !sel.disabled) {
       e.preventDefault();
       closeDD();
-      
+
       var rect = sel.getBoundingClientRect();
       dd = document.createElement('div');
       dd.id = '__customDD';
@@ -319,6 +478,18 @@ class JavaScriptCode {
       if (ddRect.right > window.innerWidth) dd.style.left = Math.max(0, window.innerWidth - ddRect.width - 5) + 'px';
     }
   }, { passive: false });
+
+  /* ================================================================
+     7. RESET (called from Flutter when coming back from another screen)
+     ================================================================ */
+  window.__resetMapUI = function () {
+    closePlotModal();
+    closeDD();
+    isDragging = false;
+    isPinching = false;
+    recalculateLayout();
+    applyTransform();
+  };
 
 })();
 ''';

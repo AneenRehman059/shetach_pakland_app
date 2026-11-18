@@ -154,9 +154,9 @@ class BookingController extends GetxController {
       };
 
       final success = await _repo.createBooking(payload);
-      final successCrm = await _repo.createBookingCRM(createBookingCRM);
+      // final successCrm = await _repo.createBookingCRM(createBookingCRM);
 
-      if (success && successCrm) {
+      if (success) {
         if (success ) {
           Get.offAll(() => MainWrapper());
           WidgetsBinding.instance.addPostFrameCallback((_) {
