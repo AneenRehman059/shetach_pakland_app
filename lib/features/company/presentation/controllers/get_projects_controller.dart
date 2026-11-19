@@ -177,6 +177,61 @@ class BookingController extends GetxController {
     }
   }
 
+  Map<String, dynamic> buildPlotBookingPayload({
+    required String brnCode,
+    required String contactName,
+    required String contactNo,
+    required String plotSizeCode,
+    required String plotNo,
+    required String blockNo,
+    required String email,
+    required String plotType,
+    required String plotNature,
+    required String otpVia,
+  }) {
+    return {
+      "brn_code": brnCode,
+      "id_no": "12345-6789101-1",
+      "contact_name": contactName,
+      "contact_no": contactNo,
+      "token_remarks": "",
+      "token_amt": "",
+      "expirey_date": DateTime.now().toIso8601String(),
+      "plot_category_desc": "",
+      "net_price": 0,
+      "plot_size_code": plotSizeCode,
+      "plot_no": plotNo,
+      "block_no": blockNo,
+      "postby": "SHE",
+      "email": email,
+      "plot_nature_code": plotNature,
+      "plot_type": plotType,
+      "status": "",
+      "OtpVia": otpVia,
+      "tokenApiDto": {},
+    };
+  }
+
+  /// Calls PlotBooking. Returns true if the OTP was sent (go to OTP screen).
+  Future<bool> submitPlotBooking(
+      Map<String, dynamic> payload, BuildContext context) async {
+    try {
+      isLoading.value = true;
+      return await _repo.plotBooking(payload);
+    } catch (e) {
+      showTopSnackBar(
+        context,
+        title: "Alert",
+        e.toString().replaceFirst('Exception: ', ''),
+        Colors.red.withOpacity(0.7),
+        icon: Icons.warning,
+      );
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   void selectBlock(String name) async {
     selectedBlockName.value = name;
     final block = blocks.firstWhere(

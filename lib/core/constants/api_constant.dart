@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class ApiConstants {
-  static const String baseUrl = "https://paklandhousingdemo.shesoft.com.pk";
+  static const String baseUrl = "https://paklandhousing.shesoft.com.pk";
   static const String apiKey = 'BRE-crm-mobile-app-2025-secure-key';
 
   static const String signUpUrl = "$baseUrl/api/ReportExecl/SendOTP";
@@ -36,12 +36,14 @@ class ApiConstants {
   static const String recentActivityUrl = "$baseUrl/api/MobileApi/GetAllLogsByUser";
   static const String formNoUrl = "$baseUrl/api/MobileApi/FormStatus";
   static const String getFaqsUrl = "$baseUrl/api/MobileApi/GetFAQs";
+  static const String verifyBookingOtpUrl = "$baseUrl/api/MobileApi/VerifyBookingOtp";
+  static const String plotBookingUrl = "$baseUrl/api/MobileApi/PlotBooking";
   static const String getCommunicationPolicyUrl = "$baseUrl/api/MobileAPi/GetCommunicationPolicy";
 
   static const String addLeadBaseUrl = "https://shecrm.com.pk/crms_updated/api/get-web-form-lead";
 
 
-  static const String baseUrl2="https://paklandhousingdemo.shesoft.com.pk";
+  static const String baseUrl2="https://paklandhousing.shesoft.com.pk";
 
   static const String cmsBase = "$baseUrl2/api/CMS";
   static const String createTicketUrl = "$cmsBase/CreateTicket";

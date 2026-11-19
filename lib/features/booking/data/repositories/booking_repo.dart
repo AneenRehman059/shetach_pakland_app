@@ -153,4 +153,44 @@ class BookingRepository {
       throw Exception("Error: $e");
     }
   }
+
+  /// Guest (not logged in) booking: POST /api/MobileApi/PlotBooking.
+  /// Server sends an OTP to the contact number; returns true on StatusCode 200.
+  Future<bool> plotBooking(Map<String, dynamic> payload) async {
+    final response = await http.post(
+      Uri.parse(ApiConstants.plotBookingUrl),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      if (decoded["StatusCode"]?.toString() == "200") {
+        return true;
+      }
+      throw Exception(decoded["Message"] ?? "Booking failed");
+    }
+    throw Exception("Error: ${response.statusCode}");
+  }
+
+  /// POST /api/MobileApi/VerifyBookingOtp. Returns true on StatusCode 200.
+  Future<bool> verifyBookingOtp({
+    required String contactNo,
+    required String otpCode,
+  }) async {
+    final response = await http.post(
+      Uri.parse(ApiConstants.verifyBookingOtpUrl),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"ContactNo": contactNo, "OtpCode": otpCode}),
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      if (decoded["StatusCode"]?.toString() == "200") {
+        return true;
+      }
+      throw Exception(decoded["Message"] ?? "Invalid OTP");
+    }
+    throw Exception("Error: ${response.statusCode}");
+  }
 }

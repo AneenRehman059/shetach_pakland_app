@@ -15,6 +15,23 @@ import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import '../../core/theme/colors.dart';
 import '../booking/presentation/screens/booking_screen.dart';
 
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:pakland/core/constants/api_constant.dart';
+import 'package:pakland/core/javascript/map_script.dart';
+import 'package:pakland/core/widgets/app_header_bar.dart';
+import 'package:pakland/features/digital_map/data/repositories/get_map_repo.dart';
+import 'package:pakland/features/digital_map/filter/my_filter_sheet_map.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+
+import '../../core/theme/colors.dart';
+import '../booking/presentation/screens/booking_screen.dart';
+
 class DigitalMapScreen extends StatefulWidget {
   const DigitalMapScreen({super.key});
 
@@ -71,6 +88,7 @@ class _DigitalMapScreen extends State<DigitalMapScreen>
 
       String clean(dynamic v) => (v ?? '').toString().trim();
 
+      final String plotNo = clean(data['plotNo']);
       final String plotSize = clean(data['plotSize']);
       final String plotNature = clean(data['plotNature']);
       final String plotType = clean(data['plotType']);
@@ -82,6 +100,7 @@ class _DigitalMapScreen extends State<DigitalMapScreen>
             initialProject: _projectName,
             initialBlockNo: _blockNo,
             initialBlock: _blockName,
+            initialPlotNo: plotNo.isEmpty ? null : plotNo,
             initialPlotSize: plotSize.isEmpty ? null : plotSize,
             initialPlotNature: plotNature.isEmpty ? null : plotNature,
             initialPlotType: plotType.isEmpty ? null : plotType,

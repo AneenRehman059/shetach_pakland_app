@@ -1,6 +1,8 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pakland/core/widgets/responsive_body.dart';
 import 'package:flutter/material.dart';
+import 'package:intl_phone_field/countries.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:get/get.dart';
 import 'package:pakland/core/constants/image_constant.dart';
@@ -8,7 +10,10 @@ import 'package:pakland/core/theme/colors.dart';
 import 'package:pakland/core/widgets/app_header_bar.dart';
 import 'package:pakland/core/widgets/custom_buttons.dart';
 import 'package:pakland/core/widgets/toast_message.dart';
+import 'package:pakland/features/auth/presentation/controllers/communication_policy_controller.dart';
 import 'package:pakland/features/company/presentation/controllers/get_projects_controller.dart';
+
+import '../../../verify_booking_otp/presentation/screens/verify_booking_otp_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   final String? initialBranchCode;
@@ -18,6 +23,7 @@ class BookingScreen extends StatefulWidget {
   final String? initialPlotSize;
   final String? initialPlotNature;
   final String? initialPlotType;
+  final String? initialPlotNo;
 
   const BookingScreen({
     super.key,
@@ -28,6 +34,7 @@ class BookingScreen extends StatefulWidget {
     this.initialPlotSize,
     this.initialPlotNature,
     this.initialPlotType,
+    this.initialPlotNo,
   });
 
   bool get hasPrefill =>
@@ -35,7 +42,8 @@ class BookingScreen extends StatefulWidget {
           (initialBranchCode ?? '').isNotEmpty ||
           (initialPlotSize ?? '').isNotEmpty ||
           (initialPlotNature ?? '').isNotEmpty ||
-          (initialPlotType ?? '').isNotEmpty;
+          (initialPlotType ?? '').isNotEmpty ||
+          (initialPlotNo ?? '').isNotEmpty;
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -51,7 +59,7 @@ class _BookingScreenState extends State<BookingScreen> {
   static const double _fieldRadius = 12;
   static const double _bannerHeight = 58;
   static const double _belowCardGap = 14;
-  static const int _rowCount = 6;
+  static const int _rowCount = 7;
 
   static const Color _fieldBorder = Color(0xFFDCE3EC);
   static const Color _fieldFill = Color(0xFFF8FAFC);
@@ -64,16 +72,23 @@ class _BookingScreenState extends State<BookingScreen> {
 
   bool _submitted = false;
 
+  // Mobile field: country picker (default Pakistan, same as SignUp screen).
+  // contactController holds only the national number (no country code).
+  String _initialCountryCode = 'PK';
+  Country _country = countries.firstWhere((c) => c.code == 'PK');
+
   final TextEditingController nameController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
   final TextEditingController contactController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController plotNoController = TextEditingController();
 
   // Focus nodes: rebuild ke bawajood focus barqarar rakhte hain
   final FocusNode _nameFocus = FocusNode();
   final FocusNode _mobileFocus = FocusNode();
   final FocusNode _cityFocus = FocusNode();
   final FocusNode _emailFocus = FocusNode();
+  final FocusNode _plotNoFocus = FocusNode();
 
   final BookingController bookingController = Get.put(BookingController());
   final _storage = const FlutterSecureStorage();
@@ -82,6 +97,11 @@ class _BookingScreenState extends State<BookingScreen> {
   void initState() {
     super.initState();
     _resetForm();
+    // Map se aaya hua Plot No foran fill kar do (koi wait nahi chahiye)
+    final prefillPlotNo = (widget.initialPlotNo ?? '').trim();
+    if (prefillPlotNo.isNotEmpty) {
+      plotNoController.text = _limit(prefillPlotNo, 20);
+    }
     _loadUserDetails();
     if (widget.hasPrefill) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _applyPrefill());
@@ -94,6 +114,8 @@ class _BookingScreenState extends State<BookingScreen> {
     cityController.dispose();
     contactController.dispose();
     emailController.dispose();
+    plotNoController.dispose();
+    _plotNoFocus.dispose();
     _nameFocus.dispose();
     _mobileFocus.dispose();
     _cityFocus.dispose();
@@ -112,7 +134,10 @@ class _BookingScreenState extends State<BookingScreen> {
     nameController.clear();
     cityController.clear();
     contactController.clear();
+    _initialCountryCode = 'PK';
+    _country = countries.firstWhere((c) => c.code == 'PK');
     emailController.clear();
+    plotNoController.clear();
 
     bookingController.selectedBranchName.value = "";
     bookingController.selectedBranchCode.value = "";
@@ -139,7 +164,7 @@ class _BookingScreenState extends State<BookingScreen> {
           nameController.text = _limit(name, 35);
         }
         if (contactController.text.isEmpty && mobile.isNotEmpty) {
-          contactController.text = _limit(mobile, 15);
+          _applyStoredMobile(mobile);
         }
         if (cityController.text.isEmpty && city.isNotEmpty) {
           cityController.text = _limit(city, 100);
@@ -166,6 +191,116 @@ class _BookingScreenState extends State<BookingScreen> {
       parts.removeLast();
     }
     return parts.length > 1 ? parts.last : '';
+  }
+
+  /// Stored mobile can be "923001234567", "03001234567" or another country's
+  /// number. Split it into (country, national number) for the phone field.
+  void _applyStoredMobile(String raw) {
+    var digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('00')) digits = digits.substring(2);
+    if (digits.isEmpty) return;
+
+    Country match = countries.firstWhere((c) => c.code == 'PK');
+    String national = digits;
+
+    if (digits.startsWith('0')) {
+      national = digits.replaceFirst(RegExp(r'^0+'), ''); // local PK format
+    } else if (digits.startsWith('92')) {
+      national = digits.substring(2);
+    } else {
+      Country? best;
+      for (final c in countries) {
+        if (digits.startsWith(c.dialCode) &&
+            (best == null || c.dialCode.length > best.dialCode.length)) {
+          final rest = digits.substring(c.dialCode.length);
+          if (rest.length >= c.minLength && rest.length <= c.maxLength) {
+            best = c;
+          }
+        }
+      }
+      if (best != null) {
+        match = best;
+        national = digits.substring(best.dialCode.length);
+      }
+    }
+
+    _country = match;
+    _initialCountryCode = match.code;
+    contactController.text = national;
+  }
+
+  /// National number without leading zeros.
+  String get _nationalNumber => contactController.text
+      .replaceAll(RegExp(r'\D'), '')
+      .replaceFirst(RegExp(r'^0+'), '');
+
+  bool get _isPhoneValid =>
+      _nationalNumber.length >= _country.minLength &&
+          _nationalNumber.length <= _country.maxLength;
+
+  /// Full international number without "+", e.g. 923001234567
+  /// (same format SignUp screen sends).
+  String get _fullContactNo => '${_country.dialCode}$_nationalNumber';
+
+  InputDecoration _phoneDecoration(double fontSize, double verticalPad,
+      bool hasError) {
+    OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(_fieldRadius),
+      borderSide: BorderSide(color: color, width: width),
+    );
+    final Color idle = hasError ? Colors.red.shade400 : _fieldBorder;
+    return InputDecoration(
+      isDense: true,
+      counterText: '',
+      hintText: 'Add Mobile No.',
+      hintStyle: TextStyle(color: Colors.black38, fontSize: fontSize),
+      filled: true,
+      fillColor: _fieldFill,
+      contentPadding: EdgeInsets.only(
+        left: 0,
+        right: 12,
+        top: verticalPad,
+        bottom: verticalPad,
+      ),
+      border: border(idle, hasError ? 1.4 : 1),
+      enabledBorder: border(idle, hasError ? 1.4 : 1),
+      focusedBorder:
+      border(hasError ? Colors.red.shade400 : AppColors.appColor, 1.6),
+    );
+  }
+
+  Widget _phoneField({required double height, required double fontSize}) {
+    final double verticalPad = ((height - 22) / 2).clamp(4.0, 14.0).toDouble();
+    final bool hasError = _submitted && !_isPhoneValid;
+
+    return SizedBox(
+      height: height,
+      child: IntlPhoneField(
+        key: ValueKey(_initialCountryCode),
+        controller: contactController,
+        focusNode: _mobileFocus,
+        initialCountryCode: _initialCountryCode,
+        cursorColor: AppColors.appColor,
+        style: TextStyle(color: Colors.black87, fontSize: fontSize),
+        dropdownTextStyle: TextStyle(color: Colors.black87, fontSize: fontSize),
+        dropdownIcon: Icon(
+          Icons.keyboard_arrow_down_rounded,
+          size: 20,
+          color: AppColors.appColor,
+        ),
+        dropdownIconPosition: IconPosition.trailing,
+        flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 6),
+        showDropdownIcon: true,
+        disableLengthCheck: false,
+        autovalidateMode: AutovalidateMode.disabled,
+        textInputAction: TextInputAction.next,
+        decoration: _phoneDecoration(fontSize, verticalPad, hasError),
+        onChanged: (_) {
+          if (_submitted) setState(() {});
+        },
+        onCountryChanged: (country) => setState(() => _country = country),
+      ),
+    );
   }
 
   String _limit(String s, int max) => s.length > max ? s.substring(0, max) : s;
@@ -456,6 +591,25 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                 ),
                 _field(
+                  label: 'Plot No.',
+                  child: _textField(
+                    height: h,
+                    fontSize: fontSize,
+                    icon: Icons.tag_rounded,
+                    controller: plotNoController,
+                    focusNode: _plotNoFocus,
+                    hint: 'Add Plot No.',
+                    maxLength: 20,
+                    keyboardType: TextInputType.text,
+                    textCapitalization: TextCapitalization.characters,
+                    textInputAction: TextInputAction.next,
+                  ),
+                ),
+              ),
+              const SizedBox(height: _rowGap),
+
+              _twoColumns(
+                _field(
                   label: 'Plot/Unit Size',
                   isRequired: true,
                   child: _dropdown(
@@ -480,10 +634,6 @@ class _BookingScreenState extends State<BookingScreen> {
                         : (value) => setState(() => selectedPlotSize = value),
                   ),
                 ),
-              ),
-              const SizedBox(height: _rowGap),
-
-              _twoColumns(
                 _field(
                   label: 'Plot/Unit Nature',
                   isRequired: true,
@@ -505,68 +655,51 @@ class _BookingScreenState extends State<BookingScreen> {
                         setState(() => selectedPlotNatureCode = value),
                   ),
                 ),
-                _field(
-                  label: 'Plot/Unit Preference',
-                  isRequired: true,
-                  child: _dropdown(
-                    height: h,
-                    fontSize: fontSize,
-                    icon: Icons.star_rounded,
-                    hint: loading ? "Loading..." : "Select Preference",
-                    value: selectedPlotType,
-                    hasError: _submitted && selectedPlotType == null,
-                    items: bookingController.plotTypes.map((type) {
-                      return DropdownMenuItem<String>(
-                        value: type["plot_type"],
-                        child: _ellipsis(
-                          (type["plot_type_desc"] ?? "").toString(),
-                          fontSize,
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: loading
-                        ? null
-                        : (value) => setState(() => selectedPlotType = value),
-                  ),
-                ),
               ),
               const SizedBox(height: _rowGap),
 
               _field(
-                label: 'Name',
+                label: 'Plot/Unit Preference',
                 isRequired: true,
-                child: _textField(
+                child: _dropdown(
                   height: h,
                   fontSize: fontSize,
-                  icon: Icons.person_outline_rounded,
-                  controller: nameController,
-                  focusNode: _nameFocus,
-                  hint: 'Add Name',
-                  maxLength: 35,
-                  keyboardType: TextInputType.name,
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.next,
-                  hasError: _submitted && nameController.text.trim().isEmpty,
+                  icon: Icons.star_rounded,
+                  hint: loading ? "Loading..." : "Select Preference",
+                  value: selectedPlotType,
+                  hasError: _submitted && selectedPlotType == null,
+                  items: bookingController.plotTypes.map((type) {
+                    return DropdownMenuItem<String>(
+                      value: type["plot_type"],
+                      child: _ellipsis(
+                        (type["plot_type_desc"] ?? "").toString(),
+                        fontSize,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: loading
+                      ? null
+                      : (value) => setState(() => selectedPlotType = value),
                 ),
               ),
               const SizedBox(height: _rowGap),
 
               _twoColumns(
                 _field(
-                  label: 'Mobile No.',
+                  label: 'Name',
                   isRequired: true,
                   child: _textField(
                     height: h,
                     fontSize: fontSize,
-                    icon: Icons.phone_android_rounded,
-                    controller: contactController,
-                    focusNode: _mobileFocus,
-                    hint: 'Add Mobile No.',
-                    maxLength: 15,
-                    keyboardType: TextInputType.phone,
+                    icon: Icons.person_outline_rounded,
+                    controller: nameController,
+                    focusNode: _nameFocus,
+                    hint: 'Add Name',
+                    maxLength: 35,
+                    keyboardType: TextInputType.name,
+                    textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
-                    hasError:
-                    _submitted && contactController.text.trim().isEmpty,
+                    hasError: _submitted && nameController.text.trim().isEmpty,
                   ),
                 ),
                 _field(
@@ -584,6 +717,13 @@ class _BookingScreenState extends State<BookingScreen> {
                     textInputAction: TextInputAction.next,
                   ),
                 ),
+              ),
+              const SizedBox(height: _rowGap),
+
+              _field(
+                label: 'Mobile No.',
+                isRequired: true,
+                child: _phoneField(height: h, fontSize: fontSize),
               ),
               const SizedBox(height: _rowGap),
 
@@ -933,7 +1073,59 @@ class _BookingScreenState extends State<BookingScreen> {
     return email.isEmpty || _emailRegex.hasMatch(email);
   }
 
-  void _submitForm() {
+  Future<String> _resolveOtpVia() async {
+    final bool existed = Get.isRegistered<CommunicationPolicyController>();
+    final policy = existed
+        ? Get.find<CommunicationPolicyController>()
+        : Get.put(CommunicationPolicyController());
+    if (existed) {
+      await policy.fetchCommunicationPolicy();
+    } else {
+
+      await _waitFor(() => !policy.isLoading.value, timeoutMs: 10000);
+    }
+    return policy.otpMethod.value.value;
+  }
+
+  Future<void> _submitAsGuest() async {
+    bookingController.isLoading.value = true;
+    String otpVia;
+    try {
+      otpVia = await _resolveOtpVia();
+    } finally {
+      bookingController.isLoading.value = false;
+    }
+    if (!mounted) return;
+
+    final payload = bookingController.buildPlotBookingPayload(
+      brnCode: bookingController.selectedBranchCode.value,
+      contactName: nameController.text.trim(),
+      contactNo: _fullContactNo,
+      plotSizeCode: selectedPlotSize ?? "",
+      plotNo: plotNoController.text.trim(),
+      blockNo: bookingController.selectedBlockCode.value,
+      email: emailController.text.trim(),
+      plotType: selectedPlotType ?? "",
+      plotNature: selectedPlotNatureCode ?? "",
+      otpVia: otpVia,
+    );
+
+    final bool otpSent =
+    await bookingController.submitPlotBooking(payload, context);
+    if (!otpSent || !mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VerifyBookingOtpScreen(
+          contactNo: _fullContactNo,
+          bookingPayload: payload,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitForm() async {
     if (selectedProject == null ||
         selectedPlotType == null ||
         selectedPlotSize == null ||
@@ -945,6 +1137,18 @@ class _BookingScreenState extends State<BookingScreen> {
         context,
         title: "Alert",
         "Please fill all required fields",
+        Colors.red.withOpacity(0.7),
+        icon: Icons.warning,
+      );
+      return;
+    }
+
+    if (!_isPhoneValid) {
+      setState(() => _submitted = true);
+      showTopSnackBar(
+        context,
+        title: "Alert",
+        "Please enter a valid mobile number",
         Colors.red.withOpacity(0.7),
         icon: Icons.warning,
       );
@@ -963,12 +1167,21 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    // Logged-in user => normal booking. Guest (user_id empty/null) => OTP flow.
+    final userId = ((await _storage.read(key: "user_id")) ?? '').trim();
+    if (!mounted) return;
+    if (userId.isEmpty) {
+      await _submitAsGuest();
+      return;
+    }
+
     bookingController.submitBooking(
       brnCode: bookingController.selectedBranchCode.value,
       selectedProject: selectedProject ?? "",
       contactName: nameController.text.trim(),
-      contactNo: contactController.text.trim(),
+      contactNo: _fullContactNo,
       plotSizeCode: selectedPlotSize ?? "",
+      plotNo: plotNoController.text.trim(),
       blockNo: bookingController.selectedBlockCode.value,
       email: emailController.text.trim(),
       plotNature: selectedPlotNatureCode ?? "",
